@@ -26,7 +26,6 @@ export interface ConversationItem {
   onlineHidden?: boolean
   type: ConversationType
   peerUserId?: string
-  archived?: boolean
   pinned?: boolean
   mute?: boolean
   /** 有人 @ 我且未读 */
@@ -49,7 +48,6 @@ interface BackendConversationVO {
   peerUserId?: number
   online?: boolean
   onlineHidden?: boolean
-  archived?: boolean
   pinned?: boolean
   mute?: boolean
   mentionUnread?: boolean
@@ -93,7 +91,6 @@ function mapItem(vo: BackendConversationVO): ConversationItem {
     // 兼容接口返回数字或字符串，避免群聊被误判为单聊。
     type: Number(vo.type) === 2 ? 'group' : 'personal',
     peerUserId: vo.peerUserId != null ? String(vo.peerUserId) : undefined,
-    archived: !!vo.archived,
     pinned: !!vo.pinned,
     mute: !!vo.mute,
     mentionUnread: !!vo.mentionUnread,
@@ -129,7 +126,6 @@ export function dedupeConversationItems(list: ConversationItem[]): ConversationI
       unread: Math.max(existing.unread || 0, item.unread || 0),
       online: existing.online || item.online,
       onlineHidden: existing.onlineHidden && item.onlineHidden,
-      archived: !!existing.archived && !!item.archived,
       pinned: !!existing.pinned || !!item.pinned,
       mute: !!existing.mute || !!item.mute,
       mentionUnread: !!existing.mentionUnread || !!item.mentionUnread,
@@ -1116,10 +1112,6 @@ export async function markConversationUnread(conversationId: string): Promise<vo
   await http.post(`/v1/conversations/${conversationId}/unread`)
 }
 
-export async function setConversationArchived(conversationId: string, archived: boolean): Promise<void> {
-  await http.post(`/v1/conversations/${conversationId}/archive`, { archived })
-}
-
 export async function removeConversation(conversationId: string): Promise<void> {
   await http.post(`/v1/conversations/${conversationId}/remove`)
 }
@@ -1144,7 +1136,7 @@ export async function markAllConversationsRead(): Promise<void> {
 
 export async function batchConversations(
   ids: string[],
-  action: 'delete' | 'archive' | 'unarchive' | 'read' | 'unread',
+  action: 'delete' | 'read' | 'unread',
 ): Promise<void> {
   await http.post('/v1/conversations/batch', {
     ids: ids.map((id) => Number(id)),

@@ -81,7 +81,7 @@ async function openForwardPicker() {
   forwardLoading.value = true
   try {
     const list = await fetchConversations('all')
-    forwardTargets.value = list.filter((c) => !c.archived)
+    forwardTargets.value = list
   } catch {
     forwardTargets.value = []
     showToast({ message: '加载会话失败', zIndex: 21001 })

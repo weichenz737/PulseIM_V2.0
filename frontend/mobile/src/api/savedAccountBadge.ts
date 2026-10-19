@@ -16,7 +16,6 @@ interface RawConversation {
   type?: number | string
   peerUserId?: number | string
   unreadCount?: number | string
-  archived?: boolean | number | string
   mute?: boolean | number | string
 }
 
@@ -82,7 +81,7 @@ function conversationUnread(account: SavedAccount, rows: RawConversation[]): num
     const peerId = row.peerUserId == null ? '' : String(row.peerUserId)
     // 与消息首页一致：不把“文件传输助手/自己”的会话计入底部角标。
     if (type === 'personal' && peerId === account.userId) continue
-    if (booleanValue(row.archived) || booleanValue(row.mute)) continue
+    if (booleanValue(row.mute)) continue
     const key = type === 'personal' && peerId
       ? `personal:${peerId}`
       : `conversation:${String(row.id ?? '')}`

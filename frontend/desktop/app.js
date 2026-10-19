@@ -78,7 +78,6 @@ import {
   markDesktopConversationUnread,
   markAllDesktopConversationsRead,
   updateDesktopConversationSettings,
-  setDesktopConversationArchived,
   removeDesktopConversation,
   deleteDesktopPrivateConversation,
   clearDesktopGroupHistory,
@@ -610,7 +609,6 @@ const state = {
   recalledEditHiddenIds: new Set(),
   contactView: 'grid',
   selectedConversation: 0,
-  conversationFilter: '全部',
   contactQuery: '',
   contactMoreOpen: false,
   contactOnlineOnly: false,
@@ -1472,7 +1470,6 @@ function mapRemoteConversation(item) {
     peerUserId: item.peerUserId ? String(item.peerUserId) : '',
     avatarUrl: resolveDesktopAvatarUrl(item.avatarUrl || item.avatar_url || item.avatar || ''),
     fileTransferAssistant: Boolean(item.fileTransferAssistant),
-    archived: Boolean(item.archived),
     pinned: Boolean(item.pinned),
     mute: Boolean(item.mute),
   }
@@ -1485,10 +1482,6 @@ function isGroupConversation(item) {
     || type === '2'
     || tag.includes('群聊')
     || item?.name?.includes('设计组')
-}
-
-function isArchivedConversation(item) {
-  return Boolean(item?.archived)
 }
 
 function mapRemoteContact(item) {
@@ -3100,7 +3093,6 @@ function desktopConversationSignature(items) {
     mentionUnread: item.mentionUnread,
     pinned: item.pinned,
     mute: item.mute,
-    archived: item.archived,
     peerUserId: item.peerUserId,
     avatarUrl: item.avatarUrl,
   })))
@@ -6217,13 +6209,12 @@ async function loadRemoteData() {
   state.dataSource = hadRemoteData ? 'remote' : 'loading'
   if (!hadRemoteData) requestDesktopRender()
   try {
-    const [remoteConversations, remoteContacts, profile, archivedConversations] = await Promise.all([
+    const [remoteConversations, remoteContacts, profile] = await Promise.all([
       fetchDesktopConversations('all'),
       fetchDesktopContacts(),
       fetchDesktopProfile(),
-      fetchDesktopConversations('archive').catch(() => []),
     ])
-    const conversationMap = new Map([...remoteConversations, ...archivedConversations].map((item) => [String(item.id), item]))
+    const conversationMap = new Map(remoteConversations.map((item) => [String(item.id), item]))
     if (remoteContacts.list?.length) {
       const nextContacts = remoteContacts.list
         .filter((item) => !isDesktopFileTransferAssistant(item))
@@ -8575,7 +8566,6 @@ async function markAllDesktopConversationsReadFlow() {
   try {
     if (state.dataSource === 'remote') await markAllDesktopConversationsRead()
     conversations.forEach((conversation) => {
-      if (isArchivedConversation(conversation)) return
       conversation.unread = 0
       conversation.mentionUnread = false
     })
@@ -8605,16 +8595,7 @@ async function handleConversationAction(indexValue, action, confirmed = false) {
   state.messageMenu = null
   const conversationId = String(conversation.id || '')
   try {
-    if (action === 'archive') {
-      const archived = !isArchivedConversation(conversation)
-      if (state.dataSource === 'remote' && conversationId) await setDesktopConversationArchived(conversationId, archived)
-      conversation.archived = archived
-      if (archived && wasSelected) {
-        const nextIndex = conversations.findIndex((item, itemIndex) => itemIndex !== index && !isArchivedConversation(item))
-        if (nextIndex >= 0) state.selectedConversation = nextIndex
-      }
-      showToast(archived ? '已归档' : '已取消归档')
-    } else if (action === 'remove') {
+    if (action === 'remove') {
       if (state.dataSource === 'remote' && conversationId) await removeDesktopConversation(conversationId)
       conversations = conversations.filter((_, itemIndex) => itemIndex !== index)
       if (conversations.length === 0) {
@@ -11111,7 +11092,7 @@ function renderDesktopHomePlusMenu(placement = '') {
 
 function renderGroups() {
   const groups = conversations
-    .filter((item) => !isArchivedConversation(item) && isGroupConversation(item))
+    .filter((item) => isGroupConversation(item))
     .sort((a, b) => Number(Boolean(b.pinned)) - Number(Boolean(a.pinned)))
   const query = state.groupQuery.trim().toLowerCase()
   const visible = groups.filter((item) => {
@@ -11158,7 +11139,7 @@ function desktopSelectedConversation() {
 
 function renderMessagesHeading() {
   const totalUnread = conversations
-    .filter((item) => !isArchivedConversation(item) && !item.mute)
+    .filter((item) => !item.mute)
     .reduce((sum, item) => sum + Number(item.unread || 0), 0)
   return pageHeading('你的通讯空间', '消息 <span class="heading-count">${totalUnread}</span>', '保持连接，继续每一个重要对话。', `${button('新建消息', 'new-message', 'primary', 'edit')}<span class="desktop-home-plus-wrap"><button class="btn btn-icon-only" type="button" data-action="toggle-home-plus" aria-label="更多新建选项" title="更多新建选项">${icon('plus')}</button>${state.showHomePlusMenu ? renderDesktopHomePlusMenu() : ''}</span>`)
 }
@@ -11176,68 +11157,27 @@ function renderMessages() {
 }
 
 function renderConversationPanel() {
-  const filters = ['全部', '个人', '群组', '归档']
-  const activeFilter = filters.includes(state.conversationFilter) ? state.conversationFilter : '全部'
   const visible = desktopVisibleConversationIndexes().map((index) => conversations[index])
   return `<section class="conversation-panel panel-surface">
     <div class="panel-title-row"><div><h2>最近对话</h2><span>${conversations.length} 个会话</span></div><div class="conversation-panel-actions"><button class="subtle-icon-btn desktop-read-all-btn" type="button" data-action="mark-all-read" aria-label="全部已读" title="全部已读">${icon('check')}</button><span class="desktop-home-plus-wrap desktop-conversation-plus-wrap"><button class="subtle-icon-btn" type="button" data-action="toggle-home-plus" aria-label="更多新建选项" title="更多新建选项">${icon('plus')}</button>${state.showHomePlusMenu ? renderDesktopHomePlusMenu('conversation') : ''}</span></div></div>
     <label class="panel-search">${icon('search')}<input id="conversation-search" value="${escapeHtml(state.contactQuery)}" placeholder="搜索会话" /></label>
-    <div class="filter-tabs">${filters.map((filter) => { const count = desktopConversationUnreadCount(filter); return `<button class="filter-tab ${activeFilter === filter ? 'active' : ''}" data-filter="${filter}">${filter}${count > 0 ? `<i data-filter-unread="${filter}">${count > 99 ? '99+' : count}</i>` : ''}</button>` }).join('')}</div>
     <div class="conversation-list">${visible.length ? visible.map((item) => renderConversation(item)).join('') : '<div class="empty-state">没有找到相关会话</div>'}</div>
     ${renderConversationMenu()}
   </section>`
 }
 
 function desktopVisibleConversationIndexes() {
-  const filters = ['全部', '个人', '群组', '归档']
-  const activeFilter = filters.includes(state.conversationFilter) ? state.conversationFilter : '全部'
   const query = state.contactQuery.trim().toLowerCase()
   return conversations
     .map((item, index) => ({ item, index }))
-    .filter(({ item }) => {
-      const byArchive = activeFilter === '归档' ? isArchivedConversation(item) : !isArchivedConversation(item)
-      const byType = activeFilter === '个人'
-        ? !isGroupConversation(item)
-        : activeFilter === '群组'
-          ? isGroupConversation(item)
-          : true
-      return byArchive && byType && (!query || item.name.toLowerCase().includes(query) || item.preview.toLowerCase().includes(query))
-    })
+    .filter(({ item }) => !query || item.name.toLowerCase().includes(query) || item.preview.toLowerCase().includes(query))
     .sort((left, right) => Number(Boolean(right.item.pinned)) - Number(Boolean(left.item.pinned)))
     .map(({ index }) => index)
 }
 
-function desktopConversationUnreadCount(filter) {
-  return conversations
-    .filter((item) => {
-      if (filter === '归档') return isArchivedConversation(item)
-      if (isArchivedConversation(item)) return false
-      if (filter === '个人') return !isGroupConversation(item)
-      if (filter === '群组') return isGroupConversation(item)
-      return true
-    })
-    .reduce((sum, item) => sum + Math.max(0, Number(item.unread || 0)), 0)
-}
-
 function updateDesktopConversationFilterBadges() {
-  const filters = ['全部', '个人', '群组', '归档']
-  document.querySelectorAll('[data-filter]').forEach((element) => {
-    const filter = element.dataset.filter || ''
-    if (!filters.includes(filter)) return
-    const count = desktopConversationUnreadCount(filter)
-    const badge = element.querySelector('[data-filter-unread]')
-    if (count <= 0) {
-      badge?.remove()
-      return
-    }
-    if (badge) {
-      badge.textContent = count > 99 ? '99+' : String(count)
-    } else {
-      element.insertAdjacentHTML('beforeend', `<i data-filter-unread="${filter}">${count > 99 ? '99+' : count}</i>`)
-    }
-  })
   const total = conversations
-    .filter((item) => !isArchivedConversation(item) && !item.mute)
+    .filter((item) => !item.mute)
     .reduce((sum, item) => sum + Math.max(0, Number(item.unread || 0)), 0)
   const headingCount = document.querySelector('.page-messages .heading-count')
   if (headingCount) headingCount.textContent = String(total)
@@ -11263,11 +11203,9 @@ function renderConversationMenuLegacy() {
   if (!conversation || !state.conversationMenu) return ''
   const readAction = Number(conversation.unread || 0) > 0 ? 'read' : 'unread'
   const readLabel = readAction === 'read' ? '设为已读' : '设为未读'
-  const archiveLabel = isArchivedConversation(conversation) ? '取消归档' : '设为归档'
   const left = Math.max(8, Number(state.conversationMenu.left || 0))
   const top = Math.max(8, Number(state.conversationMenu.top || 0))
   return `<div class="conversation-context-menu" data-conversation-menu style="left:${left}px;top:${top}px" role="menu">
-    <button data-conversation-action="archive" data-conversation-index="${index}" role="menuitem">${icon('close')}${archiveLabel}</button>
     <button data-conversation-action="remove" data-conversation-index="${index}" role="menuitem" class="danger">${icon('close')}删除</button>
     <button data-conversation-action="${readAction}" data-conversation-index="${index}" role="menuitem">${icon('check')}${readLabel}</button>
     <button data-conversation-action="${conversation.pinned ? 'unpin' : 'pin'}" data-conversation-index="${index}" role="menuitem">${icon('bookmark')}${conversation.pinned ? '取消置顶' : '置顶'}</button>
@@ -11280,17 +11218,12 @@ function renderConversationMenu() {
   if (!conversation || !state.conversationMenu) return ''
   const readAction = Number(conversation.unread || 0) > 0 ? 'read' : 'unread'
   const readLabel = readAction === 'read' ? '\u6807\u8bb0\u4e3a\u5df2\u8bfb' : '\u6807\u8bb0\u4e3a\u672a\u8bfb'
-  const archiveAction = isArchivedConversation(conversation) ? 'unarchive' : 'archive'
-  const archiveLabel = archiveAction === 'archive' ? '\u5f52\u6863' : '\u53d6\u6d88\u5f52\u6863'
   const muteAction = conversation.mute ? 'unmute' : 'mute'
   const muteLabel = conversation.mute ? '\u5173\u95ed\u6d88\u606f\u514d\u6253\u6270' : '\u6d88\u606f\u514d\u6253\u6270'
-  const archiveMenuAction = 'archive'
-  const archiveMenuLabel = isArchivedConversation(conversation) ? '\u53d6\u6d88\u5f52\u6863' : '\u5f52\u6863'
   const left = Math.max(8, Number(state.conversationMenu.left || 0))
   const top = Math.max(8, Number(state.conversationMenu.top || 0))
   return `<div class="conversation-context-menu" data-conversation-menu style="left:${left}px;top:${top}px" role="menu">
     <button data-conversation-action="${muteAction}" data-conversation-index="${index}" role="menuitem">${muteLabel}</button>
-    <button data-conversation-action="${archiveMenuAction}" data-conversation-index="${index}" role="menuitem">${archiveMenuLabel}</button>
     <button data-conversation-action="remove" data-conversation-index="${index}" role="menuitem" class="danger">\u5220\u9664</button>
     <button data-conversation-action="${readAction}" data-conversation-index="${index}" role="menuitem">${readLabel}</button>
     <button data-conversation-action="${conversation.pinned ? 'unpin' : 'pin'}" data-conversation-index="${index}" role="menuitem">${conversation.pinned ? '\u53d6\u6d88\u7f6e\u9876' : '\u7f6e\u9876'}</button>
@@ -16025,7 +15958,6 @@ function bindEvents() {
     const nextIndex = Number(element.dataset.groupConversation)
     if (!conversations[nextIndex]) return
     state.page = 'messages'
-    state.conversationFilter = '全部'
     state.scrollChatToBottom = Number(conversations[nextIndex].unread || 0) > 0
     state.selectedConversation = nextIndex
     clearPendingDesktopFile()
@@ -16070,10 +16002,6 @@ function bindEvents() {
     state.messageMenu = null
     state.momentMenu = null
     state.conversationMenu = { index: Number(element.dataset.conversation), left, top }
-    render()
-  }))
-  document.querySelectorAll('[data-filter]').forEach((element) => element.addEventListener('click', () => {
-    state.conversationFilter = element.dataset.filter
     render()
   }))
   document.querySelector('#conversation-search')?.addEventListener('input', (event) => {

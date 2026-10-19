@@ -76,7 +76,7 @@ public class ConversationService {
         list = dedupePrivateConversations(userId, list);
         boolean groupContacts = "group".equalsIgnoreCase(filter) || "群组".equals(filter);
         if (!groupContacts) {
-            // 消息首页、未读和归档仍隐藏“删除会话”；联系人-群聊不受该入口影响。
+            // 消息首页和未读仍隐藏“删除会话”；联系人-群聊不受该入口影响。
             list = list.stream()
                     .filter(vo -> !Boolean.TRUE.equals(vo.getHidden()))
                     .toList();
@@ -131,11 +131,7 @@ public class ConversationService {
                 vo.setOnlineHidden(false);
             }
         }
-        boolean archiveOnly = "archive".equalsIgnoreCase(filter) || "归档".equals(filter);
-        list = list.stream()
-                .filter(vo -> archiveOnly == Boolean.TRUE.equals(vo.getArchived()))
-                .toList();
-        if (!StringUtils.hasText(filter) || "all".equalsIgnoreCase(filter) || "全部".equals(filter) || archiveOnly) {
+        if (!StringUtils.hasText(filter) || "all".equalsIgnoreCase(filter) || "全部".equals(filter)) {
             return list;
         }
         return list.stream().filter(vo -> matchFilter(vo, filter)).toList();
@@ -512,18 +508,10 @@ public class ConversationService {
     public void markAllRead(Long userId) {
         List<ImConversationMember> members = memberMapper.selectList(new LambdaQueryWrapper<ImConversationMember>()
                 .eq(ImConversationMember::getUserId, userId)
-                .and(w -> w.isNull(ImConversationMember::getArchived).or().eq(ImConversationMember::getArchived, false))
                 .gt(ImConversationMember::getUnreadCount, 0));
         for (ImConversationMember m : members) {
             markRead(userId, m.getConversationId(), null);
         }
-    }
-
-    @Transactional
-    public void setArchived(Long userId, Long conversationId, boolean archived) {
-        ImConversationMember member = requireMember(userId, conversationId);
-        member.setArchived(archived);
-        memberMapper.updateById(member);
     }
 
     @Transactional
@@ -648,8 +636,6 @@ public class ConversationService {
         for (Long id : ids) {
             switch (action) {
                 case "delete" -> removeConversation(userId, id);
-                case "archive" -> setArchived(userId, id, true);
-                case "unarchive" -> setArchived(userId, id, false);
                 case "read" -> markRead(userId, id, null);
                 case "unread" -> setUnread(userId, id, 1);
                 default -> throw new BizException("不支持的操作");

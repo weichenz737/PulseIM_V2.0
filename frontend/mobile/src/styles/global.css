@@ -806,17 +806,6 @@ button {
   color: #087ed7 !important;
 }
 
-:root[data-theme='light'] .messages-page .filter-row {
-  background: transparent !important;
-  border-bottom: none !important;
-}
-
-:root[data-theme='light'] .messages-page .filter-block {
-  /* 透出页面统一渐变；去掉分类标签下方的横线 */
-  background: transparent !important;
-  border-bottom: none !important;
-}
-
 /* 消息/联系人列表区透出页面蓝白渐变 */
 :root[data-theme='light'] .messages-page :is(.scroll-body, .page-pull, .pull-inner),
 :root[data-theme='light'] .messages-page .page-pull :deep(.van-pull-refresh__track),
@@ -1218,31 +1207,10 @@ button {
   color: #087ed7 !important;
 }
 
-/* 安卓：消息页筛选 / 会话行保持紧凑（苹果端用默认较大尺寸） */
-:root[data-platform='android'] .messages-page .filter-row {
-  gap: 6px;
-  padding: 10px 12px 12px;
-}
-
-:root[data-platform='android'] .messages-page .filter-chips {
-  gap: 6px;
-}
-
+/* 安卓：消息页会话行保持紧凑（苹果端用默认较大尺寸） */
 :root[data-platform='android'] .messages-page .select-all-btn {
   font-size: 12px;
   padding: 4px 2px;
-}
-
-:root[data-platform='android'] .messages-page .chip {
-  gap: 4px;
-  padding: 5px 10px;
-  font-size: 15px;
-  line-height: 19px;
-}
-
-:root.capacitor-native:not([data-platform='android']) .messages-page .chip {
-  font-size: 15px;
-  line-height: 19px;
 }
 
 :root[data-platform='android'] .messages-page .conversation-item {

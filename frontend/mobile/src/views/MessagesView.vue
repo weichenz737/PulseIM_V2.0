@@ -9,7 +9,6 @@ import {
   fetchConversations,
   markConversationRead,
   markConversationUnread,
-  setConversationArchived,
   removeConversation,
   markAllConversationsRead,
   batchConversations,
@@ -32,8 +31,6 @@ import { chatDraftRevision, getChatDraft } from '@/stores/chatDraft'
 import { useLockScreenStore } from '@/stores/lockScreen'
 import { isNativeApp } from '@/native'
 import UserAvatar from '@/components/UserAvatar.vue'
-
-type FilterType = 'all' | 'personal' | 'group' | 'archive'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -142,7 +139,6 @@ function syncConversationSettings(event: Event) {
     id?: string
     pinned?: boolean
     mute?: boolean
-    archived?: boolean
     removed?: boolean
   }>).detail
   if (!detail?.id) return
@@ -153,12 +149,10 @@ function syncConversationSettings(event: Event) {
   const patch: Partial<ConversationItem> = {}
   if (typeof detail.pinned === 'boolean') patch.pinned = detail.pinned
   if (typeof detail.mute === 'boolean') patch.mute = detail.mute
-  if (typeof detail.archived === 'boolean') patch.archived = detail.archived
   patchConversationLocal(detail.id, patch)
 }
 const scrollBodyRef = ref<HTMLElement | null>(null)
 const pullMinHeight = ref(0)
-const activeFilter = ref<FilterType>('all')
 const editMode = ref(false)
 const selectedIds = ref<Set<string>>(new Set())
 let pollTimer: ReturnType<typeof setInterval> | null = null
@@ -192,19 +186,6 @@ function bindSwipeCell(id: string, el: Element | ComponentPublicInstance | null)
 function closeSwipeCell(id: string) {
   swipeCellMap.get(id)?.close('outside')
 }
-
-const filters: { key: FilterType; label: string }[] = [
-  { key: 'all', label: '全部' },
-  { key: 'personal', label: '个人' },
-  { key: 'group', label: '群组' },
-  { key: 'archive', label: '归档' },
-]
-
-/** 分类标签滑动选中块 */
-const filterChipsWrap = ref<HTMLElement | null>(null)
-const chipEls = new Map<string, HTMLElement | null>()
-const filterSliderStyle = ref({ transform: 'translateX(0px)', width: '0px' })
-let sliderObserver: ResizeObserver | null = null
 
 /** 编辑模式“全选”悬浮按钮（可拖动） */
 const selectAllFabRef = ref<HTMLButtonElement | null>(null)
@@ -283,51 +264,6 @@ function onSelectAllClick() {
   }
   toggleSelectAll()
 }
-
-function bindChipEl(key: FilterType, el: unknown) {
-  if (el instanceof HTMLElement) chipEls.set(key, el)
-}
-
-function updateFilterSlider() {
-  const wrap = filterChipsWrap.value
-  const el = chipEls.get(activeFilter.value)
-  if (!wrap || !el) return
-  const wrapRect = wrap.getBoundingClientRect()
-  const elRect = el.getBoundingClientRect()
-  if (elRect.width <= 0) return
-  const borderLeft = wrap.clientLeft || 0
-  filterSliderStyle.value = {
-    transform: `translateX(${Math.max(0, elRect.left - wrapRect.left - borderLeft)}px)`,
-    width: `${elRect.width}px`,
-  }
-}
-
-function scheduleFilterSlider() {
-  requestAnimationFrame(() => updateFilterSlider())
-  window.setTimeout(updateFilterSlider, 80)
-  window.setTimeout(updateFilterSlider, 250)
-  window.setTimeout(updateFilterSlider, 600)
-}
-
-watch(activeFilter, () => nextTick(updateFilterSlider))
-
-onMounted(() => {
-  scheduleFilterSlider()
-  restoreSelectAllPos()
-  window.addEventListener('resize', updateFilterSlider)
-  const wrap = filterChipsWrap.value
-  if (wrap && typeof ResizeObserver !== 'undefined') {
-    const ro = new ResizeObserver(() => updateFilterSlider())
-    ro.observe(wrap)
-    sliderObserver = ro
-  }
-})
-onActivated(() => scheduleFilterSlider())
-onUnmounted(() => {
-  window.removeEventListener('resize', updateFilterSlider)
-  sliderObserver?.disconnect()
-  sliderObserver = null
-})
 
 const myUserId = computed(() => String(userStore.userId || ''))
 const selectedCount = computed(() => selectedIds.value.size)
@@ -449,32 +385,12 @@ async function repairPeerAvatars(list: ConversationItem[]): Promise<Conversation
   })
 }
 
-function formatBadge(n: number): string {
-  if (n <= 0) return ''
-  return n > 99 ? '99+' : String(n)
-}
-
-/** 各筛选标签对应的未读消息角标 */
-/** 各筛选标签对应的未读消息角标 */
-const filterBadges = computed<Record<FilterType, number>>(() => {
-  void inbox.revision
-  const list = withPreviewPatches(conversations.value).filter((c) => !isSelfConversation(c))
-  const normal = list.filter((c) => !c.archived)
-  const archived = list.filter((c) => !!c.archived)
-  return {
-    all: sumUnread(normal),
-    personal: sumUnread(normal.filter((c) => c.type === 'personal')),
-    group: sumUnread(normal.filter((c) => c.type === 'group')),
-    archive: sumUnread(archived),
-  }
-})
-
 /** 底部「消息」Tab：免打扰会话不计入红点 */
 const tabUnreadTotal = computed(() => {
   void inbox.revision
   return sumUnread(
     withPreviewPatches(conversations.value).filter(
-      (c) => !isSelfConversation(c) && !c.archived && !c.mute,
+      (c) => !isSelfConversation(c) && !c.mute,
     ),
   )
 })
@@ -492,17 +408,7 @@ watch(
 const filteredList = computed(() => {
   // 依赖 revision，确保补丁触发重算
   void inbox.revision
-  let list = withPreviewPatches(conversations.value).filter((c) => !isSelfConversation(c))
-  const archiveView = activeFilter.value === 'archive'
-  list = list.filter((c) => !!c.archived === archiveView)
-  switch (activeFilter.value) {
-    case 'personal':
-      list = list.filter((c) => c.type === 'personal')
-      break
-    case 'group':
-      list = list.filter((c) => c.type === 'group')
-      break
-  }
+  const list = withPreviewPatches(conversations.value).filter((c) => !isSelfConversation(c))
   return [...list].sort((a, b) => {
     const pin = Number(!!b.pinned) - Number(!!a.pinned)
     if (pin !== 0) return pin
@@ -518,11 +424,9 @@ async function loadConversations(showLoading = false) {
   const task = (async () => {
   if (showLoading) loading.value = true
   try {
-    // 首屏只等待普通会话；归档列表在后台补齐，避免较少使用的接口拖慢首页。
-    const archivedTask = fetchConversations('archive').catch(() => [] as ConversationItem[])
-    const normal = await fetchConversations('all')
+    const all = await fetchConversations('all')
     const map = new Map<string, ConversationItem>()
-    normal.forEach((c) => map.set(c.id, c))
+    all.forEach((c) => map.set(c.id, c))
     const baseList = dedupeConversationItems([...map.values()])
     const ownerId = String(userStore.userId || '')
     baseList.forEach((item) => {
@@ -543,21 +447,12 @@ async function loadConversations(showLoading = false) {
     inbox.setUnreadTotal(
       sumUnread(
         conversations.value.filter(
-          (c) => !isSelfConversation(c) && !c.archived && !c.mute,
+          (c) => !isSelfConversation(c) && !c.mute,
         ),
       ),
     )
     void repairPeerAvatars(baseList).then((repaired) => {
-      const archived = conversations.value.filter((item) => item.archived)
-      conversations.value = dedupeConversationItems([...repaired, ...archived]).sort(
-        (a, b) => Number(!!b.pinned) - Number(!!a.pinned),
-      )
-    })
-    void archivedTask.then((archived) => {
-      if (archived.length === 0) return
-      const current = new Map(conversations.value.map((item) => [item.id, item]))
-      archived.forEach((item) => current.set(item.id, item))
-      conversations.value = dedupeConversationItems([...current.values()]).sort(
+      conversations.value = dedupeConversationItems(repaired).sort(
         (a, b) => Number(!!b.pinned) - Number(!!a.pinned),
       )
     })
@@ -631,7 +526,7 @@ function onConversationRead(e: Event) {
     inbox.clearMention(conversationId)
     inbox.setUnreadTotal(
       sumUnread(
-        conversations.value.filter((item) => !isSelfConversation(item) && !item.archived && !item.mute),
+        conversations.value.filter((item) => !isSelfConversation(item) && !item.mute),
       ),
     )
   }
@@ -661,6 +556,7 @@ watch(
 )
 
 onMounted(() => {
+  restoreSelectAllPos()
   hasMounted = true
   window.addEventListener('pulse:offline-sync', syncOfflineConversations)
   window.addEventListener('pulse:conversation-settings-updated', syncConversationSettings)
@@ -883,9 +779,7 @@ async function batchRead() {
   try {
     if (!selected) {
       await markAllConversationsRead()
-      conversations.value = conversations.value.map((c) =>
-        c.archived ? c : { ...c, unread: 0 },
-      )
+      conversations.value = conversations.value.map((c) => ({ ...c, unread: 0 }))
       inbox.setUnreadTotal(0)
       showToast('全部已读')
     } else {
@@ -895,35 +789,6 @@ async function batchRead() {
       )
       showToast('已标为已读')
     }
-    exitEditMode()
-  } catch (e) {
-    showToast(e instanceof Error ? e.message : '操作失败')
-  }
-}
-
-async function batchArchive() {
-  if (selectedCount.value === 0) {
-    showToast('请先选择会话')
-    return
-  }
-  const archive = activeFilter.value !== 'archive'
-  try {
-    await showConfirmDialog({
-      title: archive ? '归档会话' : '取消归档',
-      message: archive
-        ? `确定归档选中的 ${selectedCount.value} 个会话？`
-        : `确定取消归档选中的 ${selectedCount.value} 个会话？`,
-      confirmButtonText: '确定',
-    })
-  } catch {
-    return
-  }
-  try {
-    await batchConversations([...selectedIds.value], archive ? 'archive' : 'unarchive')
-    conversations.value = conversations.value.map((c) =>
-      selectedIds.value.has(c.id) ? { ...c, archived: archive } : c,
-    )
-    showToast(archive ? '已归档' : '已取消归档')
     exitEditMode()
   } catch (e) {
     showToast(e instanceof Error ? e.message : '操作失败')
@@ -1006,24 +871,6 @@ async function swipeToggleRead(item: ConversationItem) {
   }
 }
 
-async function swipeToggleArchive(item: ConversationItem) {
-  closeSwipeCell(item.id)
-  if (swipeBusyIds.has(item.id)) return
-  swipeBusyIds.add(item.id)
-  const next = !item.archived
-  const snapshot = findConversationSnapshot(item.id) ?? { ...item }
-  patchConversationLocal(item.id, { archived: next })
-  showToast(next ? '已归档' : '已取消归档')
-  try {
-    await setConversationArchived(item.id, next)
-  } catch (e) {
-    restoreConversation(snapshot)
-    showToast(e instanceof Error ? e.message : '操作失败')
-  } finally {
-    swipeBusyIds.delete(item.id)
-  }
-}
-
 async function swipeTogglePin(item: ConversationItem) {
   closeSwipeCell(item.id)
   if (swipeBusyIds.has(item.id)) return
@@ -1068,10 +915,6 @@ function goSearch() {
   router.push('/search')
 }
 
-function setFilter(key: FilterType) {
-  activeFilter.value = key
-  selectedIds.value = new Set()
-}
 </script>
 
 <template>
@@ -1133,31 +976,6 @@ function setFilter(key: FilterType) {
       </div>
     </header>
 
-    <div class="filter-block">
-      <div class="filter-row">
-        <div class="filter-chips scrollbar-hide" ref="filterChipsWrap">
-          <span class="chip-slider" :style="filterSliderStyle" aria-hidden="true" />
-          <button
-            v-for="chip in filters"
-            :key="chip.key"
-            type="button"
-            class="chip"
-            :class="{ active: activeFilter === chip.key }"
-            :ref="(el) => bindChipEl(chip.key, el)"
-            @click="setFilter(chip.key)"
-          >
-            {{ chip.label }}
-            <span
-              v-if="filterBadges[chip.key] > 0"
-              class="chip-badge"
-              :class="`tone-${chip.key}`"
-            >
-              {{ formatBadge(filterBadges[chip.key]) }}
-            </span>
-          </button>
-        </div>
-      </div>
-    </div>
     </div>
 
     <!-- 编辑模式：右侧悬浮“全选”按钮 -->
@@ -1265,9 +1083,6 @@ function setFilter(key: FilterType) {
                   <button type="button" class="swipe-btn read" @click.stop="swipeToggleRead(item)">
                     {{ item.unread > 0 ? '已读' : '未读' }}
                   </button>
-                  <button type="button" class="swipe-btn archive" @click.stop="swipeToggleArchive(item)">
-                    {{ item.archived ? '取消归档' : '归档' }}
-                  </button>
                   <button type="button" class="swipe-btn danger" @click.stop="swipeDelete(item)">
                     删除
                   </button>
@@ -1275,7 +1090,7 @@ function setFilter(key: FilterType) {
               </van-swipe-cell>
             </template>
             <div v-if="!loading && filteredList.length === 0" class="empty-state">
-              {{ activeFilter === 'archive' ? '暂无归档会话' : '暂无会话' }}
+              暂无会话
             </div>
           </div>
           <!-- 占满剩余高度，保证空白处也落在刷新触控区内 -->
@@ -1297,10 +1112,6 @@ function setFilter(key: FilterType) {
       <button type="button" class="edit-action" @click="batchRead">
         <span class="material-symbols-outlined">done_all</span>
         <span>{{ selectedCount > 0 ? '标为已读' : '全部已读' }}</span>
-      </button>
-      <button type="button" class="edit-action" @click="batchArchive">
-        <span class="material-symbols-outlined">inventory_2</span>
-        <span>{{ activeFilter === 'archive' ? '取消归档' : '归档' }}</span>
       </button>
     </div>
 
@@ -1767,22 +1578,6 @@ function setFilter(key: FilterType) {
   touch-action: pan-y;
 }
 
-.filter-block {
-  flex-shrink: 0;
-  z-index: 35;
-  background: rgba(18, 19, 23, 0.96);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-}
-
-.filter-row {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 16px 8px;
-}
-
 .conversation-list {
   flex-shrink: 0;
   margin: 14px 12px 12px;
@@ -1791,36 +1586,6 @@ function setFilter(key: FilterType) {
   border-radius: 16px;
   background: var(--pulse-surface-container);
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.24);
-}
-
-.filter-chips {
-  position: relative;
-  display: flex;
-  gap: 3px;
-  padding: 4px;
-  /* 深色模式：分段控件轨道 */
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 16px;
-  overflow-x: auto;
-  white-space: nowrap;
-  flex: 1;
-  min-width: 0;
-}
-
-.chip-slider {
-  position: absolute;
-  top: 4px;
-  bottom: 4px;
-  left: 0;
-  border-radius: 12px;
-  background: var(--pulse-primary-container);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-  transition:
-    transform 0.28s cubic-bezier(0.22, 0.9, 0.3, 1.05),
-    width 0.28s cubic-bezier(0.22, 0.9, 0.3, 1.05);
-  z-index: 0;
-  pointer-events: none;
 }
 
 .select-all-fab {
@@ -1846,92 +1611,6 @@ function setFilter(key: FilterType) {
 
 .select-all-fab:active {
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.32);
-}
-
-.chip {
-  position: relative;
-  z-index: 1;
-  flex: 1 1 0;
-  min-width: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 8px 6px;
-  height: 38px;
-  box-sizing: border-box;
-  border-radius: 12px;
-  border: none;
-  background: transparent;
-  color: var(--pulse-text-secondary);
-  font-size: 14px;
-  font-weight: 500;
-  letter-spacing: 0.3px;
-  line-height: 22px;
-  cursor: pointer;
-  transition:
-    color 0.2s ease,
-    transform 0.12s ease;
-}
-
-.chip:active {
-  transform: scale(0.95);
-}
-
-.chip.active {
-  /* 背景由滑动选中块提供 */
-  background: transparent;
-  color: var(--pulse-on-primary-container);
-  font-weight: 700;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
-}
-
-.chip-badge {
-  min-width: 14px;
-  height: 14px;
-  padding: 0 3px;
-  border-radius: 999px;
-  font-size: 9px;
-  font-weight: 700;
-  line-height: 14px;
-  text-align: center;
-  color: #fff;
-}
-
-.chip-badge.tone-all {
-  background: #5b8def;
-}
-
-.chip-badge.tone-personal {
-  background: #3dba7a;
-}
-
-.chip-badge.tone-group {
-  background: #e0a14a;
-}
-
-.chip-badge.tone-archive {
-  background: var(--pulse-outline);
-}
-
-.chip.active .chip-badge.tone-all {
-  background: var(--pulse-on-primary-container);
-  color: var(--pulse-primary);
-}
-
-.chip.active .chip-badge.tone-personal {
-  background: #0b3d28;
-  color: #9cf0c0;
-}
-
-.chip.active .chip-badge.tone-group {
-  background: #3d2a0a;
-  color: #ffd79a;
-}
-
-.chip.active .chip-badge.tone-archive {
-  background: #2a2c33;
-  color: var(--pulse-text-secondary);
 }
 
 .conversation-item {
@@ -2197,10 +1876,6 @@ function setFilter(key: FilterType) {
   background: #c9a227;
 }
 
-.swipe-btn.archive {
-  background: var(--pulse-outline);
-}
-
 .swipe-btn.danger {
   background: #ff5447;
 }
@@ -2262,15 +1937,14 @@ function setFilter(key: FilterType) {
 }
 
 /* 浅色模式：头部区域淡蓝渐变（与页面蓝白底协调，深色保持原样） */
-:root[data-theme='light'] .top-bar,
-:root[data-theme='light'] .filter-block {
+:root[data-theme='light'] .top-bar {
   background: transparent;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
 }
 
 :root[data-theme='light'] .head-area {
-  /* 顶部淡蓝，往下逐渐过渡到白色，到分类标签这一排已是白底 */
+  /* 顶部淡蓝，往下逐渐过渡到白色 */
   background: linear-gradient(180deg, #bfe8ff 0%, #d9f2ff 36%, #f4faff 70%, #ffffff 100%);
 }
 
@@ -2302,62 +1976,5 @@ function setFilter(key: FilterType) {
   border-color: rgba(255, 255, 255, 0.28);
   color: #14243a;
 }
-
-/* 浅色模式分类标签重做：整排极浅蓝白底轨道（浅蓝描边）+ 等宽分段，选中项为白色圆角块“盖”在轨道上 */
-:root[data-theme='light'] .filter-chips {
-  background: #eef7ff;
-  border: 1px solid rgba(139, 196, 228, 0.4);
-  border-radius: 16px;
-}
-
-:root[data-theme='light'] .filter-block .chip {
-  /* 未选中：等宽分布在轨道上，无底色无边框 */
-  flex: 1 1 0;
-  min-width: 0;
-  padding: 8px 6px;
-  background: transparent;
-  border-color: transparent;
-  color: #526574;
-  font-weight: 500;
-}
-
-:root[data-theme='light'] .filter-block .chip.active {
-  /* 选中：文字变蓝，背景由滑动选中块（白色）提供 */
-  background: transparent;
-  border-color: transparent;
-  color: #087ed7;
-  font-weight: 700;
-  box-shadow: none;
-}
-
-:root[data-theme='light'] .filter-chips .chip-slider {
-  /* 浅色模式滑动选中块：纯白 + 柔和投影 */
-  background: #ffffff;
-  box-shadow:
-    0 2px 8px rgba(39, 102, 148, 0.16),
-    0 1px 2px rgba(39, 102, 148, 0.06);
-}
-
-/* 白色选中块上，分类角标恢复各分类的标准色，保证可读 */
-:root[data-theme='light'] .chip.active .chip-badge.tone-all {
-  background: #5b8def;
-  color: #fff;
-}
-
-:root[data-theme='light'] .chip.active .chip-badge.tone-personal {
-  background: #3dba7a;
-  color: #fff;
-}
-
-:root[data-theme='light'] .chip.active .chip-badge.tone-group {
-  background: #e0a14a;
-  color: #fff;
-}
-
-:root[data-theme='light'] .chip.active .chip-badge.tone-archive {
-  background: var(--pulse-outline);
-  color: #fff;
-}
-
 
 </style>

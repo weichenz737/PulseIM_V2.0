@@ -33,7 +33,6 @@ interface ConversationUnreadItem {
   id?: string | number
   unread?: number
   type?: string
-  archived?: boolean
   mute?: boolean
   fileTransferAssistant?: boolean
 }
@@ -187,7 +186,7 @@ export const useConversationInboxStore = defineStore('conversationInbox', () => 
       const id = String(item.id || '')
       if (!id) return
       const unread = Math.max(0, Math.floor(Number(item.unread) || 0))
-      const eligible = unread > 0 && !item.archived && !item.mute && !item.fileTransferAssistant
+      const eligible = unread > 0 && !item.mute && !item.fileTransferAssistant
       if (!eligible) {
         delete next[id]
         return

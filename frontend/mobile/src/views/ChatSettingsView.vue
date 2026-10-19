@@ -11,7 +11,6 @@ import {
   updateBurnSetting,
   fetchAutoDeleteSetting,
   updateAutoDeleteSetting,
-  setConversationArchived,
   deletePrivateConversation,
   clearGroupHistory,
   type ConversationItem,
@@ -91,11 +90,8 @@ const isFileTransferAssistant = computed(() =>
 
 onMounted(async () => {
   try {
-    const [all, archived] = await Promise.all([
-      fetchConversations('all'),
-      fetchConversations('archive'),
-    ])
-    const found = [...all, ...archived].find((c) => c.id === conversationId.value)
+    const all = await fetchConversations('all')
+    const found = all.find((c) => c.id === conversationId.value)
     if (found) {
       item.value = found
       pinned.value = !!found.pinned
@@ -192,28 +188,6 @@ async function onMuteChange() {
 function openImportantMessageSettings() {
   if (!isGroup.value) return
   router.push(`/chat/${conversationId.value}/important-messages`)
-}
-
-async function onArchive() {
-  try {
-    await showConfirmDialog({
-      title: '确认归档聊天？',
-      message: '归档后，该聊天会移至消息首页的“归档”列表中。',
-      confirmButtonText: '确认归档',
-      cancelButtonText: '取消',
-    })
-  } catch {
-    return
-  }
-
-  try {
-    await setConversationArchived(conversationId.value, true)
-    notifyConversationChanged({ archived: true })
-    showToast('已归档')
-    router.replace('/app/messages')
-  } catch (e) {
-    showToast(e instanceof Error ? e.message : '归档失败')
-  }
 }
 
 function onRemove() {
@@ -468,10 +442,6 @@ async function onDeleteScopeSelect(action: { name?: string }) {
       </section>
 
       <section v-if="!isFileTransferAssistant" class="card">
-        <button type="button" class="menu-row" @click="onArchive">
-          <span class="menu-label">归档聊天</span>
-          <span class="material-symbols-outlined chevron">chevron_right</span>
-        </button>
         <button type="button" class="menu-row danger" @click="onRemove">
           <span class="menu-label">删除聊天</span>
         </button>

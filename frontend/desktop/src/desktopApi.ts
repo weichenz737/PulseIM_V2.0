@@ -198,7 +198,6 @@ export interface DesktopConversation {
   online?: boolean
   onlineHidden?: boolean
   tag?: string
-  archived?: boolean
   pinned?: boolean
   mute?: boolean
 }
@@ -1931,13 +1930,6 @@ export function updateDesktopConversationSettings(
   })
 }
 
-export function setDesktopConversationArchived(conversationId: string, archived: boolean): Promise<unknown> {
-  return request<unknown>(`/v1/conversations/${encodeURIComponent(conversationId)}/archive`, {
-    method: 'POST',
-    body: JSON.stringify({ archived }),
-  })
-}
-
 export function removeDesktopConversation(conversationId: string): Promise<unknown> {
   return request<unknown>(`/v1/conversations/${encodeURIComponent(conversationId)}/remove`, {
     method: 'POST',
@@ -1966,7 +1958,7 @@ export function clearDesktopGroupHistory(
   })
 }
 
-/** Mark every non-archived conversation as read. */
+/** Mark every conversation as read. */
 export function markAllDesktopConversationsRead(): Promise<unknown> {
   return request<unknown>('/v1/conversations/read-all', {
     method: 'POST',

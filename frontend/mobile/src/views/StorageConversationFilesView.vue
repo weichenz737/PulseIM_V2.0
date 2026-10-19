@@ -240,7 +240,7 @@ async function deleteSelected() {
 
 async function openForwardPicker() {
   if (!selectedAssets.value.length) return
-  try { targets.value = (await fetchConversations('all')).filter((item) => item.id !== conversationId.value && !item.archived); forwardTargetIds.value = new Set(); forwardVisible.value = true }
+  try { targets.value = (await fetchConversations('all')).filter((item) => item.id !== conversationId.value); forwardTargetIds.value = new Set(); forwardVisible.value = true }
   catch { showToast('加载会话失败') }
 }
 function toggleForwardTarget(id: string) { const next = new Set(forwardTargetIds.value); if (next.has(id)) next.delete(id); else next.add(id); forwardTargetIds.value = next }

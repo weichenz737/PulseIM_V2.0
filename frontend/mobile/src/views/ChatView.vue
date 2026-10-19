@@ -4897,7 +4897,7 @@ async function openContactPicker() {
       (friend) => !friend.fileTransferAssistant && friend.nickname !== '文件传输助手',
     )
     groupPickList.value = convs.filter(
-      (c) => c.type === 'group' && c.id !== conversationId.value && !c.archived,
+      (c) => c.type === 'group' && c.id !== conversationId.value,
     )
   } catch {
     contactPickList.value = []

@@ -495,14 +495,6 @@ public class ConversationController {
         return R.ok();
     }
 
-    /** 归档 / 取消归档 */
-    @PostMapping("/{id}/archive")
-    public R<Void> archive(@PathVariable("id") Long id, @RequestBody(required = false) Map<String, Object> body) {
-        boolean archived = body == null || body.get("archived") == null || Boolean.parseBoolean(String.valueOf(body.get("archived")));
-        conversationService.setArchived(AuthContext.currentUserId(), id, archived);
-        return R.ok();
-    }
-
     /** 从会话列表移除（对本端隐藏，有新消息时再显示） */
     @PostMapping("/{id}/remove")
     public R<Void> remove(@PathVariable("id") Long id) {
@@ -526,14 +518,14 @@ public class ConversationController {
         return R.ok();
     }
 
-    /** 全部已读（非归档会话） */
+    /** 全部已读 */
     @PostMapping("/read-all")
     public R<Void> readAll() {
         conversationService.markAllRead(AuthContext.currentUserId());
         return R.ok();
     }
 
-    /** 批量：delete / archive / unarchive / read / unread */
+    /** 批量：delete / read / unread */
     @PostMapping("/batch")
     public R<Void> batch(@RequestBody Map<String, Object> body) {
         String action = body.get("action") == null ? "" : String.valueOf(body.get("action"));

@@ -209,7 +209,7 @@ async function locateSelected() {
   const source = inventory.value?.conversations.find((stat) => stat.conversation.id === asset.conversationId)
   void router.push({ path: `/chat/${asset.conversationId}`, query: { title: source?.conversation.name || asset.conversationName, type: source?.conversation.type || asset.conversationType, avatar: source?.conversation.avatar || '', highlightMsgId: original.id } })
 }
-async function openForwardPicker() { if (!selectedAssets.value.length) return; try { targets.value = (await fetchConversations('all')).filter((item) => !item.archived); forwardTargetIds.value = new Set(); forwardVisible.value = true } catch { showToast('加载会话失败') } }
+async function openForwardPicker() { if (!selectedAssets.value.length) return; try { targets.value = (await fetchConversations('all')); forwardTargetIds.value = new Set(); forwardVisible.value = true } catch { showToast('加载会话失败') } }
 function toggleForwardTarget(id: string) { const next = new Set(forwardTargetIds.value); if (next.has(id)) next.delete(id); else next.add(id); forwardTargetIds.value = next }
 async function submitForward() { if (!forwardTargetIds.value.size || forwarding.value) return; forwarding.value = true; try { const grouped = new Map<string, string[]>(); selectedAssets.value.forEach((asset) => grouped.set(asset.conversationId, [...(grouped.get(asset.conversationId) || []), asset.id])); for (const [sourceId, ids] of grouped) await forwardMessages(sourceId, [...forwardTargetIds.value], ids, 'separate'); forwardVisible.value = false; showToast('已转发') } catch { showToast('转发失败，请稍后重试') } finally { forwarding.value = false } }
 
