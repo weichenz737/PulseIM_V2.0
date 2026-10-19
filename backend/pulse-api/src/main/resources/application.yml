@@ -1,0 +1,101 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: pulse-api
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:pulseim}
+    username: ${DB_USER:pulse}
+    password: ${DB_PASSWORD:pulse123}
+    driver-class-name: org.postgresql.Driver
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+    elasticsearch:
+      repositories:
+        enabled: false
+  elasticsearch:
+    uris: ${ES_URIS:http://localhost:9200}
+  servlet:
+    multipart:
+      max-file-size: 500MB
+      max-request-size: 500MB
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      logic-delete-field: deleted
+      id-type: auto
+
+pulse:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:*}
+  jwt:
+    secret: ${JWT_SECRET:pulse-im-jwt-secret-key-change-me-32bytes!!}
+    expire-ms: ${JWT_EXPIRE_MS:259200000}
+  upload:
+    # 建议配置绝对路径；未配置绝对路径时会自动选用历史文件最多的 uploads 目录
+    dir: ${PULSE_UPLOAD_DIR:uploads}
+  asr:
+    url: ${PULSE_ASR_URL:http://127.0.0.1:3978/transcribe}
+  ffmpeg:
+    # HEVC(相册/拍摄) → H.264，安卓 Chrome 才能页内播放
+    path: ${FFMPEG_PATH:E:/Desk/PulseIM（脉冲）/tools/ffmpeg/node_modules/ffmpeg-static/ffmpeg.exe}
+  document-preview:
+    # Office 文件由 LibreOffice Headless 转 PDF，再由两端 PDF.js 渲染
+    enabled: ${PULSE_DOCUMENT_PREVIEW_ENABLED:true}
+    libreoffice-path: ${LIBREOFFICE_PATH:soffice}
+    max-source-bytes: ${PULSE_DOCUMENT_PREVIEW_MAX_SOURCE_BYTES:104857600}
+    conversion-timeout-seconds: ${PULSE_DOCUMENT_PREVIEW_TIMEOUT_SECONDS:90}
+  minio:
+    endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
+    access-key: ${MINIO_ACCESS_KEY:minioadmin}
+    secret-key: ${MINIO_SECRET_KEY:minioadmin}
+    bucket: ${MINIO_BUCKET:pulse-avatar}
+    file-bucket: ${MINIO_FILE_BUCKET:pulse-files}
+    public-base-url: ${MINIO_PUBLIC_URL:http://localhost:9000/pulse-avatar}
+  sms:
+    dev-fixed-code: ${SMS_DEV_FIXED_CODE:1234}
+    expire-seconds: 300
+  map:
+    baidu-ak: ${BAIDU_MAP_AK:}
+    baidu-app-ak: ${BAIDU_MAP_APP_AK:}
+  webrtc:
+    stun-urls:
+      - stun:stun.l.google.com:19302
+      - stun:stun1.l.google.com:19302
+    # 逗号分隔；生产由 compose 注入 TURN_URLS，本地默认可空
+    turn-urls: ${TURN_URLS:}
+    turn-username: ${TURN_USERNAME:}
+    turn-credential: ${TURN_CREDENTIAL:}
+  wps:
+    weboffice:
+      enabled: ${WPS_WEBOFFICE_ENABLED:false}
+      app-id: ${WPS_WEBOFFICE_APP_ID:}
+      app-secret: ${WPS_WEBOFFICE_APP_SECRET:}
+      public-base-url: ${WPS_WEBOFFICE_PUBLIC_BASE_URL:}
+      sdk-url: ${WPS_WEBOFFICE_SDK_URL:/vendor/wps/web-office-sdk-solution.umd.js}
+      token-secret: ${WPS_WEBOFFICE_TOKEN_SECRET:${JWT_SECRET:pulse-im-jwt-secret-key-change-me-32bytes!!}}
+      token-ttl-seconds: ${WPS_WEBOFFICE_TOKEN_TTL_SECONDS:600}
+      verify-signature: ${WPS_WEBOFFICE_VERIFY_SIGNATURE:true}
+  schema:
+    fail-fast: ${SCHEMA_FAIL_FAST:false}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  health:
+    elasticsearch:
+      enabled: false
+
+logging:
+  level:
+    com.pulse: INFO

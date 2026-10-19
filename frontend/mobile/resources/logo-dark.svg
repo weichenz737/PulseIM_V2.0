@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="pulse" x1="160" y1="120" x2="850" y2="900" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#73B7FF"/>
+      <stop offset="1" stop-color="#4B8EFF"/>
+    </linearGradient>
+  </defs>
+  <path
+    fill="url(#pulse)"
+    d="M176 330c0-101.6 82.4-184 184-184h304c101.6 0 184 82.4 184 184v176c0 101.6-82.4 184-184 184H492L316 838V690c-79.7-19.8-140-92-140-178V330Z"
+  />
+  <circle cx="390" cy="430" r="46" fill="#121317"/>
+  <circle cx="512" cy="430" r="46" fill="#121317"/>
+  <circle cx="634" cy="430" r="46" fill="#121317"/>
+</svg>

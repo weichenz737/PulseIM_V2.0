@@ -1,0 +1,37 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: pulse-im-server
+  main:
+    web-application-type: none
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:pulseim}
+    username: ${DB_USER:pulse}
+    password: ${DB_PASSWORD:pulse123}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 40
+      minimum-idle: 10
+      connection-timeout: 10000
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+
+pulse:
+  im:
+    host: 0.0.0.0
+    port: ${IM_PORT:9001}
+    path: /ws
+    node-id: ${IM_NODE_ID:im-1}
+    heartbeat-timeout-seconds: 45
+  jwt:
+    secret: ${JWT_SECRET:pulse-im-jwt-secret-key-change-me-32bytes!!}
+    expire-ms: ${JWT_EXPIRE_MS:604800000}
+
+logging:
+  level:
+    com.pulse: INFO

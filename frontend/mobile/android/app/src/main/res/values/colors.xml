@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Fallback visible behind Android's transparent system bars. The web
+         shell updates the actual value when the saved theme is known. -->
+    <color name="pulse_window_background">#121317</color>
+</resources>

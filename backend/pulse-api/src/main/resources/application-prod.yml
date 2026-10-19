@@ -1,0 +1,17 @@
+mybatis-plus:
+  configuration:
+    # 生产环境禁止逐条打印 SQL，避免敏感字段进入日志并降低 I/O 压力。
+    log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
+
+pulse:
+  sms:
+    dev-fixed-code: ${SMS_DEV_FIXED_CODE:}
+  schema:
+    fail-fast: true
+
+management:
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never

@@ -1,0 +1,10 @@
+node_modules/
+.npm-cache/
+.jwt-secret.txt
+users.json
+seed.sql
+*.log
+server-*.csv
+pulse-stress.tgz
+results-*.json
+.codex-sheet-work/

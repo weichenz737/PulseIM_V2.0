@@ -1,0 +1,174 @@
+services:
+  minio:
+    image: minio/minio:RELEASE.2024-12-18T13-15-44Z
+    container_name: pulse-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
+    ports:
+      - "127.0.0.1:19090:9000"
+      - "127.0.0.1:19091:9001"
+    volumes:
+      - /opt/pulseim/data/minio:/data:Z
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+
+  pulse-asr:
+    build:
+      context: ./artifacts/asr
+      dockerfile: Dockerfile
+    container_name: pulse-asr
+    environment:
+      PULSE_ASR_PORT: 3978
+      PULSE_ASR_MODEL: small
+      PULSE_ASR_COMPUTE_TYPE: int8
+      PULSE_ASR_CPU_THREADS: 2
+      HF_ENDPOINT: https://hf-mirror.com
+      HF_HOME: /data/hf-cache
+      HF_HUB_DISABLE_XET: 1
+    volumes:
+      - /opt/pulseim/data/asr-cache:/data/hf-cache:Z
+    restart: unless-stopped
+
+  coturn:
+    image: docker.m.daocloud.io/coturn/coturn:4.6.2
+    container_name: pulse-coturn
+    volumes:
+      - ./coturn/turnserver.conf:/etc/coturn/turnserver.conf:ro
+    command: ["-c", "/etc/coturn/turnserver.conf", "--static-auth-secret", "${TURN_CREDENTIAL:?TURN_CREDENTIAL is required}"]
+    ports:
+      - "3478:3478/tcp"
+      - "3478:3478/udp"
+      - "49160-49200:49160-49200/udp"
+    restart: unless-stopped
+
+  pulse-api:
+    depends_on:
+      minio:
+        condition: service_healthy
+    build:
+      context: ./artifacts/api
+      dockerfile: Dockerfile
+    container_name: pulse-api
+    environment:
+      DB_HOST: customer-service-chat-postgres-1
+      DB_PORT: 5432
+      DB_NAME: pulseim
+      DB_USER: pulse
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      REDIS_HOST: customer-service-chat-redis-1
+      REDIS_PORT: 6379
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:?CORS_ALLOWED_ORIGINS is required}
+      SPRING_PROFILES_ACTIVE: prod
+      SMS_DEV_FIXED_CODE: ${SMS_DEV_FIXED_CODE:-}
+      ALLOW_FIXED_SMS_CODE: ${ALLOW_FIXED_SMS_CODE:-false}
+      SCHEMA_FAIL_FAST: "true"
+      PULSE_UPLOAD_DIR: /app/uploads
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+      MINIO_BUCKET: ${MINIO_BUCKET:-pulse-avatar}
+      MINIO_FILE_BUCKET: ${MINIO_FILE_BUCKET:-pulse-files}
+      PULSE_DOCUMENT_PREVIEW_ENABLED: ${PULSE_DOCUMENT_PREVIEW_ENABLED:-true}
+      LIBREOFFICE_PATH: ${LIBREOFFICE_PATH:-soffice}
+      PULSE_DOCUMENT_PREVIEW_MAX_SOURCE_BYTES: ${PULSE_DOCUMENT_PREVIEW_MAX_SOURCE_BYTES:-104857600}
+      PULSE_DOCUMENT_PREVIEW_TIMEOUT_SECONDS: ${PULSE_DOCUMENT_PREVIEW_TIMEOUT_SECONDS:-90}
+      WPS_WEBOFFICE_ENABLED: ${WPS_WEBOFFICE_ENABLED:-false}
+      WPS_WEBOFFICE_APP_ID: ${WPS_WEBOFFICE_APP_ID:-}
+      WPS_WEBOFFICE_APP_SECRET: ${WPS_WEBOFFICE_APP_SECRET:-}
+      WPS_WEBOFFICE_PUBLIC_BASE_URL: ${WPS_WEBOFFICE_PUBLIC_BASE_URL:-}
+      WPS_WEBOFFICE_TOKEN_SECRET: ${WPS_WEBOFFICE_TOKEN_SECRET:-}
+      WPS_WEBOFFICE_SDK_URL: ${WPS_WEBOFFICE_SDK_URL:-/vendor/wps/web-office-sdk-solution.umd.js}
+      PULSE_ASR_URL: http://pulse-asr:3978/transcribe
+      BAIDU_MAP_AK: ${BAIDU_MAP_AK:-}
+      BAIDU_MAP_APP_AK: ${BAIDU_MAP_APP_AK:-}
+      TURN_URLS: "turn:117.72.220.127:3478?transport=udp,turn:117.72.220.127:3478?transport=tcp"
+      TURN_USERNAME: pulse
+      TURN_CREDENTIAL: ${TURN_CREDENTIAL:?TURN_CREDENTIAL is required}
+    ports:
+      - "127.0.0.1:18080:8080"
+    volumes:
+      - /opt/pulseim/data/uploads:/app/uploads:Z
+    networks:
+      - default
+      - pulse_backend
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 45s
+    restart: unless-stopped
+
+  pulse-im:
+    build:
+      context: ./artifacts/im
+      dockerfile: Dockerfile
+    container_name: pulse-im
+    environment:
+      DB_HOST: customer-service-chat-postgres-1
+      DB_PORT: 5432
+      DB_NAME: pulseim
+      DB_USER: pulse
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      REDIS_HOST: customer-service-chat-redis-1
+      REDIS_PORT: 6379
+      IM_PORT: 9001
+      IM_NODE_ID: im-1
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      SPRING_PROFILES_ACTIVE: prod
+    ports:
+      - "127.0.0.1:19001:9001"
+    networks:
+      - default
+      - pulse_backend
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 3 bash -c '</dev/tcp/127.0.0.1/9001'"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    restart: unless-stopped
+
+  mobile:
+    build:
+      context: ./artifacts/mobile
+      dockerfile: Dockerfile
+    container_name: pulse-mobile
+    depends_on:
+      - pulse-api
+    ports:
+      - "127.0.0.1:18082:80"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/index.html"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  admin:
+    build:
+      context: ./artifacts/admin
+      dockerfile: Dockerfile
+    container_name: pulse-admin
+    depends_on:
+      - pulse-api
+    ports:
+      - "127.0.0.1:18083:80"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/index.html"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+networks:
+  pulse_backend:
+    external: true
+    name: customer-service-chat_default

@@ -1,0 +1,10 @@
+# Do not put real passwords in this file or commit a populated copy.
+# Pass these values as Gradle properties (-P...) or environment variables.
+PULSE_RELEASE_STORE_FILE=D:/Keys/pulse-release.jks
+PULSE_RELEASE_STORE_PASSWORD=replace_me
+PULSE_RELEASE_KEY_ALIAS=pulse
+PULSE_RELEASE_KEY_PASSWORD=replace_me
+
+# Optional release version overrides.
+PULSE_VERSION_CODE=1
+PULSE_VERSION_NAME=1.0.0

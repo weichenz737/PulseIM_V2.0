@@ -1,0 +1,76 @@
+syntax = "proto3";
+
+option java_package = "com.pulse.proto";
+option java_outer_classname = "ImProto";
+option java_multiple_files = true;
+
+package pulse.im;
+
+enum Cmd {
+  CMD_UNKNOWN = 0;
+  AUTH = 1;
+  AUTH_ACK = 2;
+  HEARTBEAT = 3;
+  HEARTBEAT_ACK = 4;
+  SEND_MSG = 5;
+  MSG_ACK = 6;
+  PUSH_MSG = 7;
+  KICK = 8;
+  ERROR = 9;
+}
+
+enum MsgType {
+  TEXT = 0;
+  IMAGE = 1;
+  FILE = 2;
+  SYSTEM = 3;
+}
+
+message ImEnvelope {
+  Cmd cmd = 1;
+  int64 seq = 2;
+  int64 timestamp = 3;
+  bytes payload = 4;
+}
+
+message AuthPayload {
+  string token = 1;
+  string device_id = 2;
+  string platform = 3;
+}
+
+message AuthAckPayload {
+  bool success = 1;
+  int64 user_id = 2;
+  string message = 3;
+}
+
+message ChatMessage {
+  string msg_id = 1;
+  int64 conversation_id = 2;
+  int64 from_user_id = 3;
+  int64 to_user_id = 4;
+  MsgType msg_type = 5;
+  string content = 6;
+  string client_msg_id = 7;
+  int64 send_time = 8;
+  string reply_to_msg_id = 9;
+  repeated int64 mention_user_ids = 10;
+  bool at_all = 11;
+}
+
+message MsgAckPayload {
+  string client_msg_id = 1;
+  string msg_id = 2;
+  bool success = 3;
+  string message = 4;
+}
+
+message KickPayload {
+  string reason = 1;
+}
+
+message ErrorPayload {
+  int32 code = 1;
+  string message = 2;
+}

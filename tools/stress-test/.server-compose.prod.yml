@@ -1,0 +1,194 @@
+# PulseIM 生产部署
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: pulse-postgres
+    command:
+      - "postgres"
+      - "-c"
+      - "shared_buffers=2GB"
+      - "-c"
+      - "effective_cache_size=5GB"
+      - "-c"
+      - "work_mem=16MB"
+      - "-c"
+      - "maintenance_work_mem=256MB"
+      - "-c"
+      - "synchronous_commit=off"
+      - "-c"
+      - "max_connections=150"
+    environment:
+      POSTGRES_DB: pulseim
+      POSTGRES_USER: pulse
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+    volumes:
+      - pulse_pg:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pulse -d pulseim"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: pulse-redis
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - pulse_redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped
+
+  pulse-asr:
+    build:
+      context: ./artifacts/asr
+      dockerfile: Dockerfile
+    container_name: pulse-asr
+    environment:
+      PULSE_ASR_PORT: 3978
+      PULSE_ASR_MODEL: Xenova/whisper-tiny
+      HF_ENDPOINT: https://hf-mirror.com
+      TRANSFORMERS_CACHE: /data/hf-cache
+      ONNXRUNTIME_NODE_INSTALL: skip
+    volumes:
+      - pulse_asr_cache:/data/hf-cache
+    restart: unless-stopped
+
+  coturn:
+    image: coturn/coturn:4.6.2
+    container_name: pulse-coturn
+    volumes:
+      - ./coturn/turnserver.conf:/etc/coturn/turnserver.conf:ro
+    command: ["-c", "/etc/coturn/turnserver.conf", "--static-auth-secret", "${TURN_CREDENTIAL:?TURN_CREDENTIAL is required}"]
+    ports:
+      - "3478:3478/tcp"
+      - "3478:3478/udp"
+      - "49160-49200:49160-49200/udp"
+    restart: unless-stopped
+
+  pulse-api:
+    build:
+      context: ./artifacts/api
+      dockerfile: Dockerfile
+    container_name: pulse-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: pulseim
+      DB_USER: pulse
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:?CORS_ALLOWED_ORIGINS is required}
+      SPRING_PROFILES_ACTIVE: prod
+      SMS_DEV_FIXED_CODE: ""
+      SCHEMA_FAIL_FAST: "true"
+      PULSE_UPLOAD_DIR: /app/uploads
+      PULSE_ASR_URL: http://pulse-asr:3978/transcribe
+      BAIDU_MAP_AK: ${BAIDU_MAP_AK}
+      TURN_URLS: "turn:39.97.240.31:3478?transport=udp,turn:39.97.240.31:3478?transport=tcp"
+      TURN_USERNAME: pulse
+      TURN_CREDENTIAL: ${TURN_CREDENTIAL:?TURN_CREDENTIAL is required}
+    volumes:
+      - pulse_uploads:/app/uploads
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/actuator/health/readiness"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 45s
+    restart: unless-stopped
+
+  pulse-im:
+    build:
+      context: ./artifacts/im
+      dockerfile: Dockerfile
+    container_name: pulse-im
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: pulseim
+      DB_USER: pulse
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      IM_PORT: 9001
+      IM_NODE_ID: im-1
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      SPRING_PROFILES_ACTIVE: prod
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 3 bash -c '</dev/tcp/127.0.0.1/9001'"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    restart: unless-stopped
+
+  mobile:
+    build:
+      context: ./artifacts/mobile
+      dockerfile: Dockerfile
+    container_name: pulse-mobile
+    depends_on:
+      - pulse-api
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/index.html"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  admin:
+    build:
+      context: ./artifacts/admin
+      dockerfile: Dockerfile
+    container_name: pulse-admin
+    depends_on:
+      - pulse-api
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/index.html"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: pulse-nginx
+    depends_on:
+      - pulse-api
+      - pulse-im
+      - mobile
+      - admin
+    ports:
+      - "8080:443"
+      - "8081:80"
+      - "443:443"
+      - "8443:443"
+    volumes:
+      - ./nginx/nginx.prod.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
+      - pulse_uploads:/srv/pulse-uploads:ro
+    restart: unless-stopped
+
+volumes:
+  pulse_pg:
+  pulse_uploads:
+  pulse_asr_cache:
+  pulse_redis:

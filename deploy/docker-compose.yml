@@ -1,0 +1,166 @@
+services:
+  postgres:
+    image: docker.m.daocloud.io/library/postgres:16-alpine
+    container_name: pulse-postgres
+    command:
+      - "postgres"
+      - "-c"
+      - "shared_buffers=2GB"
+      - "-c"
+      - "effective_cache_size=5GB"
+      - "-c"
+      - "work_mem=16MB"
+      - "-c"
+      - "maintenance_work_mem=256MB"
+      - "-c"
+      - "synchronous_commit=off"
+      - "-c"
+      - "max_connections=150"
+    environment:
+      POSTGRES_DB: pulseim
+      POSTGRES_USER: pulse
+      POSTGRES_PASSWORD: pulse123
+    ports:
+      - "5432:5432"
+    volumes:
+      - pulse_pg:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pulse -d pulseim"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: docker.m.daocloud.io/library/redis:7-alpine
+    container_name: pulse-redis
+    ports:
+      - "6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  minio:
+    image: bitnami/minio:2024.9.22
+    container_name: pulse-minio
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_DEFAULT_BUCKETS: pulse-avatar:download
+    ports:
+      - "9000:9000"
+      - "9002:9001"
+    volumes:
+      - pulse_minio:/bitnami/minio/data
+    profiles: ["full"]
+
+  # minio-init removed: bitnami image can create default buckets via MINIO_DEFAULT_BUCKETS
+  # enable with: docker compose --profile full up -d minio
+
+  elasticsearch:
+    image: docker.m.daocloud.io/elastic/elasticsearch:8.15.3
+    container_name: pulse-es
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
+    volumes:
+      - pulse_es:/usr/share/elasticsearch/data
+    profiles: ["full"]
+
+  pulse-api:
+    build:
+      context: ../backend
+      dockerfile: ../docker/api/Dockerfile
+    container_name: pulse-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: pulseim
+      DB_USER: pulse
+      DB_PASSWORD: pulse123
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_BUCKET: pulse-avatar
+      MINIO_PUBLIC_URL: http://localhost:9000/pulse-avatar
+      JWT_SECRET: pulse-im-jwt-secret-key-change-me-32bytes!!
+      ES_URIS: http://elasticsearch:9200
+      BAIDU_MAP_AK: ${BAIDU_MAP_AK}
+    ports:
+      - "8080:8080"
+    volumes:
+      - pulse_uploads:/app/uploads
+
+  pulse-im:
+    build:
+      context: ../backend
+      dockerfile: ../docker/im/Dockerfile
+    container_name: pulse-im
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      pulse-api:
+        condition: service_started
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: pulseim
+      DB_USER: pulse
+      DB_PASSWORD: pulse123
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      IM_PORT: 9001
+      IM_NODE_ID: im-1
+      JWT_SECRET: pulse-im-jwt-secret-key-change-me-32bytes!!
+    ports:
+      - "9001:9001"
+
+  mobile:
+    build:
+      context: ../frontend/mobile
+      dockerfile: Dockerfile
+    container_name: pulse-mobile
+    depends_on:
+      - pulse-api
+
+  admin:
+    build:
+      context: ../frontend/admin
+      dockerfile: Dockerfile
+    container_name: pulse-admin
+    depends_on:
+      - pulse-api
+
+  nginx:
+    image: docker.m.daocloud.io/library/nginx:1.27-alpine
+    container_name: pulse-nginx
+    depends_on:
+      - pulse-api
+      - pulse-im
+      - mobile
+      - admin
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - pulse_uploads:/srv/pulse-uploads:ro
+
+volumes:
+  pulse_pg:
+  pulse_minio:
+  pulse_es:
+  pulse_uploads:

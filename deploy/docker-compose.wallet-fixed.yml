@@ -1,0 +1,6 @@
+services:
+  pulse-api:
+    build:
+      context: ./artifacts/api
+      dockerfile: Dockerfile.local
+    image: deploy-pulse-api-wallet-fixed

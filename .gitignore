@@ -1,0 +1,81 @@
+# Java
+**/target/
+**/*.class
+**/*.jar
+**/*.war
+!.mvn/wrapper/maven-wrapper.jar
+
+# Node
+**/node_modules/
+**/dist/
+.npm-cache/
+.tools-bcrypt/
+
+# IDE / OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Env / logs
+*.log
+.env
+
+# Local runtimes, data and credentials
+.local/
+tools/stress-test/.jwt-secret.txt
+**/*.jks
+**/*.keystore
+**/*.p12
+**/*.pfx
+**/*.pem
+**/*.key
+
+# Generated release bundles
+frontend/desktop/out*/
+deploy/artifacts/
+frontend/mobile/*.apk
+
+# Local inspection files
+.tmp-*
+conv-check.json
+line-scan.ps1
+postgres-local.log
+scan-blue.ps1
+PROD_TEST_REPORT.md
+tools/stress-test/im-dump*.txt
+
+# CI workflow is kept locally until the GitHub credential has workflow scope
+.github/workflows/ci.yml
+.env.local
+
+# Docker volumes leftovers
+deploy/data/
+deploy/backups/
+
+# Chat uploads
+uploads/
+backend/pulse-api/uploads/
+
+#-------下列文件大小大于100M，无法上传到github代码仓库-----#
+# Release
+.release/
+
+# Node
+node_modules/
+
+# Build
+dist/
+build/
+
+# Logs
+*.log
+
+# 压缩包
+*.tgz
+*.tar.gz
+*.zip
+
+# 环境变量
+.env

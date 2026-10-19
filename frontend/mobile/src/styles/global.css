@@ -1,0 +1,1918 @@
+﻿
+:root {
+  color-scheme: light;
+  /* Stitch Global Direct tokens */
+  --pulse-bg: #121317;
+  --pulse-page-bg: #121317;
+  --pulse-surface: #121317;
+  --pulse-surface-low: #1a1b1f;
+  --pulse-surface-container: #1e1f23;
+  --pulse-surface-high: #292a2e;
+  --pulse-surface-highest: #343539;
+  --pulse-surface-bright: #38393d;
+  --pulse-card: #1e1f23;
+  --pulse-error: #ffb4ab;
+  --pulse-primary: #adc6ff;
+  --pulse-primary-container: #4b8eff;
+  --pulse-primary-gradient: linear-gradient(135deg, #4b8eff 0%, #6675f5 100%);
+  --pulse-on-primary: #002e69;
+  --pulse-on-primary-container: #00285c;
+  --pulse-secondary: #42e355;
+  --pulse-text: #e3e2e7;
+  --pulse-text-secondary: #c1c6d7;
+  --pulse-outline: #8b90a0;
+  --pulse-outline-variant: #414755;
+  --pulse-border: rgba(65, 71, 85, 0.35);
+  --pulse-divider: rgba(255, 255, 255, 0.1);
+  --pulse-pressed: rgba(255, 255, 255, 0.05);
+  --pulse-nav-bg: rgba(18, 19, 23, 0.92);
+  --pulse-tabbar-bg: rgba(28, 30, 36, 0.94);
+  --pulse-tabbar-border: rgba(255, 255, 255, 0.09);
+  --pulse-tabbar-shadow: rgba(0, 0, 0, 0.34);
+  --pulse-tabbar-active-bg: rgba(173, 198, 255, 0.14);
+  --pulse-tabbar-active-ring: rgba(173, 198, 255, 0.08);
+  --pulse-input-bg: var(--pulse-surface-high);
+  --pulse-danger: #ff5447;
+  --pulse-radius: 12px;
+  --pulse-radius-lg: 16px;
+  /* 聊天内容字号（通用设置可调）；界面标题/导航等用各自固定 px，保持层级 */
+  --chat-font-size: 15px;
+  --pulse-content-font-size: clamp(13px, var(--chat-font-size), 20px);
+  --chat-line-height: 22px;
+  --chat-bubble-max: 78%;
+  --chat-bubble-pad-y: 10px;
+  --chat-bubble-pad-x: 14px;
+  /* 顶栏安全区：仅保留安全区 + 少量间距，避免部分机型顶部空一大截 */
+  --pulse-safe-top: env(safe-area-inset-top, 0px);
+  --pulse-safe-right: env(safe-area-inset-right, 0px);
+  --pulse-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --pulse-safe-left: env(safe-area-inset-left, 0px);
+  --pulse-keyboard-height: 0px;
+  --pulse-keyboard-offset: 0px;
+  --pulse-keyboard-base-height: 0px;
+  --pulse-header-pad-top: calc(var(--pulse-safe-top) + 4px);
+  /* 顶栏内容行高度（不含安全区）；总高度 = 该值 + pad-top */
+  --pulse-header-bar-height: 52px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/*
+ * 顶栏统一：在 border-box 下，height 必须包含安全区，
+ * 否则 padding-top 会挤掉内容行，导致图标/标题无法垂直居中，
+ * 同时内容会显得贴着导航栏。
+ */
+:is(
+  .page-header,
+  .header,
+  .moments-header,
+  .compose-header,
+  .pay-header,
+  .wallet-header
+) {
+  /* Several legacy scoped headers still declare content-box. With a top
+     safe-area padding that adds the inset a second time and also puts the
+     title and action buttons on different vertical centers. */
+  box-sizing: border-box !important;
+  display: flex;
+  align-items: center;
+  height: calc(var(--pulse-header-bar-height) + var(--pulse-header-pad-top)) !important;
+  min-height: calc(var(--pulse-header-bar-height) + var(--pulse-header-pad-top)) !important;
+  padding-top: var(--pulse-header-pad-top) !important;
+  padding-bottom: 0 !important;
+}
+
+/* 顶栏与下方内容拉开间距（沉浸式封面页除外，避免导航与封面之间露缝） */
+:is(.page-header, .header, .pay-header, .wallet-header, .compose-header) {
+  margin-bottom: 12px;
+}
+
+:is(.album-page, .moments-page, .user-moments-page) :is(.page-header, .moments-header, .header) {
+  margin-bottom: 0 !important;
+}
+
+/* Tab 首页顶栏略留空，避免标题贴着下方卡片 */
+:is(.discover-page, .me-page, .contacts-page) .page-header.tab-home-header {
+  margin-bottom: 8px;
+  padding-bottom: 4px !important;
+  height: calc(var(--pulse-header-bar-height) + var(--pulse-header-pad-top) + 4px) !important;
+  min-height: calc(var(--pulse-header-bar-height) + var(--pulse-header-pad-top) + 4px) !important;
+}
+
+html {
+  /* 禁止安卓/WebView 按系统「显示大小/字体」强行放大页面文字 */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+  background: var(--pulse-page-bg, var(--pulse-bg));
+  color: var(--pulse-text);
+  font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC',
+    'Microsoft YaHei', sans-serif;
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+  /* 禁止双击缩放，保留单指滚动 */
+  touch-action: manipulation;
+  -ms-touch-action: manipulation;
+  overscroll-behavior: none;
+  /* iOS 长按系统菜单 / 选中 */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+input,
+textarea,
+[contenteditable='true'] {
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
+}
+
+img,
+a {
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
+}
+
+#app {
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+  background: var(--pulse-page-bg, var(--pulse-bg));
+}
+
+/* Browser mobile needs the dynamic viewport; the native Android WebView
+   must instead follow the resized content view when the IME is shown. */
+:root:not(.capacitor-native),
+:root:not(.capacitor-native) body,
+:root:not(.capacitor-native) #app {
+  height: 100dvh;
+  max-height: 100dvh;
+}
+
+/* Native WebView edge-to-edge insets. Keep interactive content away from
+   cutouts, rounded corners and the gesture navigation indicator. */
+:root.capacitor-native body,
+:root.capacitor-native #app {
+  width: 100%;
+  min-width: 0;
+}
+
+/* The Android WebView viewport is resized by the native IME. Do not let
+   100dvh on the Vue shell/route recreate the pre-keyboard full-height box. */
+:root.capacitor-native .app-root,
+:root.capacitor-native .route-page {
+  height: 100% !important;
+  max-height: 100% !important;
+  min-height: 100% !important;
+}
+
+/*
+ * Android lays the WebView edge-to-edge. Use the actual native status-bar
+ * inset for every top bar; truncating it makes the system icons overlap the
+ * first row on devices whose status bar is taller than 20px.
+ */
+:root.capacitor-native[data-orientation='portrait'] {
+  --pulse-header-pad-top: var(--pulse-safe-top);
+}
+
+:root.capacitor-native[data-orientation='landscape'] {
+  --pulse-header-pad-top: var(--pulse-safe-top);
+  --pulse-header-bar-height: 48px;
+}
+
+:root.capacitor-native[data-orientation='landscape'] :is(.page-header, .header, .chat-header) {
+  padding-left: max(12px, var(--pulse-safe-left)) !important;
+  padding-right: max(12px, var(--pulse-safe-right)) !important;
+}
+
+:root.native-keyboard-open {
+  --pulse-safe-bottom: 0px;
+}
+
+/* The lock screen owns the whole viewport. Keep the app tab bar from moving
+   with the password keyboard underneath the modal. */
+:root.lock-screen-open .pulse-tabbar,
+:root.lock-screen-open .pulse-tabbar-backdrop {
+  display: none !important;
+}
+
+:root.lock-screen-open .app-root {
+  overflow: hidden !important;
+}
+
+/* Browser visualViewport handling can resize the shell while the IME is
+   open. Android native uses the platform's adjustResize bounds directly. */
+:root.pulse-keyboard-open body,
+:root.pulse-keyboard-open #app,
+:root.pulse-keyboard-open .app-root,
+:root.pulse-keyboard-open .main-layout {
+  height: var(--pulse-viewport-height, 100%) !important;
+  max-height: var(--pulse-viewport-height, 100%) !important;
+}
+
+/* Route roots frequently use 100dvh for the normal page. While the IME is
+   open that would recreate a full-screen page inside the shortened shell and
+   put the focused control back under the keyboard. Keep an explicit height
+   here as well: some route roots are fixed-position pages and do not inherit
+   the shortened app shell's containing block. */
+:root.pulse-keyboard-open .route-page {
+  height: var(--pulse-viewport-height, 100%) !important;
+  max-height: var(--pulse-viewport-height, 100%) !important;
+  min-height: 100% !important;
+}
+
+/* Bottom sheets must sit above the IME even on WebViews that keep the fixed
+   containing block at the full, pre-keyboard height. Their content remains
+   scrollable so the last password field and save button can be reached. */
+:root.pulse-keyboard-open .lock-password-popup,
+:root.native-keyboard-open .lock-password-popup {
+  bottom: var(--pulse-keyboard-offset, 0px) !important;
+  max-height: calc(var(--pulse-viewport-height, 100dvh) - 12px) !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+}
+
+/* 隐藏纵向滚动条，保留触摸/滚轮滚动 */
+html,
+body,
+* {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE / 旧 Edge */
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+*::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+  background: transparent;
+}
+
+a {
+  color: var(--pulse-primary);
+  text-decoration: none;
+}
+
+input,
+button {
+  font-family: inherit;
+}
+
+.van-toast {
+  background: var(--pulse-surface-high) !important;
+}
+
+/* White mode: token-only foundation. Avoid full-tree filters, transparent
+   overrides and forced compositing, which can blank iOS WebViews. */
+:root[data-theme='light'] {
+  --pulse-bg: #f7faff;
+  --pulse-page-bg: #f7faff;
+  --pulse-surface: #f7faff;
+  --pulse-surface-low: #edf4ff;
+  --pulse-surface-container: #ffffff;
+  --pulse-surface-high: #e7efff;
+  --pulse-surface-highest: #d8e5fb;
+  --pulse-surface-bright: #ffffff;
+  --pulse-card: #ffffff;
+  --pulse-error: #ba1a1a;
+  --pulse-primary: #087ed7;
+  --pulse-primary-container: #00bced;
+  --pulse-primary-gradient: linear-gradient(135deg, #00c6ff 0%, #007aff 100%);
+  --pulse-on-primary: #ffffff;
+  --pulse-on-primary-container: #ffffff;
+  --pulse-secondary: #0058bc;
+  --pulse-text: #14243a;
+  --pulse-text-primary: #14243a;
+  --pulse-text-secondary: #526574;
+  --pulse-outline: #738796;
+  --pulse-outline-variant: #c1ced8;
+  --pulse-border: rgba(169, 193, 211, 0.5);
+  --pulse-divider: rgba(169, 193, 211, 0.45);
+  --pulse-input-bg: #edf4ff;
+  --pulse-danger: #ba1a1a;
+  --pulse-pressed: rgba(0, 122, 255, 0.08);
+  --pulse-nav-bg: rgba(255, 255, 255, 0.94);
+  --pulse-tabbar-bg: rgba(255, 255, 255, 0.98);
+  --pulse-tabbar-border: rgba(169, 193, 211, 0.42);
+  --pulse-tabbar-shadow: rgba(39, 72, 102, 0.14);
+  --pulse-tabbar-active-bg: #eaf7ff;
+  --pulse-tabbar-active-ring: rgba(8, 126, 215, 0.04);
+  --pulse-list-page-bg: linear-gradient(180deg, #cfeeff 0%, #e2f5ff 130px, #f2f9ff 280px, #f7faff 100%);
+  --van-dialog-background: #ffffff;
+  --van-dialog-message-text-color: #526574;
+  --van-dialog-confirm-button-text-color: #087ed7;
+  --van-action-sheet-background: #ffffff;
+  --van-action-sheet-item-background: #ffffff;
+  --van-action-sheet-item-text-color: #14243a;
+  --van-popup-background: #ffffff;
+  --van-picker-background: #ffffff;
+  --van-picker-option-text-color: #14243a;
+  --van-picker-confirm-action-color: #087ed7;
+  --van-picker-cancel-action-color: #738796;
+  --van-picker-mask-color: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.4)), linear-gradient(0deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.4));
+  --van-picker-loading-mask-color: rgba(255, 255, 255, 0.9);
+  --van-calendar-background: #ffffff;
+}
+
+:root[data-theme='light'],
+:root[data-theme='light'] body,
+:root[data-theme='light'] #app,
+:root[data-theme='light'] .app-root,
+:root[data-theme='light'] .main-layout {
+  background: #f7faff;
+  color: #14243a;
+}
+
+:root[data-theme='light'] :is(
+  .page-header,
+  .header,
+  .topbar,
+  .moments-header,
+  .compose-header,
+  .pay-header,
+  .wallet-header,
+  .chat-header
+) {
+  position: relative;
+  color: #14243a;
+  background: linear-gradient(180deg, rgba(225, 247, 255, 0.98), rgba(247, 250, 255, 0.94));
+  border-color: rgba(169, 193, 211, 0.42);
+}
+
+:root[data-theme='light'] :is(
+  .primary,
+  .primary-btn,
+  .submit,
+  .submit-btn,
+  .save-btn,
+  .send-btn,
+  .confirm-btn,
+  .done-btn
+) {
+  color: #ffffff;
+  background: var(--pulse-primary-gradient);
+  border-color: transparent;
+}
+
+/* 白日模式：返回按钮统一蓝色 */
+:root[data-theme='light'] :is(
+  .back-btn,
+  .back-button,
+  .back-link,
+  .nav-back,
+  .header-back,
+  .back,
+  .back-ico,
+  [aria-label='返回']
+) {
+  color: #087ed7 !important;
+}
+
+:root[data-theme='light'] :is(.page-header, .header, .moments-header, .compose-header, .pay-header, .chat-header)
+  :is(.icon-btn, .back-btn, button):first-child,
+:root[data-theme='light'] :is(.page-header, .header) .header-left :is(.icon-btn, .back-ico),
+:root[data-theme='light'] .wallet-header .back,
+:root[data-theme='light'] .pay-page .back-btn,
+:root[data-theme='light'] .contacts-page .page-header .icon-btn,
+:root[data-theme='light'] .moments-header .icon-btn,
+:root[data-theme='light'] .moments-header .header-right .icon-btn {
+  color: #087ed7 !important;
+}
+
+:root[data-theme='light'] .me-page .theme-btn {
+  color: #087ed7 !important;
+  position: relative !important;
+  z-index: 3 !important;
+}
+
+/* 发红包 / 转账：金额区不要套全局浅蓝输入底 */
+:root[data-theme='light'] .pay-page .amount {
+  background: #ffffff !important;
+  border: 1px solid rgba(169, 193, 211, 0.5) !important;
+  box-shadow: 0 10px 28px rgba(34, 112, 165, 0.07);
+}
+
+:root[data-theme='light'] .pay-page .amount-row {
+  border-bottom-color: rgba(169, 193, 211, 0.55) !important;
+}
+
+:root[data-theme='light'] .pay-page .amount-row input,
+:root[data-theme='light'] .pay-page .amount input {
+  color: #14243a !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+:root[data-theme='light'] .pay-page .amount-row b,
+:root[data-theme='light'] .pay-page .amount-label,
+:root[data-theme='light'] .pay-page .amount small {
+  color: #526574 !important;
+}
+
+:root[data-theme='light'] .pay-page .amount-row b {
+  color: #14243a !important;
+}
+
+:root[data-theme='light'] .pay-page :is(.field-row, .field) {
+  color: #14243a !important;
+  background: #ffffff !important;
+  border-color: rgba(169, 193, 211, 0.5) !important;
+}
+
+:root[data-theme='light'] .pay-page .field-row :is(select, input),
+:root[data-theme='light'] .pay-page .field {
+  color: #14243a !important;
+  background: transparent !important;
+}
+
+:root[data-theme='light'] .pay-page .pay-submit,
+:root[data-theme='light'] .pay-page .confirm-pay {
+  color: #ffffff !important;
+  background: #07c160 !important;
+}
+
+:root[data-theme='light'] .code-row button {
+  color: #087ed7 !important;
+  background: rgba(8, 126, 215, 0.12) !important;
+  border-color: rgba(8, 126, 215, 0.35) !important;
+}
+
+:root[data-theme='light'] .edit-profile-page .form-card {
+  background: #ffffff !important;
+  border: 1px solid rgba(169, 193, 211, 0.48) !important;
+  box-shadow: 0 10px 28px rgba(34, 112, 165, 0.07) !important;
+}
+
+:root[data-theme='light'] .edit-profile-page .form-row {
+  border-bottom-color: rgba(169, 193, 211, 0.38) !important;
+}
+
+:root[data-theme='light'] .edit-profile-page .form-row:active {
+  background: #edf4ff !important;
+}
+
+:root[data-theme='light'] .edit-profile-page .form-value {
+  color: #14243a !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+:root[data-theme='light'] .edit-profile-page .form-label {
+  color: #718ea4 !important;
+}
+
+:root[data-theme='light'] .pay-password-popup {
+  background: #ffffff !important;
+  color: #14243a !important;
+}
+
+:root[data-theme='light'] .pay-password-popup .password-grid {
+  background: #f7faff !important;
+  border-color: rgba(169, 193, 211, 0.55) !important;
+}
+
+:root[data-theme='light'] .pay-password-popup .password-grid i {
+  border-right-color: rgba(169, 193, 211, 0.45) !important;
+  color: #14243a !important;
+}
+
+:root[data-theme='light'] .pay-password-popup .code-row {
+  background: #f7faff !important;
+  border-color: rgba(169, 193, 211, 0.5) !important;
+}
+
+:root[data-theme='light'] .pay-password-popup .code-row input {
+  color: #14243a !important;
+  background: transparent !important;
+}
+
+:root[data-theme='light'] .location-page .search-box,
+:root[data-theme='light'] .location-page .search-box input {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+:root[data-theme='light'] .location-page .results {
+  background: #ffffff !important;
+  border: 1px solid rgba(169, 193, 211, 0.55) !important;
+  box-shadow: 0 10px 28px rgba(34, 112, 165, 0.12) !important;
+}
+
+:root[data-theme='light'] .location-page .results button {
+  background: #ffffff !important;
+  color: #14243a !important;
+}
+
+:root[data-theme='light'] .location-page .results button:active {
+  background: #edf4ff !important;
+}
+
+:root[data-theme='light'] .pay-password-popup .number-keyboard button {
+  background: #edf4ff !important;
+  color: #14243a !important;
+}
+
+:root[data-theme='light'] .pay-password-popup .number-keyboard .delete-key {
+  color: #526574 !important;
+}
+
+:root[data-theme='light'] .pay-password-popup .send-code {
+  color: #07a35a !important;
+}
+
+:root[data-theme='light'] :is(
+  .page-header,
+  .header,
+  .moments-header,
+  .compose-header,
+  .pay-header,
+  .wallet-header
+) :is(
+  .icon-btn,
+  .back-btn,
+  .back,
+  .header-right,
+  .header-space,
+  .spacer,
+  .setting,
+  .done-btn,
+  .save-btn,
+  .perm-btn,
+  .publish-btn,
+  .reset-btn
+) {
+  position: relative;
+  z-index: 2;
+}
+
+:root[data-theme='light'] :is(.glass-card, .login-card, .register-panel, .hint-card) {
+  color: #14243a;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.97), rgba(231, 246, 255, 0.93));
+  border-color: rgba(137, 196, 228, 0.4);
+  box-shadow: 0 16px 40px rgba(34, 112, 165, 0.1);
+}
+
+:root[data-theme='light'] :is(input, textarea, select, .field, .field-input, .otp-cell) {
+  color: #172536;
+  background-color: #edf6ff;
+  border-color: rgba(113, 184, 224, 0.45);
+}
+
+:root[data-theme='light'] :is(input, textarea)::placeholder {
+  color: #8ca4b5;
+}
+
+:root[data-theme='light'] .messages-page {
+  background: var(--pulse-list-page-bg) !important;
+}
+
+/* 白日模式：带列表的页面统一蓝白渐变底 */
+:root[data-theme='light'] :is(
+  .contacts-page,
+  .discover-page,
+  .me-page,
+  .settings-page,
+  .favorites-page,
+  .groups-page,
+  .new-friends-page,
+  .blocked-page,
+  .common-groups-page,
+  .group-info-page,
+  .manage-page,
+  .friends-perm-page,
+  .moments-page,
+  .wallet-page,
+  .search-page,
+  .create-group-page,
+  .add-friend-page,
+  .perm-list-page,
+  .album-page,
+  .user-moments-page,
+  .notif-page,
+  .notify-page,
+  .group-invites-page,
+  .join-req-page,
+  .history-search-page,
+  .forward-detail-page,
+  .general-page,
+  .edit-profile-page,
+  .account-security-page,
+  .about-page,
+  .fav-detail-page,
+  .detail-page,
+  .group-profile-page,
+  .location-page,
+  .pay-page,
+  .contact-detail-page,
+  .compose-page,
+  .storage-page,
+  .help-feedback-page
+) {
+  background: var(--pulse-list-page-bg) !important;
+}
+
+/* 列表页顶栏半透明，透出蓝白渐变 */
+:root[data-theme='light'] :is(
+  .contacts-page,
+  .discover-page,
+  .me-page,
+  .settings-page,
+  .favorites-page,
+  .groups-page,
+  .new-friends-page,
+  .blocked-page,
+  .common-groups-page,
+  .group-info-page,
+  .manage-page,
+  .friends-perm-page,
+  .moments-page,
+  .wallet-page,
+  .search-page,
+  .create-group-page,
+  .add-friend-page,
+  .perm-list-page,
+  .notif-page,
+  .notify-page,
+  .group-invites-page,
+  .join-req-page,
+  .history-search-page,
+  .forward-detail-page,
+  .general-page,
+  .edit-profile-page,
+  .account-security-page,
+  .about-page,
+  .fav-detail-page,
+  .detail-page,
+  .group-profile-page,
+  .pay-page,
+  .compose-page,
+  .storage-page,
+  .help-feedback-page,
+  .communities-page,
+  .community-detail-page,
+  .community-create-page,
+  .data-page,
+  .post-detail-page
+) :is(.page-header, .header, .moments-header, .compose-header, .pay-header, .wallet-header, .topbar) {
+  background: linear-gradient(180deg, rgba(207, 238, 255, 0.92), rgba(247, 250, 255, 0.88)) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom-color: rgba(137, 196, 228, 0.28) !important;
+}
+
+/* 指定页面的导航栏与页面使用同一背景，不再单独显示渐变色层。 */
+:root[data-theme='light'] :is(
+  .discover-page,
+  .me-page,
+  .new-friends-page,
+  .group-invites-page,
+  .groups-page
+) > .page-header {
+  background: var(--pulse-list-page-bg) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border-bottom-color: transparent !important;
+  box-shadow: none !important;
+}
+
+/* 白色模式朋友圈顶栏使用浅色主题背景，避免系统栏/导航栏仍呈黑色。 */
+:root[data-theme='light'] .moments-page .moments-header {
+  background: linear-gradient(180deg, #bfe8ff 0%, rgba(225, 247, 255, 0.96) 100%) !important;
+  border-bottom-color: rgba(137, 196, 228, 0.28) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+/* 朋友圈消息页导航栏与页面背景保持一致。 */
+:root[data-theme='light'] .notif-page > .page-header {
+  background: var(--pulse-list-page-bg) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border-bottom-color: transparent !important;
+  box-shadow: none !important;
+}
+
+/* 发送位置页顶栏与浅色页面底色完全一致，不使用通用导航渐变。 */
+:root[data-theme='light'] .location-page > .topbar {
+  background: var(--pulse-list-page-bg, var(--pulse-page-bg)) !important;
+  background-image: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border-bottom-color: transparent !important;
+  box-shadow: none !important;
+}
+
+/* 浅色朋友圈封面底部较亮，使用深色昵称和签名保证对比度。 */
+:root[data-theme='light'] .moments-page .cover-name {
+  color: #14243a !important;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.9) !important;
+}
+
+:root[data-theme='light'] .moments-page .cover-sig {
+  color: #526574 !important;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.88) !important;
+}
+
+:root[data-theme='light'] .album-page .page-header {
+  background: var(--pulse-list-page-bg) !important;
+  border-bottom-color: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+:root[data-theme='light'] .album-page .page-header.solid {
+  background: var(--pulse-list-page-bg) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border-bottom-color: transparent !important;
+  box-shadow: none !important;
+}
+
+:root[data-theme='light'] .page {
+  background: var(--pulse-list-page-bg) !important;
+}
+
+:root[data-theme='light'] .search-page {
+  color: #14243a !important;
+  background: var(--pulse-list-page-bg) !important;
+}
+
+:root[data-theme='light'] .search-page .search-bar {
+  background: rgba(255, 255, 255, 0.96) !important;
+  border-color: rgba(137, 196, 228, 0.42) !important;
+  box-shadow: 0 8px 20px rgba(34, 112, 165, 0.08);
+}
+
+:root[data-theme='light'] .search-page :is(.card, .history-card) {
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.98), rgba(232, 246, 255, 0.9)) !important;
+  border-color: rgba(137, 196, 228, 0.35) !important;
+}
+
+:root[data-theme='light'] .search-page .card:active,
+:root[data-theme='light'] .search-page .conv-hit:active {
+  background: rgba(0, 122, 255, 0.06) !important;
+}
+
+:root[data-theme='light'] .settings-page .burn-range {
+  accent-color: #087ed7 !important;
+  background:
+    radial-gradient(circle, #2aa3f0 0 3px, transparent 3.2px) left center / 6px 6px no-repeat,
+    linear-gradient(#2aa3f0, #2aa3f0) 3px center / 9px 6px no-repeat,
+    radial-gradient(circle, #cbd5df 0 3px, transparent 3.2px) right center / 6px 6px no-repeat,
+    linear-gradient(
+      90deg,
+      #2aa3f0 0%,
+      #2aa3f0 var(--burn-progress, 0%),
+      transparent var(--burn-progress, 0%),
+      transparent 100%
+    ) center / calc(100% - 18px) 6px no-repeat,
+    linear-gradient(#cbd5df, #cbd5df) center / calc(100% - 6px) 6px no-repeat !important;
+}
+
+:root[data-theme='light'] .settings-page .burn-range::-webkit-slider-runnable-track {
+  background: transparent !important;
+  border-color: transparent !important;
+}
+
+:root[data-theme='light'] .settings-page .burn-range::-webkit-slider-thumb {
+  background: #087ed7 !important;
+  border-color: #ffffff !important;
+}
+
+:root[data-theme='light'] .settings-page .burn-range::-moz-range-track {
+  background: #cbd5df !important;
+  border-color: #cbd5df !important;
+}
+
+:root[data-theme='light'] .settings-page .burn-range::-moz-range-progress {
+  background: linear-gradient(90deg, #087ed7, #2aa3f0) !important;
+}
+
+:root[data-theme='light'] .settings-page .burn-range::-moz-range-thumb {
+  background: #087ed7 !important;
+  border-color: #ffffff !important;
+}
+
+:root[data-theme='dark'] .settings-page .burn-range {
+  background:
+    radial-gradient(circle, #2aa3f0 0 3px, transparent 3.2px) left center / 6px 6px no-repeat,
+    linear-gradient(#2aa3f0, #2aa3f0) 3px center / 9px 6px no-repeat,
+    radial-gradient(circle, #343539 0 3px, transparent 3.2px) right center / 6px 6px no-repeat,
+    linear-gradient(
+      90deg,
+      #2aa3f0 0%,
+      #2aa3f0 var(--burn-progress, 0%),
+      transparent var(--burn-progress, 0%),
+      transparent 100%
+    ) center / calc(100% - 18px) 6px no-repeat,
+    linear-gradient(#343539, #343539) center / calc(100% - 6px) 6px no-repeat !important;
+}
+
+:root[data-theme='dark'] .settings-page .burn-range::-webkit-slider-runnable-track {
+  background: transparent !important;
+  border-color: transparent !important;
+}
+
+:root[data-theme='dark'] .settings-page .burn-range::-moz-range-track {
+  background: #343539 !important;
+  border-color: rgba(139, 144, 160, 0.35) !important;
+}
+
+:root[data-theme='light'] .messages-page .top-bar {
+  color: #14243a !important;
+  /* 透出页面统一渐变，避免顶部单独一段渐变；去掉分类标签上方的横线 */
+  background: transparent !important;
+  border-bottom: none !important;
+  box-shadow: none !important;
+}
+
+:root[data-theme='light'] .messages-page .top-bar :is(.page-title, .more-btn) {
+  color: #087ed7 !important;
+}
+
+:root[data-theme='light'] .messages-page :is(.search-pill, .more-btn) {
+  color: #526574 !important;
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-color: rgba(137, 196, 228, 0.42) !important;
+}
+
+:root[data-theme='light'] .messages-page .more-menu {
+  background: linear-gradient(160deg, #ffffff 0%, #f2f9ff 100%) !important;
+  border-color: rgba(137, 196, 228, 0.45) !important;
+  box-shadow: 0 12px 28px rgba(34, 112, 165, 0.14) !important;
+}
+
+:root[data-theme='light'] .messages-page .more-menu::before {
+  background: #ffffff !important;
+  border-left-color: rgba(137, 196, 228, 0.45) !important;
+  border-top-color: rgba(137, 196, 228, 0.45) !important;
+}
+
+:root[data-theme='light'] .messages-page .more-item {
+  color: #14243a !important;
+}
+
+:root[data-theme='light'] .messages-page .more-item:active {
+  background: rgba(8, 126, 215, 0.1) !important;
+}
+
+:root[data-theme='light'] .messages-page .more-icon {
+  color: #087ed7 !important;
+}
+
+:root[data-theme='light'] .messages-page .filter-row {
+  background: transparent !important;
+  border-bottom: none !important;
+}
+
+:root[data-theme='light'] .messages-page .filter-block {
+  /* 透出页面统一渐变；去掉分类标签下方的横线 */
+  background: transparent !important;
+  border-bottom: none !important;
+}
+
+/* 消息/联系人列表区透出页面蓝白渐变 */
+:root[data-theme='light'] .messages-page :is(.scroll-body, .page-pull, .pull-inner),
+:root[data-theme='light'] .messages-page .page-pull :deep(.van-pull-refresh__track),
+:root[data-theme='light'] .contacts-page :is(.contacts-pull, .list-pull),
+:root[data-theme='light'] .contacts-page .van-pull-refresh,
+:root[data-theme='light'] .contacts-page .van-pull-refresh__track,
+:root[data-theme='light'] .contacts-page .van-pull-refresh__head,
+:root[data-theme='light'] .me-page .list-pull,
+:root[data-theme='light'] .me-page .van-pull-refresh,
+:root[data-theme='light'] .me-page .van-pull-refresh__track,
+:root[data-theme='light'] .me-page .van-pull-refresh__head {
+  background: transparent !important;
+}
+
+:root[data-theme='light'] .me-page .van-pull-refresh {
+  overflow: hidden !important;
+}
+
+:root[data-theme='light'] .me-page .main-content {
+  padding-top: 8px !important;
+}
+
+:root[data-theme='light'] .discover-page .menu-item {
+  padding-top: 10px !important;
+  padding-bottom: 10px !important;
+  gap: 12px !important;
+}
+
+:root[data-theme='light'] .discover-page .menu-icon {
+  width: 42px !important;
+  height: 42px !important;
+}
+
+:root[data-theme='light'] .messages-page .conversation-list {
+  margin: 14px 12px 12px;
+  overflow: hidden;
+  border-radius: 16px;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.96), rgba(232, 246, 255, 0.88));
+  border: 1px solid rgba(137, 196, 228, 0.35);
+  box-shadow: 0 8px 22px rgba(34, 112, 165, 0.08);
+}
+
+:root[data-theme='light'] .messages-page .conversation-item {
+  background: transparent !important;
+}
+
+:root[data-theme='light'] .messages-page .conversation-item:active,
+:root[data-theme='light'] .messages-page .conversation-item.selected {
+  background: rgba(0, 122, 255, 0.06) !important;
+}
+
+:root[data-theme='light'] .messages-page .conversation-item::after {
+  left: 16px !important;
+  right: 16px !important;
+  background: rgba(137, 196, 228, 0.28) !important;
+}
+
+:root[data-theme='light'] .contacts-page .page-header {
+  background: linear-gradient(180deg, #bfe8ff 0%, #d7f2ff 42%, rgba(241, 249, 255, 0.92) 100%) !important;
+  border-bottom: 1px solid rgba(137, 196, 228, 0.38) !important;
+  box-shadow: 0 10px 28px rgba(34, 112, 165, 0.1);
+}
+
+:root[data-theme='light'] :is(.discover-page, .me-page) .page-header.tab-home-header {
+  color: #14243a !important;
+  background: linear-gradient(180deg, #bfe8ff 0%, #d7f2ff 42%, rgba(241, 249, 255, 0.92) 100%) !important;
+  border-bottom: 1px solid rgba(137, 196, 228, 0.38) !important;
+  box-shadow: 0 10px 28px rgba(34, 112, 165, 0.1);
+}
+
+:root[data-theme='light'] :is(.discover-page, .me-page, .contacts-page) .page-header.tab-home-header
+  :is(.page-title, .theme-btn) {
+  color: #087ed7 !important;
+}
+
+/* 浅色模式转发弹窗：主按钮文字保持足够对比度。 */
+:root[data-theme='light'] .forward-submit {
+  color: #0d2340 !important;
+  font-weight: 700 !important;
+  text-shadow: none !important;
+}
+
+:root[data-theme='light'] .forward-submit:disabled {
+  color: #526574 !important;
+  opacity: 0.68 !important;
+}
+
+:root[data-theme='light'] .contacts-page .search-entry {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(231, 246, 255, 0.9)) !important;
+  border-color: rgba(137, 196, 228, 0.42) !important;
+}
+
+:root[data-theme='light'] .contacts-page .quick-sections,
+:root[data-theme='light'] .contacts-page .letter-group {
+  margin: 0 12px 10px;
+  overflow: hidden;
+  border-radius: 16px;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.96), rgba(232, 246, 255, 0.88));
+  border: 1px solid rgba(137, 196, 228, 0.35);
+  box-shadow: 0 8px 22px rgba(34, 112, 165, 0.08);
+}
+
+:root[data-theme='light'] .contacts-page .letter-label {
+  background: linear-gradient(90deg, rgba(207, 238, 255, 0.9), rgba(242, 249, 255, 0.75)) !important;
+}
+
+:root[data-theme='light'] .contacts-page .section-item {
+  padding-top: 10px !important;
+  padding-bottom: 10px !important;
+  gap: 12px !important;
+}
+
+:root[data-theme='light'] .contacts-page .section-item:active,
+:root[data-theme='light'] .contacts-page .contact-item:active {
+  background: rgba(0, 122, 255, 0.06) !important;
+}
+
+/* 黑色模式仅复用白色模式的列表结构，不覆盖任何主题颜色。 */
+:root[data-theme='dark'] .messages-page .conversation-list {
+  margin: 14px 12px 12px;
+  overflow: hidden;
+  border-radius: 16px;
+  background: var(--pulse-surface-container);
+  border: 1px solid var(--pulse-border);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.24);
+}
+
+:root[data-theme='dark'] .messages-page .conversation-item {
+  background: transparent !important;
+}
+
+:root[data-theme='dark'] .messages-page .conversation-item::after {
+  left: 16px !important;
+  right: 16px !important;
+  background: var(--pulse-divider) !important;
+}
+
+:root[data-theme='dark'] .contacts-page .quick-sections,
+:root[data-theme='dark'] .contacts-page .letter-group {
+  margin: 0 12px 10px;
+  overflow: hidden;
+  border-radius: 16px;
+  background: var(--pulse-surface-container);
+  border: 1px solid var(--pulse-border);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.24);
+}
+
+:root[data-theme='dark'] .contacts-page .letter-label {
+  background: var(--pulse-surface-low) !important;
+}
+
+:root[data-theme='dark'] .contacts-page .section-item {
+  padding-top: 10px !important;
+  padding-bottom: 10px !important;
+  gap: 12px !important;
+}
+
+:root[data-theme='light'] .me-page .profile-card {
+  margin-top: 0 !important;
+  border-radius: 20px !important;
+  background: #ffffff !important;
+  border-color: rgba(137, 196, 228, 0.4) !important;
+  box-shadow: 0 8px 20px rgba(34, 112, 165, 0.08) !important;
+}
+
+:root[data-theme='light'] .me-page :is(.qr-card, .setting-group, .logout-btn) {
+  border-radius: 16px !important;
+  background: #ffffff !important;
+  border-color: rgba(137, 196, 228, 0.4) !important;
+  box-shadow: 0 10px 28px rgba(34, 112, 165, 0.1) !important;
+}
+
+:root[data-theme='light'] .me-page .item-label,
+:root[data-theme='light'] .me-page .profile-name {
+  color: #14243a !important;
+}
+
+:root[data-theme='light'] .me-page .item-right,
+:root[data-theme='light'] .me-page .profile-id,
+:root[data-theme='light'] .me-page .profile-meta {
+  color: #526574 !important;
+}
+
+/* 我的朋友圈 / 用户相册：白日模式勿用白字 */
+:root[data-theme='light'] .album-page {
+  color: #14243a !important;
+}
+
+:root[data-theme='light'] .album-page .list-pull,
+:root[data-theme='light'] .album-page .van-pull-refresh,
+:root[data-theme='light'] .album-page .van-pull-refresh__track,
+:root[data-theme='light'] .album-page .van-pull-refresh__head {
+  background: transparent !important;
+}
+
+:root[data-theme='light'] .album-page :is(.icon-btn, .perm-btn) {
+  color: #087ed7 !important;
+  text-shadow: none !important;
+}
+
+:root[data-theme='light'] .album-page .page-header.solid :is(.icon-btn, .perm-btn) {
+  color: #087ed7 !important;
+  text-shadow: none !important;
+}
+
+:root[data-theme='light'] .album-page .page-title {
+  color: #14243a !important;
+  text-shadow: none !important;
+}
+
+:root[data-theme='light'] .album-page :is(.year-row, .day) {
+  color: #14243a !important;
+}
+
+:root[data-theme='light'] .album-page .month {
+  color: #526574 !important;
+}
+
+:root[data-theme='light'] .album-page .post-text {
+  color: #14243a !important;
+}
+
+:root[data-theme='light'] .album-page .post-text.muted,
+:root[data-theme='light'] .album-page .state {
+  color: #7a8a9a !important;
+}
+
+:root[data-theme='light'] .groups-page .search-box {
+  background: #ffffff !important;
+  border-color: rgba(169, 193, 211, 0.5) !important;
+  box-shadow: none !important;
+}
+
+:root[data-theme='light'] .groups-page .search-box input {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  color: #14243a !important;
+}
+
+:root[data-theme='light'] .messages-page .chip {
+  color: #526574 !important;
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+:root[data-theme='light'] .messages-page .chip.active {
+  color: #087ed7 !important;
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+:root[data-theme='light'] .chat-page {
+  color: #14243a !important;
+  background: var(--pulse-list-page-bg) !important;
+}
+
+:root[data-theme='light'] .chat-page .chat-header {
+  color: #14243a !important;
+  background: var(--pulse-list-page-bg) !important;
+  border-bottom-color: transparent !important;
+  box-shadow: none !important;
+}
+
+:root[data-theme='light'] .chat-page .chat-header :is(.back-btn, .icon-btn) {
+  color: #087ed7 !important;
+}
+
+:root[data-theme='light'] .chat-page .bubble:not(.mine):not(.business):not(.image):not(.video):not(.location) {
+  color: #172536 !important;
+  background: linear-gradient(145deg, #ffffff 0%, #f4faff 100%) !important;
+  border: 1px solid rgba(137, 196, 228, 0.42) !important;
+  box-shadow: 0 7px 20px rgba(34, 112, 165, 0.09) !important;
+}
+
+:root[data-theme='light'] .chat-page .bubble.mine:not(.business):not(.image):not(.video):not(.location) {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #75dafa 0%, #43b2ee 48%, #6398f3 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+}
+
+:root[data-theme='light'] .chat-page .bubble .mention-hl {
+  color: #0759b8 !important;
+  font-weight: 700;
+}
+
+:root[data-theme='light'] .chat-page .bubble.mine .mention-hl {
+  color: #072f66 !important;
+}
+
+:root[data-theme='light'] .chat-page .system-tip {
+  color: #397096 !important;
+  background: linear-gradient(135deg, rgba(224, 247, 255, 0.96), rgba(231, 240, 255, 0.96)) !important;
+  border: 1px solid rgba(125, 190, 225, 0.38) !important;
+}
+
+:root[data-theme='light'] .chat-page .system-tip-time {
+  color: #718ea4 !important;
+}
+
+:root[data-theme='light'] .chat-page .recall-tip {
+  color: #58758a !important;
+  background: rgba(218, 234, 244, 0.82) !important;
+  border: 1px solid rgba(137, 196, 228, 0.32) !important;
+  box-shadow: 0 3px 10px rgba(34, 112, 165, 0.05) !important;
+}
+
+/* 白日模式：消息输入栏（footer 用了 glass-header，默认是深色半透明） */
+:root[data-theme='light'] .glass-header {
+  background: rgba(255, 255, 255, 0.92);
+}
+
+:root[data-theme='light'] .chat-page :is(.chat-footer, .multi-footer) {
+  color: #14243a !important;
+  background: linear-gradient(180deg, rgba(242, 249, 255, 0.98), rgba(255, 255, 255, 0.98)) !important;
+  border-top: 1px solid rgba(137, 196, 228, 0.38) !important;
+  box-shadow: 0 -8px 24px rgba(34, 112, 165, 0.06);
+}
+
+:root[data-theme='light'] .chat-page .msg-input {
+  color: #14243a !important;
+  background: #edf4ff !important;
+}
+
+:root[data-theme='light'] .chat-page .msg-input::placeholder {
+  color: rgba(82, 101, 116, 0.55) !important;
+}
+
+:root[data-theme='light'] .chat-page :is(.plus-btn, .mic-btn.secondary, .voice-hold-btn) {
+  color: #526574 !important;
+  background: #e7efff !important;
+}
+
+:root[data-theme='light'] .chat-page .emoji-btn {
+  color: #738796 !important;
+}
+
+:root[data-theme='light'] .chat-page .emoji-panel {
+  border-top-color: rgba(169, 193, 211, 0.45) !important;
+}
+
+:root[data-theme='light'] .chat-page .reply-bar {
+  background: rgba(231, 239, 255, 0.9) !important;
+  border-color: rgba(137, 196, 228, 0.35) !important;
+}
+
+:root[data-theme='light'] .chat-page .plus-title {
+  color: #14243a !important;
+}
+
+:root[data-theme='light'] .chat-page .plus-handle {
+  background: rgba(115, 135, 150, 0.35) !important;
+}
+
+:root[data-theme='light'] .chat-page .chat-block-tip {
+  color: #526574 !important;
+  background: rgba(231, 239, 255, 0.9) !important;
+}
+
+:root[data-theme='light'] .chat-page .mute-soft-tip {
+  color: #b86a00 !important;
+  background: rgba(255, 183, 77, 0.18) !important;
+}
+
+/* 通用开关：关闭态不再沿用深色轨道 */
+:root[data-theme='light'] .switch .slider {
+  background: #c8d5e3 !important;
+}
+
+:root[data-theme='light'] .switch .slider::before {
+  background: #ffffff !important;
+  box-shadow: 0 1px 4px rgba(20, 36, 58, 0.28);
+}
+
+:root[data-theme='light'] .switch input:checked + .slider {
+  background: #087ed7 !important;
+}
+
+:root[data-theme='light'] .switch.active .slider {
+  background: #087ed7 !important;
+}
+
+:root[data-theme='dark'] .switch.active .slider {
+  background: #4b8eff !important;
+}
+
+/* 消息首页：编辑模式底部栏 */
+:root[data-theme='light'] .messages-page .edit-bar {
+  color: #14243a !important;
+  background: rgba(255, 255, 255, 0.96) !important;
+  border-top: 1px solid rgba(137, 196, 228, 0.4) !important;
+  box-shadow: 0 -8px 24px rgba(34, 112, 165, 0.08);
+}
+
+:root[data-theme='light'] .messages-page .edit-action.cancel .material-symbols-outlined,
+:root[data-theme='light'] .messages-page .edit-action.danger .material-symbols-outlined {
+  color: #087ed7 !important;
+}
+
+/* 安卓：消息页筛选 / 会话行保持紧凑（苹果端用默认较大尺寸） */
+:root[data-platform='android'] .messages-page .filter-row {
+  gap: 6px;
+  padding: 10px 12px 12px;
+}
+
+:root[data-platform='android'] .messages-page .filter-chips {
+  gap: 6px;
+}
+
+:root[data-platform='android'] .messages-page .select-all-btn {
+  font-size: 12px;
+  padding: 4px 2px;
+}
+
+:root[data-platform='android'] .messages-page .chip {
+  gap: 4px;
+  padding: 5px 10px;
+  font-size: 15px;
+  line-height: 19px;
+}
+
+:root.capacitor-native:not([data-platform='android']) .messages-page .chip {
+  font-size: 15px;
+  line-height: 19px;
+}
+
+:root[data-platform='android'] .messages-page .conversation-item {
+  gap: 12px;
+  padding: 10px 14px;
+}
+
+:root[data-platform='android'] .messages-page .avatar-wrap {
+  --messages-avatar-size: 46px;
+}
+
+:root[data-platform='android'] .messages-page .conv-avatar.initials {
+  font-size: calc(var(--pulse-content-font-size, 15px) - 1px);
+}
+
+:root[data-platform='android'] .messages-page .online-dot {
+  width: 12px;
+  height: 12px;
+}
+
+:root[data-platform='android'] .messages-page .conv-top {
+  margin-bottom: 1px;
+}
+
+:root[data-platform='android'] .messages-page .conv-name {
+  font-size: var(--pulse-content-font-size, 15px);
+  line-height: 20px;
+}
+
+:root[data-platform='android'] .messages-page .conv-preview {
+  font-size: calc(var(--pulse-content-font-size, 15px) - 2px);
+  line-height: 18px;
+}
+
+/* 用户资料页：返回 / 更多 */
+:root[data-theme='light'] .contact-detail-page .hero-btn {
+  color: #087ed7 !important;
+  background: rgba(255, 255, 255, 0.88) !important;
+  border: 1px solid rgba(137, 196, 228, 0.45);
+  box-shadow: 0 4px 14px rgba(34, 112, 165, 0.12);
+}
+
+:root[data-theme='light'] .contact-detail-page .hero-gradient {
+  background: linear-gradient(
+    to top,
+    rgba(10, 22, 35, 0.82) 0%,
+    rgba(10, 22, 35, 0.34) 42%,
+    transparent 72%
+  ) !important;
+}
+
+:root[data-theme='light'] .contact-detail-page .hero-bg {
+  background-color: #d6ecff !important;
+  background-image:
+    radial-gradient(circle at 78% 18%, rgba(70, 161, 225, 0.42), transparent 38%),
+    radial-gradient(circle at 18% 58%, rgba(145, 191, 235, 0.35), transparent 42%),
+    linear-gradient(145deg, #8ecdf3 0%, #b8dcf5 52%, #d8ecfa 100%) !important;
+}
+
+:root[data-theme='light'] .contact-detail-page :is(
+  .profile-name,
+  .profile-meta,
+  .profile-nickname,
+  .profile-region,
+  .profile-signature
+) {
+  color: #ffffff !important;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+:root[data-theme='light'] .pulse-switch:not(.on) {
+  background: #c8d5e3 !important;
+}
+
+:root[data-theme='light'] .switch > span {
+  background: #c8d5e3 !important;
+}
+
+:root[data-theme='light'] .switch input:checked + span {
+  background: #087ed7 !important;
+}
+
+/* 聊天设置顶栏 */
+:root[data-theme='light'] .settings-page .page-header {
+  color: #14243a !important;
+  background: linear-gradient(180deg, rgba(225, 247, 255, 0.98), rgba(247, 250, 255, 0.94)) !important;
+  border-bottom: 1px solid rgba(169, 193, 211, 0.42);
+}
+
+/* 我的钱包 */
+:root[data-theme='light'] .wallet-header {
+  color: #14243a !important;
+  background: linear-gradient(180deg, #dff6ff 0%, rgba(247, 250, 255, 0.98) 100%) !important;
+  border-bottom: 1px solid rgba(137, 196, 228, 0.38) !important;
+}
+
+:root[data-theme='light'] .wallet-page .back {
+  color: #087ed7 !important;
+}
+
+:root[data-theme='light'] .wallet-page .setting {
+  color: #07a35a !important;
+}
+
+:root[data-theme='light'] .wallet-page .balance {
+  color: #14243a !important;
+  background: linear-gradient(145deg, #ffffff 0%, #e8f7ff 100%) !important;
+  border: 1px solid rgba(137, 196, 228, 0.45) !important;
+  box-shadow: 0 10px 28px rgba(34, 112, 165, 0.1);
+}
+
+:root[data-theme='light'] .wallet-page .balance span,
+:root[data-theme='light'] .wallet-page .balance small {
+  color: #718ea4 !important;
+}
+
+:root[data-theme='light'] .wallet-page .balance strong {
+  color: #14243a !important;
+}
+
+:root[data-theme='light'] .wallet-page :is(.filters, .list) {
+  color: #14243a !important;
+  background: #ffffff !important;
+  border: 1px solid rgba(169, 193, 211, 0.45) !important;
+}
+
+:root[data-theme='light'] .wallet-page .filters :is(select, input) {
+  color: #14243a !important;
+  background: #edf4ff !important;
+  border-color: rgba(113, 184, 224, 0.45) !important;
+  color-scheme: light !important;
+}
+
+:root[data-theme='light'] .wallet-page .dates span,
+:root[data-theme='light'] .wallet-page .list small,
+:root[data-theme='light'] .wallet-page .empty {
+  color: #718ea4 !important;
+}
+
+:root[data-theme='light'] .wallet-page .list h2,
+:root[data-theme='light'] .wallet-page .list article {
+  border-bottom-color: rgba(169, 193, 211, 0.4) !important;
+}
+
+/* 全局弹层统一使用软件黑色主色调。 */
+:root {
+  --van-dialog-background: var(--pulse-surface-container);
+  --van-dialog-header-font-weight: 600;
+  --van-dialog-message-text-color: #d6d6da;
+  --van-dialog-confirm-button-text-color: #69a7ff;
+  --van-action-sheet-background: var(--pulse-surface-container);
+  --van-action-sheet-item-background: var(--pulse-surface-container);
+  --van-action-sheet-item-text-color: #f4f4f6;
+  --van-popup-background: var(--pulse-surface-container);
+  --van-picker-background: var(--pulse-surface-container);
+  --van-picker-option-text-color: #f4f4f6;
+  --van-picker-confirm-action-color: #69a7ff;
+  --van-picker-cancel-action-color: #aaaab2;
+  /* 深色模式下滚轮上下渐变遮罩改回黑色，避免出现白色渐变 */
+  --van-picker-mask-color: linear-gradient(180deg, rgba(30, 31, 35, 0.92), rgba(30, 31, 35, 0.35)), linear-gradient(0deg, rgba(30, 31, 35, 0.92), rgba(30, 31, 35, 0.35));
+  --van-picker-loading-mask-color: rgba(30, 31, 35, 0.75);
+  --van-calendar-background: var(--pulse-surface-container);
+}
+
+.van-dialog,
+.van-popup,
+.van-action-sheet,
+.van-picker,
+.van-calendar {
+  color: #f4f4f6 !important;
+  background: var(--pulse-surface-container) !important;
+}
+
+.van-dialog__header,
+.van-dialog__message,
+.van-action-sheet__name,
+.van-picker__title,
+.van-calendar__header-title,
+.van-calendar__header-subtitle,
+.van-calendar__month-title,
+.van-calendar__day {
+  color: #f4f4f6 !important;
+}
+
+.van-dialog__message {
+  color: #c9c9cf !important;
+}
+
+.van-dialog__footer,
+.van-dialog__cancel,
+.van-dialog__confirm,
+.van-action-sheet__cancel,
+.van-picker__toolbar,
+.van-calendar__header {
+  background: #222226 !important;
+  border-color: #343438 !important;
+}
+
+.van-dialog__cancel {
+  color: #aaaab2 !important;
+}
+
+.van-hairline--top::after,
+.van-hairline--bottom::after,
+.van-hairline--top-bottom::after,
+.van-hairline--surround::after {
+  border-color: #343438 !important;
+}
+
+.van-action-sheet__gap {
+  background: var(--pulse-page-bg, var(--pulse-bg)) !important;
+}
+
+/* White-mode modal controls must come after the dark defaults above. */
+:root[data-theme='light'] :is(
+  .van-dialog,
+  .van-popup,
+  .van-action-sheet,
+  .van-picker,
+  .van-calendar
+) {
+  color: #14243a !important;
+  background: #ffffff !important;
+}
+
+:root[data-theme='light'] :is(
+  .van-dialog__header,
+  .van-dialog__message,
+  .van-action-sheet__name,
+  .van-action-sheet__description,
+  .van-picker__title,
+  .van-picker-column__item,
+  .van-calendar__header-title,
+  .van-calendar__header-subtitle,
+  .van-calendar__month-title,
+  .van-calendar__day
+) {
+  color: #14243a !important;
+}
+
+:root[data-theme='light'] .van-dialog__message,
+:root[data-theme='light'] .van-action-sheet__description {
+  color: #526574 !important;
+}
+
+:root[data-theme='light'] :is(
+  .van-dialog__footer,
+  .van-dialog__cancel,
+  .van-dialog__confirm,
+  .van-action-sheet__item,
+  .van-action-sheet__cancel,
+  .van-picker__toolbar,
+  .van-calendar__header
+) {
+  background: #ffffff !important;
+  border-color: rgba(169, 193, 211, 0.45) !important;
+}
+
+:root[data-theme='light'] .van-dialog__cancel,
+:root[data-theme='light'] .van-action-sheet__cancel {
+  color: #738796 !important;
+}
+
+:root[data-theme='light'] .van-dialog__confirm,
+:root[data-theme='light'] :is(.van-picker__confirm, .van-calendar__confirm) {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #00c6ff, #007aff) !important;
+}
+
+:root[data-theme='light'] :is(.van-picker__cancel, .van-action-sheet__item) {
+  color: #087ed7 !important;
+}
+
+:root[data-theme='light'] :is(
+  .van-hairline--top,
+  .van-hairline--bottom,
+  .van-hairline--top-bottom,
+  .van-hairline--surround
+)::after {
+  border-color: rgba(169, 193, 211, 0.45) !important;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  -webkit-font-smoothing: antialiased;
+}
+
+.material-symbols-outlined.filled {
+  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+.glass-header {
+  background: rgba(18, 19, 23, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.glass-card {
+  background: rgba(30, 31, 35, 0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* 下拉刷新：背景与页面一致；容器需撑满剩余视口，避免列表下移时「掉进」下方空白背景 */
+:root {
+  --van-pull-refresh-head-text-color: var(--pulse-outline);
+  --van-pull-refresh-head-font-size: 13px;
+}
+
+.van-pull-refresh {
+  background: var(--pulse-page-bg, var(--pulse-bg)) !important;
+  overflow: hidden;
+}
+
+.van-pull-refresh__track {
+  position: relative;
+  background: var(--pulse-page-bg, var(--pulse-bg)) !important;
+  min-height: 100%;
+}
+
+.van-pull-refresh__head {
+  background: var(--pulse-page-bg, var(--pulse-bg)) !important;
+  color: var(--pulse-outline) !important;
+}
+
+.list-pull {
+  background: var(--pulse-page-bg, var(--pulse-bg));
+  min-height: 100%;
+}
+
+/* Web 与 App：搜索框跟随页面底色，不显示额外色块背景。 */
+:root :is(
+  .search-pill,
+  .search-entry,
+  .search-bar,
+  .search-box,
+  .search-wrap,
+  .search-row
+) {
+  background: transparent !important;
+}
+
+:root :is(
+  .search-pill,
+  .search-entry,
+  .search-bar,
+  .search-box,
+  .search-wrap,
+  .search-row
+) :is(input[type='search'], input.search-input, input) {
+  background: transparent !important;
+}
+
+/* 统一搜索框清除按钮：隐藏 WebView 自带按钮，避免与页面按钮叠加。 */
+input[type='search']::-webkit-search-cancel-button,
+input[type='search']::-webkit-search-decoration,
+input[type='search']::-ms-clear {
+  display: none;
+  width: 0;
+  height: 0;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+:root .search-clear-btn {
+  display: grid;
+  flex: 0 0 28px !important;
+  place-items: center;
+  width: 28px !important;
+  min-width: 28px !important;
+  height: 28px !important;
+  box-sizing: border-box;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--pulse-text-secondary, var(--pulse-outline)) !important;
+  cursor: pointer;
+}
+
+.search-clear-btn:active {
+  background: color-mix(in srgb, currentColor 12%, transparent);
+}
+
+.search-clear-btn .material-symbols-outlined {
+  font-size: 17px;
+  line-height: 1;
+}
+
+/* 指定「我的」子页面：导航栏必须与页面底色完全一致。放在文件末尾，
+ * 避免浅色模式的通用导航渐变覆盖页面自身设置。 */
+:root :is(
+  .album-page,
+  .moments-page,
+  .detail-page,
+  .edit-profile-page,
+  .wallet-page,
+  .favorites-page,
+  .account-security-page,
+  .friends-perm-page,
+  .general-page,
+  .storage-page,
+  .help-feedback-page,
+  .notify-page
+) > :is(.page-header, .header, .moments-header, .wallet-header) {
+  background: var(--pulse-page-bg, var(--pulse-bg)) !important;
+  background-image: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border-bottom-color: transparent !important;
+  box-shadow: none !important;
+}
+
+/* 浅色列表页本身使用 --pulse-list-page-bg；顶栏必须使用同一个背景，
+ * 不能退回 --pulse-page-bg，否则会形成一条不同颜色的横条。 */
+:root[data-theme='light'] :is(
+  .album-page,
+  .moments-page,
+  .detail-page,
+  .edit-profile-page,
+  .wallet-page,
+  .favorites-page,
+  .friends-perm-page,
+  .general-page,
+  .account-security-page,
+  .about-page,
+  .notify-page,
+  .storage-page,
+  .help-feedback-page
+) > :is(.page-header, .header, .moments-header, .wallet-header) {
+  background: var(--pulse-list-page-bg) !important;
+  background-image: var(--pulse-list-page-bg) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border-bottom-color: transparent !important;
+  box-shadow: none !important;
+}
+
+/* 朋友圈为沉浸式固定顶栏，浅色模式也必须保持透明，让封面延伸到顶栏下方。 */
+:root[data-theme='light'] .moments-page > .moments-header {
+  background: transparent !important;
+  background-image: none !important;
+  border-bottom-color: transparent !important;
+  box-shadow: none !important;
+}
+
+/* 浅色模式：好友/群聊相关子页的顶栏与页面底色保持一致。 */
+:root[data-theme='light'] :is(
+  .add-friend-page,
+  .create-group-page,
+  .history-search-page,
+  .settings-page,
+  .group-info-page
+) > .page-header {
+  background: var(--pulse-list-page-bg) !important;
+  background-image: var(--pulse-list-page-bg) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border-bottom-color: transparent !important;
+  box-shadow: none !important;
+}
+
+/* 圈子相关页面统一使用通用浅色页面的顶栏底色，覆盖各页面自己的渐变和毛玻璃。 */
+:root[data-theme='light'] :is(
+  .communities-page,
+  .community-detail-page,
+  .community-create-page,
+  .manage-page,
+  .data-page,
+  .favorite-detail-page,
+  .post-detail-page,
+  .notifications-page
+) > :is(.page-header, .notifications-header) {
+  background: var(--pulse-list-page-bg) !important;
+  background-image: var(--pulse-list-page-bg) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border-bottom-color: transparent !important;
+  box-shadow: none !important;
+}
+
+/* 朋友圈采用沉浸式封面：封面延伸到状态栏和顶栏，顶栏不能再铺不透明底色。 */
+:root .moments-page > .moments-header {
+  position: fixed !important;
+  top: 0 !important;
+  right: 0 !important;
+  left: 0 !important;
+  z-index: 50 !important;
+  background: transparent !important;
+  background-image: none !important;
+  border-bottom-color: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+:root .moments-page > .moments-header :is(.icon-btn, .header-title) {
+  color: #fff !important;
+  text-shadow: 0 1px 5px rgba(0, 0, 0, 0.55);
+}
+
+:root .moments-page > .moments-header .icon-btn:active {
+  background: rgba(0, 0, 0, 0.18) !important;
+}
+
+:root .moments-page .cover-name {
+  color: #fff !important;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.55) !important;
+}
+
+:root .moments-page .cover-sig {
+  color: rgba(255, 255, 255, 0.86) !important;
+  text-shadow: 0 1px 5px rgba(0, 0, 0, 0.45) !important;
+}
+
+/* 存储清理页：全局顶栏默认规则会把页面自己的三列 grid 改回 flex，
+ * 右侧“选择”按钮宽度变化后标题就不再位于屏幕几何中心。 */
+:root :is(.all-files-page, .records-page, .files-page) > .page-header {
+  display: grid !important;
+  grid-template-columns: 72px minmax(0, 1fr) 72px !important;
+  align-items: center !important;
+  gap: 0 !important;
+}
+
+:root :is(.all-files-page, .records-page, .files-page) > .page-header > h1 {
+  position: static !important;
+  inset: auto !important;
+  grid-column: 2 !important;
+  width: auto !important;
+  max-width: none !important;
+  height: auto !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  transform: none !important;
+  text-align: center !important;
+  pointer-events: auto !important;
+}
+
+:root :is(.all-files-page, .records-page, .files-page) > .page-header > .header-text-btn {
+  grid-column: 3 !important;
+  justify-self: end !important;
+  margin-left: 0 !important;
+}
+
+/* 收藏详情页：标题不再用相对 header 高度的 absolute 定位，避免深色模式
+ * 下被安全区 padding 和全局顶栏高度规则推到顶部。 */
+:root .fav-detail-page > .page-header {
+  display: grid !important;
+  grid-template-columns: 96px minmax(0, 1fr) 96px !important;
+  align-items: center !important;
+  gap: 0 !important;
+}
+
+:root .fav-detail-page > .page-header > .page-title {
+  position: static !important;
+  inset: auto !important;
+  grid-column: 2 !important;
+  width: auto !important;
+  max-width: none !important;
+  height: auto !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  transform: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  pointer-events: auto !important;
+}
+
+:root .fav-detail-page > .page-header > .icon-btn:first-child {
+  grid-column: 1 !important;
+  justify-self: start !important;
+}
+
+:root .fav-detail-page > .page-header > .header-actions {
+  grid-column: 3 !important;
+  justify-self: end !important;
+  margin-left: 0 !important;
+}
