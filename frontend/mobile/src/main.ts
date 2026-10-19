@@ -99,15 +99,9 @@ markClientPlatform()
  */
 function syncInitialNativeBackground() {
   if (!isNativeApp) return
-  let lightTheme = false
-  try {
-    lightTheme = localStorage.getItem('pulse_theme') === 'light'
-  } catch {
-    /* use the dark first-paint fallback */
-  }
-  const color = lightTheme ? '#f7faff' : '#121317'
+  const color = '#f7faff'
   document.documentElement.style.backgroundColor = color
-  void applyNativeStatusBar(color, lightTheme ? 'light' : 'dark', color).catch(() => {})
+  void applyNativeStatusBar(color, 'light', color).catch(() => {})
 }
 
 syncInitialNativeBackground()

@@ -2,8 +2,6 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 
 const STORAGE_KEY = 'pulse_font_size'
-const THEME_STORAGE_KEY = 'pulse_theme'
-export type PulseTheme = 'dark' | 'light'
 /** 滑块范围 0–100，默认 50 为标准（约 15px） */
 export const FONT_SLIDER_MIN = 0
 export const FONT_SLIDER_MAX = 100
@@ -69,21 +67,15 @@ function readStored(): number {
   return FONT_SLIDER_DEFAULT
 }
 
-function readStoredTheme(): PulseTheme {
-  try {
-    return localStorage.getItem(THEME_STORAGE_KEY) === 'light' ? 'light' : 'dark'
-  } catch {
-    return 'dark'
-  }
-}
-
-function applyThemeToDom(theme: PulseTheme) {
+function applyLightThemeToDom() {
   const root = document.documentElement
-  root.dataset.theme = theme
-  // The app already renders both themes with its own CSS tokens. Keep the
-  // browser's native scheme light so Chrome/WebView does not darken the
-  // completed page a second time after startup.
+  root.dataset.theme = 'light'
   root.style.colorScheme = 'light'
+  try {
+    localStorage.removeItem('pulse_theme')
+  } catch {
+    /* storage may be unavailable in a private WebView */
+  }
 }
 
 export function applyFontSizeToDom(value: number) {
@@ -100,8 +92,6 @@ export function applyFontSizeToDom(value: number) {
 
 export const usePreferenceStore = defineStore('preference', () => {
   const fontSize = ref(readStored())
-  const theme = ref<PulseTheme>(readStoredTheme())
-  const isLightTheme = computed(() => theme.value === 'light')
 
   const fontSizeLabel = computed(() => {
     const px = Math.round(fontParamsFromSlider(fontSize.value).chatFontPx)
@@ -119,28 +109,15 @@ export const usePreferenceStore = defineStore('preference', () => {
     }
   }
 
-  function setTheme(value: PulseTheme) {
-    theme.value = value
-    applyThemeToDom(value)
-    try {
-      localStorage.setItem(THEME_STORAGE_KEY, value)
-    } catch {
-      /* ignore */
-    }
-  }
-
   function init() {
     applyFontSizeToDom(fontSize.value)
-    applyThemeToDom(theme.value)
+    applyLightThemeToDom()
   }
 
   return {
     fontSize,
     fontSizeLabel,
-    theme,
-    isLightTheme,
     setFontSize,
-    setTheme,
     init,
   }
 })

@@ -31,9 +31,13 @@ const item = ref<ConversationItem | null>(null)
 const pinned = ref(false)
 const muted = ref(false)
 const burnEnabled = ref(false)
-const burnSeconds = ref(10)
-const savedBurnSeconds = ref(10)
+const BURN_SECONDS_OPTIONS = [5, 15, 30] as const
+const burnSeconds = ref(15)
+const savedBurnSeconds = ref(15)
 const burnSaving = ref(false)
+const hasLegacyBurnSeconds = computed(() =>
+  burnEnabled.value && !BURN_SECONDS_OPTIONS.some((seconds) => seconds === burnSeconds.value),
+)
 const showDeleteSheet = ref(false)
 const autoDeleteEnabled = ref(false)
 const autoDeleteSeconds = ref(86400)
@@ -273,23 +277,18 @@ async function saveBurnSetting(nextEnabled: boolean, nextSeconds: number, previo
 
 function onBurnToggleClick() {
   if (!burnEnabled.value) {
-    void saveBurnSetting(true, burnSeconds.value, savedBurnSeconds.value)
+    const seconds = BURN_SECONDS_OPTIONS.some((option) => option === burnSeconds.value)
+      ? burnSeconds.value
+      : 15
+    void saveBurnSetting(true, seconds, savedBurnSeconds.value)
     return
   }
   void saveBurnSetting(false, burnSeconds.value, savedBurnSeconds.value)
 }
 
-function onBurnTimeInput(event: Event) {
-  burnSeconds.value = Number((event.target as HTMLInputElement).value)
-}
-
-function onBurnTimeChange(event: Event) {
-  const previousSeconds = savedBurnSeconds.value
-  const nextSeconds = Number((event.target as HTMLInputElement).value)
-  burnSeconds.value = nextSeconds
-  if (burnEnabled.value) {
-    void saveBurnSetting(true, nextSeconds, previousSeconds)
-  }
+function onBurnTimeSelect(seconds: number) {
+  if (burnSaving.value || (burnEnabled.value && burnSeconds.value === seconds)) return
+  void saveBurnSetting(true, seconds, savedBurnSeconds.value)
 }
 
 async function saveAutoDelete(enabled: boolean, seconds = autoDeleteSeconds.value) {
@@ -427,24 +426,20 @@ async function onDeleteScopeSelect(action: { name?: string }) {
             <span class="slider" />
           </label>
         </div>
-        <div class="burn-time" :class="{ disabled: !burnEnabled }">
-          <input
-            class="burn-range"
-            type="range"
-            min="0"
-            max="300"
-            step="1"
-            :value="burnSeconds"
-            :disabled="!burnEnabled || burnSaving"
-            :style="{ '--burn-progress': `${(burnSeconds / 300) * 100}%` }"
-            aria-label="阅后即焚时间"
-            @input="onBurnTimeInput"
-            @change="onBurnTimeChange"
-          />
-          <div class="burn-labels">
-            <span>立即销毁</span>
-            <span>5分钟</span>
+        <div class="burn-time">
+          <div class="burn-options" role="group" aria-label="阅后即焚时间">
+            <button
+              v-for="seconds in BURN_SECONDS_OPTIONS"
+              :key="seconds"
+              type="button"
+              class="burn-option"
+              :class="{ active: burnEnabled && burnSeconds === seconds }"
+              :aria-pressed="burnEnabled && burnSeconds === seconds"
+              :disabled="burnSaving"
+              @click="onBurnTimeSelect(seconds)"
+            >{{ seconds }}S</button>
           </div>
+          <small v-if="hasLegacyBurnSeconds" class="burn-legacy">当前为旧设置：{{ burnTimeLabel }}，请选择新的时间</small>
         </div>
       </section>
 
@@ -667,112 +662,47 @@ async function onDeleteScopeSelect(action: { name?: string }) {
 }
 
 .burn-time {
-  padding: 14px 16px 18px;
-  transition: opacity 0.2s;
+  padding: 12px 16px 16px;
 }
 
-.burn-time.disabled {
-  opacity: 0.45;
+.burn-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
 }
 
-.burn-range {
-  --burn-track: rgba(255, 255, 255, 0.2);
-  --burn-fill: #2aa3f0;
-  -webkit-appearance: none;
-  appearance: none;
-  width: 100%;
-  height: 28px;
-  margin: 0;
-  background:
-    radial-gradient(circle, var(--burn-fill) 0 3px, transparent 3.2px) left center / 6px 6px no-repeat,
-    linear-gradient(var(--burn-fill), var(--burn-fill)) 3px center / 9px 6px no-repeat,
-    radial-gradient(circle, var(--burn-track) 0 3px, transparent 3.2px) right center / 6px 6px no-repeat,
-    linear-gradient(
-      90deg,
-      var(--burn-fill) 0%,
-      var(--burn-fill) var(--burn-progress, 0%),
-      transparent var(--burn-progress, 0%),
-      transparent 100%
-    ) center / calc(100% - 18px) 6px no-repeat,
-    linear-gradient(var(--burn-track), var(--burn-track)) center / calc(100% - 6px) 6px no-repeat;
-  accent-color: #087ed7;
+.burn-option {
+  min-height: 40px;
+  border: 1px solid var(--pulse-outline-variant);
+  border-radius: 10px;
+  background: var(--pulse-surface);
+  color: var(--pulse-text);
+  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
 }
 
-:global(:root[data-theme='light']) .burn-range {
-  --burn-track: #cbd5df;
+.burn-option.active {
+  border-color: var(--pulse-primary);
+  background: var(--pulse-primary);
+  color: var(--pulse-on-primary);
 }
 
-.burn-range:focus {
-  outline: none;
+.burn-option:focus-visible {
+  outline: 2px solid var(--pulse-primary);
+  outline-offset: 2px;
 }
 
-.burn-range::-webkit-slider-runnable-track {
-  height: 6px;
-  border-radius: 999px;
-  background: transparent;
-  border: 1px solid transparent;
+.burn-option:disabled {
+  opacity: 0.55;
+  cursor: wait;
 }
 
-:global(:root[data-theme='light']) .burn-range::-webkit-slider-runnable-track {
-  background: transparent;
-  border-color: transparent;
-}
-
-.burn-range::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 18px;
-  height: 18px;
-  margin-top: -7px;
-  border-radius: 50%;
-  background: #087ed7;
-  border: 2px solid #ffffff;
-  box-shadow: 0 2px 8px rgba(8, 126, 215, 0.35);
-}
-
-.burn-range::-moz-range-track {
-  height: 6px;
-  border-radius: 999px;
-  background: var(--burn-track);
-  border: 1px solid var(--burn-track);
-}
-
-:global(:root[data-theme='light']) .burn-range::-moz-range-track {
-  background: #cbd5df;
-  border-color: #cbd5df;
-}
-
-.burn-range::-moz-range-progress {
-  height: 6px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, #087ed7, #2aa3f0);
-}
-
-.burn-range::-moz-range-thumb {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: #087ed7;
-  border: 2px solid #ffffff;
-  box-shadow: 0 2px 8px rgba(8, 126, 215, 0.35);
-}
-
-.burn-labels {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 2px;
+.burn-legacy {
+  display: block;
+  margin-top: 8px;
   color: var(--pulse-text-secondary);
-  font-size: 10px;
-  text-align: center;
-}
-
-.burn-labels span:first-child {
-  text-align: left;
-}
-
-.burn-labels span:last-child {
-  text-align: right;
+  font-size: 12px;
 }
 
 .chevron {

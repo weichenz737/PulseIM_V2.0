@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="light">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
@@ -8,40 +8,22 @@
       content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content"
     />
     <meta name="format-detection" content="telephone=no, email=no, address=no" />
-    <meta name="theme-color" content="#121317" />
+    <meta name="theme-color" content="#f7faff" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block" />
     <title>Pulse 脉冲</title>
-    <script>
-      // Apply the saved theme before the first WebView paint. Without this,
-      // light-theme users briefly expose the dark fallback during login and
-      // route replacement, which Android can retain as a black strip.
-      try {
-        if (localStorage.getItem('pulse_theme') === 'light') {
-          document.documentElement.dataset.theme = 'light'
-          document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '#f7faff')
-        }
-      } catch (_) {
-        // Storage can be unavailable in private/first-run WebViews.
-      }
-    </script>
     <style>
       /* 尽早禁用 iOS 长按 callout，避免首屏闪出系统菜单 */
       html {
         -webkit-text-size-adjust: 100%;
         text-size-adjust: 100%;
-        background: #121317;
+        background: #f7faff;
       }
       body,
       #app {
         min-height: 100%;
         margin: 0;
-        background: #121317;
-      }
-      html[data-theme='light'],
-      html[data-theme='light'] body,
-      html[data-theme='light'] #app {
         background: #f7faff;
       }
       html,

@@ -468,7 +468,6 @@ syncDesktopMediaToken(getDesktopToken())
 debugDesktopMedia('renderer-loaded')
 const initialRememberedLogin = getRememberedLogin()
 let lastDesktopShellBadge = -1
-const DESKTOP_THEME_STORAGE_KEY = 'pulse_desktop_theme'
 const DESKTOP_SIDEBAR_COLLAPSED_KEY = 'pulse_desktop_sidebar_collapsed'
 const DESKTOP_NOTIFICATION_DISMISSALS_KEY = 'pulse_desktop_notification_dismissals'
 const DESKTOP_ACCOUNT_SECURITY_CODE = '1234'
@@ -502,22 +501,6 @@ let desktopLocationPickerRuntime = {
   initPromise: null,
   composing: false,
   locationFallback: false,
-}
-
-function readDesktopTheme() {
-  try {
-    return localStorage.getItem(DESKTOP_THEME_STORAGE_KEY) === 'dark' ? 'dark' : 'light'
-  } catch {
-    return 'light'
-  }
-}
-
-function saveDesktopTheme(theme) {
-  try {
-    localStorage.setItem(DESKTOP_THEME_STORAGE_KEY, theme)
-  } catch {
-    /* ignore storage failures */
-  }
 }
 
 function readDesktopSidebarCollapsed() {
@@ -607,9 +590,14 @@ function syncDesktopNativeTheme(theme) {
   void window.pulseDesktop.setTheme(theme).catch(() => {})
 }
 
+try {
+  localStorage.removeItem('pulse_desktop_theme')
+} catch {
+  /* storage may be unavailable before login */
+}
+
 const state = {
   page: 'messages',
-  theme: readDesktopTheme(),
   sidebarCollapsed: readDesktopSidebarCollapsed(),
   settingsSection: 'profile',
   profileMenuOpen: false,
@@ -2768,12 +2756,25 @@ function defaultDesktopConversationSettings(conversationId) {
   return {
     conversationId: String(conversationId || ''),
     burnEnabled: false,
-    burnSeconds: 10,
+    burnSeconds: 15,
     autoDeleteEnabled: false,
     autoDeleteSeconds: 86400,
     peerAutoDeleteEnabled: false,
     peerAutoDeleteSeconds: 86400,
   }
+}
+
+const DESKTOP_BURN_SECONDS_OPTIONS = [5, 15, 30]
+
+function desktopBurnOptionsMarkup(settings, disabled) {
+  const buttons = DESKTOP_BURN_SECONDS_OPTIONS.map((seconds) => {
+    const active = settings.burnEnabled && Number(settings.burnSeconds) === seconds
+    return `<button type="button" class="desktop-burn-option ${active ? 'active' : ''}" data-chat-burn-option="${seconds}" aria-pressed="${active}" ${disabled ? 'disabled' : ''}>${seconds}S</button>`
+  }).join('')
+  const legacy = settings.burnEnabled && !DESKTOP_BURN_SECONDS_OPTIONS.includes(Number(settings.burnSeconds))
+    ? `<small class="desktop-burn-legacy">当前旧设置：${escapeHtml(desktopDurationLabel(settings.burnSeconds, 'burn'))}，请选择新的时间</small>`
+    : ''
+  return `<div class="desktop-setting-control"><div class="desktop-burn-options" role="group" aria-label="阅后即焚时间">${buttons}</div>${legacy}</div>`
 }
 
 function desktopConversationSettings(selected) {
@@ -2850,7 +2851,8 @@ async function saveDesktopBurnSetting(enabled, burnSeconds) {
   if (!selected?.id || selected.type === 'group' || state.chatSettingsSaving) return
   const id = String(selected.id)
   const current = desktopConversationSettings(selected)
-  const next = { ...current, burnEnabled: Boolean(enabled), burnSeconds: Math.min(300, Math.max(0, Number(burnSeconds) || 0)) }
+  const nextSeconds = DESKTOP_BURN_SECONDS_OPTIONS.includes(Number(burnSeconds)) ? Number(burnSeconds) : 15
+  const next = { ...current, burnEnabled: Boolean(enabled), burnSeconds: nextSeconds }
   state.conversationSettingsById[id] = next
   state.chatSettingsSaving = true
   render()
@@ -5798,8 +5800,8 @@ function render(force = false) {
   if (previousContactProfileModal instanceof HTMLElement) {
     state.contactProfileScrollTop = previousContactProfileModal.scrollTop
   }
-  document.documentElement.dataset.theme = state.theme
-  syncDesktopNativeTheme(state.theme)
+  document.documentElement.dataset.theme = 'light'
+  syncDesktopNativeTheme('light')
   if (!state.authenticated) {
     const loginChanged = writeDesktopRegion(roots.loginRoot, renderLogin(), 'login')
     const sidebarChanged = writeDesktopRegion(roots.sidebarRoot, '', 'sidebar')
@@ -11022,7 +11024,6 @@ function renderTopbar() {
     <div class="topbar-actions">
       <label class="global-search">${icon('search')}<input id="global-search" value="${escapeHtml(state.globalSearchQuery || '')}" placeholder="搜索联系人、群聊、聊天记录" /><kbd>⌘ K</kbd></label>
       <button class="top-icon-btn" data-action="notifications" aria-label="通知${notificationCount ? `，${notificationCount} 条待处理` : ''}" title="通知${notificationCount ? `，${notificationCount} 条待处理` : ''}">${icon('bell')}${notificationCount ? '<i></i>' : ''}</button>
-      <button class="top-icon-btn" data-theme-toggle aria-label="切换主题" title="切换主题">${icon(state.theme === 'light' ? 'moon' : 'sun')}</button>
       <button type="button" class="top-icon-btn top-refresh-btn${state.globalRefreshing ? ' is-refreshing' : ''}" data-action="global-refresh" aria-label="刷新数据" title="刷新当前页面数据" ${state.globalRefreshing ? 'disabled' : ''}>${icon('refresh')}</button>
       <button type="button" class="top-icon-btn top-lock-btn" data-action="lock-screen" aria-label="锁定 Pulse" title="锁定 Pulse">${icon('lock')}</button>
       <div class="profile-menu ${state.profileMenuOpen ? 'is-open' : ''}">
@@ -12212,7 +12213,7 @@ function renderDesktopChatSettingsPanel(selected) {
     ? '<div class="desktop-modal-hint">\u6b63\u5728\u52a0\u8f7d\u804a\u5929\u8bbe\u7f6e\u2026</div>'
     : `<div class="desktop-chat-settings">
         ${group ? '<div class="desktop-settings-note">\u9605\u540e\u5373\u711a\u548c\u81ea\u52a8\u5220\u9664\u8bb0\u5f55\u4ec5\u652f\u6301\u597d\u53cb\u79c1\u804a\u3002</div>' : ''}
-        <section class="desktop-chat-setting-card"><div class="desktop-chat-setting-heading"><span class="desktop-setting-icon">${icon('shield')}</span><span><strong>\u9605\u540e\u5373\u711a</strong><small>\u5bf9\u65b9\u9605\u8bfb\u6d88\u606f\u540e\u5f00\u59cb\u5012\u8ba1\u65f6\uff0c\u5230\u671f\u540e\u53cc\u65b9\u4e0d\u53ef\u89c1\u3002</small></span><label class="desktop-switch"><input type="checkbox" data-chat-burn-toggle ${settings.burnEnabled ? 'checked' : ''} ${disabled ? 'disabled' : ''} /><i></i></label></div><div class="desktop-setting-control ${settings.burnEnabled ? '' : 'is-disabled'}"><input type="range" min="0" max="300" step="1" value="${settings.burnSeconds}" data-chat-burn-range ${!settings.burnEnabled || disabled ? 'disabled' : ''} /><div><span>\u7acb\u5373\u9500\u6bc1</span><strong data-burn-label>${escapeHtml(desktopDurationLabel(settings.burnSeconds, 'burn'))}</strong><span>5\u5206\u949f</span></div></div></section>
+        <section class="desktop-chat-setting-card"><div class="desktop-chat-setting-heading"><span class="desktop-setting-icon">${icon('shield')}</span><span><strong>\u9605\u540e\u5373\u711a</strong><small>\u5bf9\u65b9\u9605\u8bfb\u6d88\u606f\u540e\u5f00\u59cb\u5012\u8ba1\u65f6\uff0c\u5230\u671f\u540e\u53cc\u65b9\u4e0d\u53ef\u89c1\u3002</small></span><label class="desktop-switch"><input type="checkbox" data-chat-burn-toggle ${settings.burnEnabled ? 'checked' : ''} ${disabled ? 'disabled' : ''} /><i></i></label></div>${desktopBurnOptionsMarkup(settings, disabled)}</section>
         <section class="desktop-chat-setting-card"><div class="desktop-chat-setting-heading"><span class="desktop-setting-icon">${icon('close')}</span><span><strong>\u81ea\u52a8\u5220\u9664\u8bb0\u5f55</strong><small>\u4ece\u6d88\u606f\u53d1\u9001\u65f6\u5f00\u59cb\u8ba1\u65f6\uff0c\u5373\u4f7f\u672a\u8bfb\u4e5f\u4f1a\u81ea\u52a8\u5220\u9664\u3002</small></span><label class="desktop-switch"><input type="checkbox" data-chat-auto-delete-toggle ${settings.autoDeleteEnabled ? 'checked' : ''} ${disabled ? 'disabled' : ''} /><i></i></label></div><label class="desktop-setting-select ${settings.autoDeleteEnabled ? '' : 'is-disabled'}"><span>\u5220\u9664\u65f6\u95f4</span><select data-chat-auto-delete-select ${!settings.autoDeleteEnabled || disabled ? 'disabled' : ''}>${autoOptionMarkup}</select></label>${settings.peerAutoDeleteEnabled ? `<div class="desktop-peer-setting">\u5bf9\u65b9\u5df2\u5f00\u542f\u81ea\u52a8\u5220\u9664\uff1a${escapeHtml(desktopDurationLabel(settings.peerAutoDeleteSeconds))}</div>` : ''}</section>
         ${state.chatSettingsError ? `<div class="login-error">${escapeHtml(state.chatSettingsError)}</div>` : ''}
       </div>`
@@ -12404,7 +12405,7 @@ function renderSettingsLegacy() {
   const profile = state.profile
   return `<section class="page page-settings ${profileEditing ? 'is-profile-editing' : ''}">
     ${pageHeading('管理你的 Pulse', '个人中心', '资料、偏好与安全设置都在这里。', `${button('编辑资料', 'edit-profile', 'secondary', 'edit')}`)}
-    <div class="settings-layout"><aside class="settings-menu"><div class="settings-profile-mini">${avatar({ initials: profile.nickname?.slice(0, 1) || '我', tone: 'blue', avatarUrl: profile.avatarUrl }, 'avatar-medium')}<div><strong>${escapeHtml(profile.nickname || '当前账户')}</strong><small>PulseID ${escapeHtml(profile.pulseId || profile.userId || '-')}</small></div>${icon('arrow')}</div><div class="settings-menu-label">账户</div><button class="settings-nav active">${icon('person')}个人资料</button><button class="settings-nav">${icon('bell')}消息通知<span class="setting-dot"></span></button><button class="settings-nav">${icon('shield')}账号与安全</button><div class="settings-menu-label">偏好</div><button class="settings-nav">${icon('sun')}外观与主题<span class="menu-value">${state.theme === 'dark' ? '深色' : '浅色'}</span></button><button class="settings-nav">${icon('chat')}聊天设置</button><button class="settings-nav">${icon('download')}存储空间</button><div class="settings-menu-label">其他</div><button class="settings-nav">${icon('help')}帮助与反馈</button></aside><div class="settings-content"><div class="settings-card profile-edit-card"><div class="settings-card-heading"><div><h2>个人资料</h2><p>这些信息会展示给你的联系人。</p></div><span class="privacy-pill">${icon('lock')} 仅联系人可见</span></div><div class="profile-edit-main">${avatar({ initials: profile.nickname?.slice(0, 1) || '我', tone: 'blue', avatarUrl: profile.avatarUrl }, 'avatar-xl')}<div><h3>${escapeHtml(profile.nickname || '当前账户')}</h3><p>${escapeHtml(profile.signature || '暂无个性签名')}</p><button class="text-button" data-action="change-avatar">更换头像 ${icon('arrow')}</button></div></div><form class="form-grid" data-profile-form><label><span>昵称</span><input name="nickname" value="${escapeHtml(profile.nickname || '')}" /></label><label><span>Pulse ID</span><input value="${escapeHtml(profile.pulseId || profile.userId || '')}" disabled /></label><label class="full"><span>个性签名</span><input name="signature" value="${escapeHtml(profile.signature || '')}" /></label><button class="btn btn-primary" type="submit">保存资料 ${icon('check')}</button></form></div><div class="settings-card session-card"><div class="settings-card-heading"><div><h2>已登录设备</h2><p>你可以在这里查看最近的登录设备。</p></div><span class="safe-label">${icon('shield')} 账户安全</span></div><div class="device-row"><span class="device-icon">${icon('grid')}</span><span><strong>Windows 客户端 · 本设备</strong><small>本地桌面 · 刚刚活跃</small></span><i class="device-current">当前设备</i><button>${icon('more')}</button></div><div class="device-row"><span class="device-icon">${icon('person')}</span><span><strong>其他设备</strong><small>由移动端同步的登录会话</small></span><button>${icon('more')}</button></div></div><button class="logout-button" data-action="logout">退出当前账户</button></div></div>
+    <div class="settings-layout"><aside class="settings-menu"><div class="settings-profile-mini">${avatar({ initials: profile.nickname?.slice(0, 1) || '我', tone: 'blue', avatarUrl: profile.avatarUrl }, 'avatar-medium')}<div><strong>${escapeHtml(profile.nickname || '当前账户')}</strong><small>PulseID ${escapeHtml(profile.pulseId || profile.userId || '-')}</small></div>${icon('arrow')}</div><div class="settings-menu-label">账户</div><button class="settings-nav active">${icon('person')}个人资料</button><button class="settings-nav">${icon('bell')}消息通知<span class="setting-dot"></span></button><button class="settings-nav">${icon('shield')}账号与安全</button><div class="settings-menu-label">偏好</div><button class="settings-nav">${icon('chat')}聊天设置</button><button class="settings-nav">${icon('download')}存储空间</button><div class="settings-menu-label">其他</div><button class="settings-nav">${icon('help')}帮助与反馈</button></aside><div class="settings-content"><div class="settings-card profile-edit-card"><div class="settings-card-heading"><div><h2>个人资料</h2><p>这些信息会展示给你的联系人。</p></div><span class="privacy-pill">${icon('lock')} 仅联系人可见</span></div><div class="profile-edit-main">${avatar({ initials: profile.nickname?.slice(0, 1) || '我', tone: 'blue', avatarUrl: profile.avatarUrl }, 'avatar-xl')}<div><h3>${escapeHtml(profile.nickname || '当前账户')}</h3><p>${escapeHtml(profile.signature || '暂无个性签名')}</p><button class="text-button" data-action="change-avatar">更换头像 ${icon('arrow')}</button></div></div><form class="form-grid" data-profile-form><label><span>昵称</span><input name="nickname" value="${escapeHtml(profile.nickname || '')}" /></label><label><span>Pulse ID</span><input value="${escapeHtml(profile.pulseId || profile.userId || '')}" disabled /></label><label class="full"><span>个性签名</span><input name="signature" value="${escapeHtml(profile.signature || '')}" /></label><button class="btn btn-primary" type="submit">保存资料 ${icon('check')}</button></form></div><div class="settings-card session-card"><div class="settings-card-heading"><div><h2>已登录设备</h2><p>你可以在这里查看最近的登录设备。</p></div><span class="safe-label">${icon('shield')} 账户安全</span></div><div class="device-row"><span class="device-icon">${icon('grid')}</span><span><strong>Windows 客户端 · 本设备</strong><small>本地桌面 · 刚刚活跃</small></span><i class="device-current">当前设备</i><button>${icon('more')}</button></div><div class="device-row"><span class="device-icon">${icon('person')}</span><span><strong>其他设备</strong><small>由移动端同步的登录会话</small></span><button>${icon('more')}</button></div></div><button class="logout-button" data-action="logout">退出当前账户</button></div></div>
   </section>`
 }
 
@@ -12508,7 +12509,6 @@ function renderSettings() {
         <button type="button" class="settings-nav" data-action="notifications">${icon('bell')}\u6d88\u606f\u901a\u77e5<span class="setting-dot"></span></button>
         <button type="button" class="settings-nav ${state.settingsSection === 'account-security' ? 'active' : ''}" data-action="account-security">${icon('shield')}\u8d26\u53f7\u4e0e\u5b89\u5168</button>
         <div class="settings-menu-label">\u504f\u597d</div>
-        <button type="button" class="settings-nav" data-action="toggle-theme">${icon('sun')}\u5916\u89c2\u4e0e\u4e3b\u9898<span class="menu-value">${state.theme === 'dark' ? '\u6df1\u8272' : '\u6d45\u8272'}</span></button>
         ${isDesktopWalletEnabled() ? `<button type="button" class="settings-nav" data-page="wallet">${icon('money')}我的钱包</button>` : ''}
         <button type="button" class="settings-nav" data-settings-section="friend-permission">${icon('group')}朋友权限</button>
         <button type="button" class="settings-nav ${state.settingsSection === 'storage' ? 'active' : ''}" data-action="storage">${icon('download')}\u5b58\u50a8\u7a7a\u95f4</button>
@@ -13420,7 +13420,7 @@ function renderChatSettingsModal() {
     ? '<div class="desktop-modal-hint">正在加载聊天设置…</div>'
     : `<div class="desktop-chat-settings">
         ${group ? '<div class="desktop-settings-note">阅后即焚和自动删除记录仅支持好友私聊。</div>' : ''}
-        <section class="desktop-chat-setting-card"><div class="desktop-chat-setting-heading"><span class="desktop-setting-icon">${icon('shield')}</span><span><strong>阅后即焚</strong><small>对方阅读消息后开始倒计时，到期后双方不可见。</small></span><label class="desktop-switch"><input type="checkbox" data-chat-burn-toggle ${settings.burnEnabled ? 'checked' : ''} ${disabled ? 'disabled' : ''} /><i></i></label></div><div class="desktop-setting-control ${settings.burnEnabled ? '' : 'is-disabled'}"><input type="range" min="0" max="300" step="1" value="${settings.burnSeconds}" data-chat-burn-range ${!settings.burnEnabled || disabled ? 'disabled' : ''} /><div><span>立即销毁</span><strong data-burn-label>${escapeHtml(desktopDurationLabel(settings.burnSeconds, 'burn'))}</strong><span>5分钟</span></div></div></section>
+        <section class="desktop-chat-setting-card"><div class="desktop-chat-setting-heading"><span class="desktop-setting-icon">${icon('shield')}</span><span><strong>阅后即焚</strong><small>对方阅读消息后开始倒计时，到期后双方不可见。</small></span><label class="desktop-switch"><input type="checkbox" data-chat-burn-toggle ${settings.burnEnabled ? 'checked' : ''} ${disabled ? 'disabled' : ''} /><i></i></label></div>${desktopBurnOptionsMarkup(settings, disabled)}</section>
         <section class="desktop-chat-setting-card"><div class="desktop-chat-setting-heading"><span class="desktop-setting-icon">${icon('close')}</span><span><strong>自动删除记录</strong><small>从消息发送时开始计时，即使未读也会自动删除。</small></span><label class="desktop-switch"><input type="checkbox" data-chat-auto-delete-toggle ${settings.autoDeleteEnabled ? 'checked' : ''} ${disabled ? 'disabled' : ''} /><i></i></label></div><label class="desktop-setting-select ${settings.autoDeleteEnabled ? '' : 'is-disabled'}"><span>删除时间</span><select data-chat-auto-delete-select ${!settings.autoDeleteEnabled || disabled ? 'disabled' : ''}>${autoOptionMarkup}</select></label>${settings.peerAutoDeleteEnabled ? `<div class="desktop-peer-setting">对方已开启自动删除：${escapeHtml(desktopDurationLabel(settings.peerAutoDeleteSeconds))}</div>` : ''}</section>
         ${state.chatSettingsError ? `<div class="login-error">${escapeHtml(state.chatSettingsError)}</div>` : ''}
       </div>`
@@ -15509,17 +15509,11 @@ function bindEvents() {
 
   document.querySelector('[data-chat-burn-toggle]')?.addEventListener('change', (event) => {
     const settings = desktopConversationSettings(conversations[state.selectedConversation])
-    const range = document.querySelector('[data-chat-burn-range]')
-    void saveDesktopBurnSetting(event.currentTarget.checked, Number(range?.value || settings.burnSeconds))
+    void saveDesktopBurnSetting(event.currentTarget.checked, settings.burnSeconds)
   })
-  document.querySelector('[data-chat-burn-range]')?.addEventListener('input', (event) => {
-    const label = document.querySelector('[data-burn-label]')
-    if (label) label.textContent = desktopDurationLabel(Number(event.currentTarget.value || 0), 'burn')
-  })
-  document.querySelector('[data-chat-burn-range]')?.addEventListener('change', (event) => {
-    const settings = desktopConversationSettings(conversations[state.selectedConversation])
-    void saveDesktopBurnSetting(true, Number(event.currentTarget.value || settings.burnSeconds))
-  })
+  document.querySelectorAll('[data-chat-burn-option]').forEach((button) => button.addEventListener('click', () => {
+    void saveDesktopBurnSetting(true, Number(button.dataset.chatBurnOption))
+  }))
   document.querySelector('[data-chat-auto-delete-toggle]')?.addEventListener('change', (event) => {
     const select = document.querySelector('[data-chat-auto-delete-select]')
     void saveDesktopAutoDeleteSetting(event.currentTarget.checked, Number(select?.value || 86400))
@@ -16082,11 +16076,6 @@ function bindEvents() {
     state.conversationFilter = element.dataset.filter
     render()
   }))
-  document.querySelector('[data-theme-toggle]')?.addEventListener('click', () => {
-    state.theme = state.theme === 'light' ? 'dark' : 'light'
-    saveDesktopTheme(state.theme)
-    render()
-  })
   document.querySelector('#conversation-search')?.addEventListener('input', (event) => {
     state.contactQuery = event.target.value
     const cursor = event.target.selectionStart
@@ -16954,12 +16943,6 @@ function bindEvents() {
     }
     if (action === 'change-avatar') {
       openDesktopAvatarPicker()
-      return
-    }
-    if (action === 'toggle-theme') {
-      state.theme = state.theme === 'light' ? 'dark' : 'light'
-      saveDesktopTheme(state.theme)
-      render()
       return
     }
     if (action === 'toggle-profile-menu') {

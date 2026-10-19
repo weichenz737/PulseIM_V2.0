@@ -18,7 +18,6 @@ import {
   type ConversationItem,
 } from '@/api/conversation'
 import { useUserStore } from '@/stores/user'
-import { usePreferenceStore } from '@/stores/preference'
 import { useConversationInboxStore } from '@/stores/conversationInbox'
 import { fetchUserProfile } from '@/api/contact'
 import { resolveAvatarUrl } from '@/api/file'
@@ -38,7 +37,6 @@ type FilterType = 'all' | 'personal' | 'group' | 'archive'
 
 const router = useRouter()
 const userStore = useUserStore()
-const preferenceStore = usePreferenceStore()
 const lockScreen = useLockScreenStore()
 const inbox = useConversationInboxStore()
 const conversations = ref<ConversationItem[]>([])
@@ -163,22 +161,6 @@ const pullMinHeight = ref(0)
 const activeFilter = ref<FilterType>('all')
 const editMode = ref(false)
 const selectedIds = ref<Set<string>>(new Set())
-const fabRef = ref<HTMLButtonElement | null>(null)
-const fabPosition = ref<{ x: number; y: number } | null>(null)
-const fabDragging = ref(false)
-const fabHidden = ref(false)
-const fabExpandedPosition = ref<{ x: number; y: number } | null>(null)
-let fabPointerId: number | null = null
-let fabStartX = 0
-let fabStartY = 0
-let fabOriginX = 0
-let fabOriginY = 0
-let fabMoved = false
-let fabHideTimer: ReturnType<typeof setTimeout> | null = null
-const FAB_POSITION_KEY = 'pulse:messages-fab-position'
-// Leave a compact but still reachable handle; 34px tucks the button slightly
-// farther into the right edge without falling into Android's back-gesture zone.
-const FAB_HIDDEN_HANDLE_WIDTH = 34
 let pollTimer: ReturnType<typeof setInterval> | null = null
 let reloadTimer: ReturnType<typeof setTimeout> | null = null
 let pullResizeObserver: ResizeObserver | null = null
@@ -193,146 +175,6 @@ function syncPullMinHeight() {
   const el = scrollBodyRef.value
   if (!el) return
   pullMinHeight.value = el.clientHeight
-}
-
-function clampFabPosition(x: number, y: number) {
-  const size = fabRef.value?.offsetWidth || 56
-  const edge = 8
-  const maxX = Math.max(edge, window.innerWidth - size - edge)
-  const maxY = Math.max(edge, window.innerHeight - size - 88)
-  return {
-    x: Math.min(maxX, Math.max(edge, x)),
-    y: Math.min(maxY, Math.max(edge, y)),
-  }
-}
-
-function restoreFabPosition() {
-  try {
-    const raw = localStorage.getItem(FAB_POSITION_KEY)
-    if (!raw) return
-    const saved = JSON.parse(raw) as { x?: number; y?: number }
-    if (Number.isFinite(saved.x) && Number.isFinite(saved.y)) {
-      fabPosition.value = clampFabPosition(Number(saved.x), Number(saved.y))
-    }
-  } catch {
-    /* ignore invalid saved position */
-  }
-}
-
-function keepFabInViewport() {
-  if (!fabPosition.value) return
-  if (fabHidden.value) {
-    fabPosition.value = {
-      x: window.innerWidth - FAB_HIDDEN_HANDLE_WIDTH,
-      y: Math.min(window.innerHeight - 72, Math.max(8, fabPosition.value.y)),
-    }
-    return
-  }
-  fabPosition.value = clampFabPosition(fabPosition.value.x, fabPosition.value.y)
-}
-
-function clearFabHideTimer() {
-  if (fabHideTimer) {
-    clearTimeout(fabHideTimer)
-    fabHideTimer = null
-  }
-}
-
-function hideFab() {
-  if (fabHidden.value || editMode.value) return
-  const rect = fabRef.value?.getBoundingClientRect()
-  if (!rect) return
-  fabExpandedPosition.value = { x: rect.left, y: rect.top }
-  fabPosition.value = { x: window.innerWidth - FAB_HIDDEN_HANDLE_WIDTH, y: rect.top }
-  fabHidden.value = true
-}
-
-function scheduleFabHide() {
-  clearFabHideTimer()
-  if (editMode.value || fabHidden.value) return
-  fabHideTimer = setTimeout(hideFab, 3000)
-}
-
-function revealFab() {
-  if (!fabHidden.value) {
-    scheduleFabHide()
-    return
-  }
-  fabHidden.value = false
-  fabPosition.value = clampFabPosition(
-    fabExpandedPosition.value?.x ?? window.innerWidth - 80,
-    fabExpandedPosition.value?.y ?? window.innerHeight - 180,
-  )
-  scheduleFabHide()
-}
-
-function onFabPointerDown(event: PointerEvent) {
-  if (event.button !== 0 && event.pointerType === 'mouse') return
-  const rect = fabRef.value?.getBoundingClientRect()
-  if (!rect) return
-  fabPointerId = event.pointerId
-  fabStartX = event.clientX
-  fabStartY = event.clientY
-  fabOriginX = rect.left
-  fabOriginY = rect.top
-  fabMoved = false
-  fabRef.value?.setPointerCapture(event.pointerId)
-}
-
-function onFabPointerMove(event: PointerEvent) {
-  if (fabPointerId !== event.pointerId) return
-  const dx = event.clientX - fabStartX
-  const dy = event.clientY - fabStartY
-  if (fabHidden.value) {
-    if (dx < -8) {
-      fabMoved = true
-      revealFab()
-    }
-    return
-  }
-  if (!fabMoved && Math.hypot(dx, dy) < 5) return
-  fabMoved = true
-  fabDragging.value = true
-  fabPosition.value = clampFabPosition(fabOriginX + dx, fabOriginY + dy)
-}
-
-function onFabPointerEnd(event: PointerEvent) {
-  if (fabPointerId !== event.pointerId) return
-  fabRef.value?.releasePointerCapture(event.pointerId)
-  fabPointerId = null
-  fabDragging.value = false
-  if (fabMoved && fabPosition.value) {
-    const size = fabRef.value?.offsetWidth || 56
-    // 拖到屏幕右侧边缘时，收纳进右侧边栏把手
-    const nearRight = fabPosition.value.x >= window.innerWidth - size - 48
-    if (nearRight && !fabHidden.value) {
-      fabExpandedPosition.value = clampFabPosition(
-        window.innerWidth - size - 24,
-        fabPosition.value.y,
-      )
-      fabPosition.value = {
-        x: window.innerWidth - FAB_HIDDEN_HANDLE_WIDTH,
-        y: Math.min(window.innerHeight - 72, Math.max(8, fabPosition.value.y)),
-      }
-      fabHidden.value = true
-      localStorage.setItem(FAB_POSITION_KEY, JSON.stringify(fabExpandedPosition.value))
-      return
-    }
-    localStorage.setItem(FAB_POSITION_KEY, JSON.stringify(fabPosition.value))
-  }
-  scheduleFabHide()
-}
-
-function onFabClick() {
-  if (fabHidden.value) {
-    revealFab()
-    return
-  }
-  if (fabMoved) {
-    fabMoved = false
-    return
-  }
-  toggleEditMode()
 }
 
 /** 左滑单元格实例，点操作后立即收起 */
@@ -825,7 +667,6 @@ onMounted(() => {
   window.addEventListener('pulse:presence', onPresence)
   window.addEventListener('pulse:conversation-read', onConversationRead)
   window.addEventListener('pulse:native-back', onNativeBack)
-  window.addEventListener('resize', keepFabInViewport)
   inbox.startWsBridge()
   void fetchUserProfile()
     .then((me) => {
@@ -847,8 +688,6 @@ onMounted(() => {
   }
   startPoll()
   nextTick(() => {
-    restoreFabPosition()
-    scheduleFabHide()
     syncPullMinHeight()
     if (scrollBodyRef.value && typeof ResizeObserver !== 'undefined') {
       pullResizeObserver = new ResizeObserver(() => syncPullMinHeight())
@@ -865,13 +704,11 @@ onActivated(() => {
   startPoll()
   nextTick(() => {
     syncPullMinHeight()
-    scheduleFabHide()
   })
 })
 
 onDeactivated(() => {
   stopPoll()
-  clearFabHideTimer()
 })
 
 onUnmounted(() => {
@@ -880,9 +717,7 @@ onUnmounted(() => {
   window.removeEventListener('pulse:presence', onPresence)
   window.removeEventListener('pulse:conversation-read', onConversationRead)
   window.removeEventListener('pulse:native-back', onNativeBack)
-  window.removeEventListener('resize', keepFabInViewport)
   stopPoll()
-  clearFabHideTimer()
   clearLongPressTimer()
   pullResizeObserver?.disconnect()
   pullResizeObserver = null
@@ -911,20 +746,10 @@ function openChat(item: ConversationItem) {
   })
 }
 
-function toggleEditMode() {
-  editMode.value = !editMode.value
-  selectedIds.value = new Set()
-  closeMoreMenu()
-  if (!editMode.value) {
-    restartFabAutoHide()
-  }
-}
-
 function exitEditMode() {
   editMode.value = false
   selectedIds.value = new Set()
   closeMoreMenu()
-  restartFabAutoHide()
 }
 
 function onNativeBack(event: Event) {
@@ -942,14 +767,6 @@ function onNativeBack(event: Event) {
     exitEditMode()
     event.preventDefault()
   }
-}
-
-function restartFabAutoHide() {
-  clearFabHideTimer()
-  fabHidden.value = false
-  nextTick(() => {
-    if (!editMode.value) scheduleFabHide()
-  })
 }
 
 function enterEditModeWith(item: ConversationItem) {
@@ -1251,22 +1068,6 @@ function goSearch() {
   router.push('/search')
 }
 
-async function onThemeToggle() {
-  const nextTheme = preferenceStore.isLightTheme ? 'dark' : 'light'
-  const label = nextTheme === 'light' ? '白日模式' : '夜间模式'
-  try {
-    await showConfirmDialog({
-      title: `切换为${label}`,
-      message: `确认切换为${label}吗？`,
-      cancelButtonText: '取消',
-      confirmButtonText: '确认切换',
-    })
-    preferenceStore.setTheme(nextTheme)
-  } catch {
-    /* cancelled */
-  }
-}
-
 function setFilter(key: FilterType) {
   activeFilter.value = key
   selectedIds.value = new Set()
@@ -1308,16 +1109,6 @@ function setFilter(key: FilterType) {
           </svg>
           <span class="search-placeholder">搜索</span>
         </div>
-        <button
-          type="button"
-          class="theme-btn"
-          :aria-label="preferenceStore.isLightTheme ? '切换为夜间模式' : '切换为白日模式'"
-          @click.stop="onThemeToggle"
-        >
-          <span class="material-symbols-outlined">
-            {{ preferenceStore.isLightTheme ? 'dark_mode' : 'light_mode' }}
-          </span>
-        </button>
         <div class="more-wrap" @click.stop>
           <button type="button" class="more-btn" aria-label="更多" @click.stop="onMore">
             <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
@@ -1513,23 +1304,6 @@ function setFilter(key: FilterType) {
       </button>
     </div>
 
-    <button
-      v-else
-      ref="fabRef"
-      type="button"
-      class="fab"
-      :class="{ dragging: fabDragging, hidden: fabHidden }"
-      :style="fabPosition ? { left: `${fabPosition.x}px`, top: `${fabPosition.y}px`, right: 'auto', bottom: 'auto' } : undefined"
-      aria-label="编辑"
-      @click.stop="onFabClick"
-      @pointerdown.stop="onFabPointerDown"
-      @pointermove.stop.prevent="onFabPointerMove"
-      @pointerup.stop="onFabPointerEnd"
-      @pointercancel.stop="onFabPointerEnd"
-    >
-      <span class="material-symbols-outlined fab-icon">edit</span>
-    </button>
-
     <van-popup
       v-model:show="showDesktopSessions"
       position="bottom"
@@ -1709,31 +1483,6 @@ function setFilter(key: FilterType) {
   background: var(--pulse-surface-high);
   border: 1px solid rgba(65, 71, 85, 0.35);
   cursor: pointer;
-}
-
-.theme-btn {
-  width: 40px;
-  height: 40px;
-  padding: 0;
-  flex-shrink: 0;
-  border: none;
-  border-radius: 50%;
-  background: transparent;
-  color: var(--pulse-text-secondary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.theme-btn:active {
-  background: var(--pulse-pressed);
-  transform: scale(0.95);
-}
-
-.theme-btn .material-symbols-outlined {
-  font-size: 22px;
 }
 
 .search-ico {
@@ -2500,83 +2249,6 @@ function setFilter(key: FilterType) {
   color: #ff5447;
 }
 
-.fab {
-  position: fixed;
-  right: 24px;
-  bottom: calc(96px + env(safe-area-inset-bottom, 0px));
-  width: 56px;
-  height: 56px;
-  border: none;
-  border-radius: 16px;
-  background: #273346;
-  color: #c4d6ff;
-  border: 1px solid rgba(173, 198, 255, 0.14);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.26);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  z-index: 50;
-  touch-action: none;
-  user-select: none;
-  transition:
-    left 0.28s cubic-bezier(0.2, 0.75, 0.2, 1),
-    transform 0.12s ease,
-    box-shadow 0.12s ease,
-    opacity 0.2s ease;
-}
-
-:root[data-theme='light'] .fab {
-  border-color: transparent;
-  background: var(--pulse-primary);
-  color: var(--pulse-on-primary);
-  box-shadow: 0 10px 24px rgba(39, 72, 102, 0.2);
-}
-
-.fab:active {
-  transform: scale(0.9);
-}
-
-.fab.dragging {
-  transform: scale(1.05);
-  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.42);
-}
-
-.fab.hidden {
-  opacity: 0.82;
-  border-radius: 16px 0 0 16px;
-  box-shadow: -4px 6px 16px rgba(0, 0, 0, 0.2);
-}
-
-.fab.hidden .fab-icon {
-  opacity: 0;
-}
-
-.fab.hidden::before {
-  content: '‹';
-  position: absolute;
-  left: 0;
-  display: grid;
-  place-items: center;
-  width: 38px;
-  height: 100%;
-  color: currentColor;
-  font-size: 30px;
-  font-weight: 500;
-  line-height: 1;
-  opacity: 0.9;
-}
-
-.fab-icon {
-  font-size: 24px;
-  font-variation-settings: 'FILL' 1;
-}
-
-.fab-text {
-  font-size: 14px;
-  font-weight: 700;
-}
-
 .loading-state,
 .empty-state {
   text-align: center;
@@ -2604,11 +2276,6 @@ function setFilter(key: FilterType) {
 
 :root[data-theme='light'] .top-bar .page-title {
   color: #fff;
-}
-
-:root[data-theme='light'] .top-bar .theme-btn {
-  /* 与“我的”页主题切换按钮颜色保持一致 */
-  color: var(--pulse-text-secondary);
 }
 
 :root[data-theme='light'] .top-bar .desktop-session-btn {

@@ -23,7 +23,6 @@ const PROTECTED_KEYS = new Set([
   'pulse_user_profile',
   'pulse_remember_login',
   'pulse_font_size',
-  'pulse_theme',
   'pulse_device_id',
   'pulse_chat_font_size',
   'pulse_saved_accounts',

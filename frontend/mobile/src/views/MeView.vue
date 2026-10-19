@@ -3,7 +3,6 @@ import { computed, nextTick, onActivated, onBeforeUnmount, onDeactivated, onMoun
 import { onBeforeRouteLeave, useRouter } from 'vue-router'
 import { showConfirmDialog, showToast } from 'vant'
 import { useUserStore } from '@/stores/user'
-import { usePreferenceStore } from '@/stores/preference'
 import { fetchUserProfile } from '@/api/contact'
 import { userQrPayload } from '@/utils/qrcode'
 import { isNativeApp, nativeClipboard } from '@/native'
@@ -13,7 +12,6 @@ import UserAvatar from '@/components/UserAvatar.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
-const preferenceStore = usePreferenceStore()
 const previewVisible = ref(false)
 const refreshing = ref(false)
 const mePageRef = ref<HTMLElement | null>(null)
@@ -273,22 +271,6 @@ function goSwitchAccount() {
   router.push('/account/switch')
 }
 
-async function onThemeToggle() {
-  const nextTheme = preferenceStore.isLightTheme ? 'dark' : 'light'
-  const label = nextTheme === 'light' ? '白日模式' : '夜间模式'
-  try {
-    await showConfirmDialog({
-      title: `切换为${label}`,
-      message: `确认切换为${label}吗？`,
-      cancelButtonText: '取消',
-      confirmButtonText: '确认切换',
-    })
-    preferenceStore.setTheme(nextTheme)
-  } catch {
-    /* cancelled */
-  }
-}
-
 async function handleLogout() {
   try {
     await showConfirmDialog({
@@ -309,14 +291,6 @@ async function handleLogout() {
   <div ref="mePageRef" class="me-page">
     <header class="page-header tab-home-header">
       <h1 class="page-title">我的</h1>
-      <button
-        type="button"
-        class="theme-btn"
-        :aria-label="preferenceStore.isLightTheme ? '切换为夜间模式' : '切换为白日模式'"
-        @click="onThemeToggle"
-      >
-        <span class="material-symbols-outlined">{{ preferenceStore.isLightTheme ? 'dark_mode' : 'light_mode' }}</span>
-      </button>
     </header>
 
     <main class="main-content">
@@ -481,31 +455,6 @@ async function handleLogout() {
   font-size: calc(var(--pulse-content-font-size, 15px) + 3px);
   font-weight: 600;
   color: var(--pulse-text);
-}
-
-.theme-btn {
-  width: 40px;
-  height: 40px;
-  margin-left: auto;
-  flex-shrink: 0;
-  border: none;
-  background: transparent;
-  color: var(--pulse-text-secondary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  border-radius: 50%;
-  position: relative;
-  z-index: 2;
-}
-
-.theme-btn:active {
-  background: var(--pulse-pressed);
-}
-
-.theme-btn .material-symbols-outlined {
-  font-size: 22px;
 }
 
 .main-content {

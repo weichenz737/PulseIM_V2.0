@@ -393,12 +393,6 @@ button {
   color: #087ed7 !important;
 }
 
-:root[data-theme='light'] .me-page .theme-btn {
-  color: #087ed7 !important;
-  position: relative !important;
-  z-index: 3 !important;
-}
-
 /* 发红包 / 转账：金额区不要套全局浅蓝输入底 */
 :root[data-theme='light'] .pay-page .amount {
   background: #ffffff !important;
@@ -770,71 +764,6 @@ button {
   background: rgba(0, 122, 255, 0.06) !important;
 }
 
-:root[data-theme='light'] .settings-page .burn-range {
-  accent-color: #087ed7 !important;
-  background:
-    radial-gradient(circle, #2aa3f0 0 3px, transparent 3.2px) left center / 6px 6px no-repeat,
-    linear-gradient(#2aa3f0, #2aa3f0) 3px center / 9px 6px no-repeat,
-    radial-gradient(circle, #cbd5df 0 3px, transparent 3.2px) right center / 6px 6px no-repeat,
-    linear-gradient(
-      90deg,
-      #2aa3f0 0%,
-      #2aa3f0 var(--burn-progress, 0%),
-      transparent var(--burn-progress, 0%),
-      transparent 100%
-    ) center / calc(100% - 18px) 6px no-repeat,
-    linear-gradient(#cbd5df, #cbd5df) center / calc(100% - 6px) 6px no-repeat !important;
-}
-
-:root[data-theme='light'] .settings-page .burn-range::-webkit-slider-runnable-track {
-  background: transparent !important;
-  border-color: transparent !important;
-}
-
-:root[data-theme='light'] .settings-page .burn-range::-webkit-slider-thumb {
-  background: #087ed7 !important;
-  border-color: #ffffff !important;
-}
-
-:root[data-theme='light'] .settings-page .burn-range::-moz-range-track {
-  background: #cbd5df !important;
-  border-color: #cbd5df !important;
-}
-
-:root[data-theme='light'] .settings-page .burn-range::-moz-range-progress {
-  background: linear-gradient(90deg, #087ed7, #2aa3f0) !important;
-}
-
-:root[data-theme='light'] .settings-page .burn-range::-moz-range-thumb {
-  background: #087ed7 !important;
-  border-color: #ffffff !important;
-}
-
-:root[data-theme='dark'] .settings-page .burn-range {
-  background:
-    radial-gradient(circle, #2aa3f0 0 3px, transparent 3.2px) left center / 6px 6px no-repeat,
-    linear-gradient(#2aa3f0, #2aa3f0) 3px center / 9px 6px no-repeat,
-    radial-gradient(circle, #343539 0 3px, transparent 3.2px) right center / 6px 6px no-repeat,
-    linear-gradient(
-      90deg,
-      #2aa3f0 0%,
-      #2aa3f0 var(--burn-progress, 0%),
-      transparent var(--burn-progress, 0%),
-      transparent 100%
-    ) center / calc(100% - 18px) 6px no-repeat,
-    linear-gradient(#343539, #343539) center / calc(100% - 6px) 6px no-repeat !important;
-}
-
-:root[data-theme='dark'] .settings-page .burn-range::-webkit-slider-runnable-track {
-  background: transparent !important;
-  border-color: transparent !important;
-}
-
-:root[data-theme='dark'] .settings-page .burn-range::-moz-range-track {
-  background: #343539 !important;
-  border-color: rgba(139, 144, 160, 0.35) !important;
-}
-
 :root[data-theme='light'] .messages-page .top-bar {
   color: #14243a !important;
   /* 透出页面统一渐变，避免顶部单独一段渐变；去掉分类标签上方的横线 */
@@ -959,7 +888,7 @@ button {
 }
 
 :root[data-theme='light'] :is(.discover-page, .me-page, .contacts-page) .page-header.tab-home-header
-  :is(.page-title, .theme-btn) {
+  .page-title {
   color: #087ed7 !important;
 }
 

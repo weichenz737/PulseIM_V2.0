@@ -1,15 +1,11 @@
 <script setup lang="ts">
 defineOptions({ name: 'GeneralSettingsView' })
-import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { showConfirmDialog, showToast } from 'vant'
 import { smartBack } from '@/utils/navBack'
 import { usePreferenceStore } from '@/stores/preference'
 
 const router = useRouter()
 const pref = usePreferenceStore()
-
-const themeLabel = computed(() => (pref.isLightTheme ? '白日模式' : '夜间模式'))
 
 function goBack() {
   smartBack(router)
@@ -23,21 +19,6 @@ function goRingtone() {
   void router.push('/settings/ringtone')
 }
 
-async function toggleTheme() {
-  const nextLight = !pref.isLightTheme
-  const nextLabel = nextLight ? '白日模式' : '夜间模式'
-  try {
-    await showConfirmDialog({
-      title: '切换主题',
-      message: `确定切换为${nextLabel}？`,
-      confirmButtonText: '切换',
-    })
-  } catch {
-    return
-  }
-  pref.setTheme(nextLight ? 'light' : 'dark')
-  showToast(`已切换为${nextLabel}`)
-}
 </script>
 
 <template>
@@ -79,21 +60,6 @@ async function toggleTheme() {
           </div>
         </button>
 
-        <button type="button" class="menu-row" @click="toggleTheme">
-          <div class="menu-left">
-            <span class="material-symbols-outlined menu-ico">
-              {{ pref.isLightTheme ? 'dark_mode' : 'light_mode' }}
-            </span>
-            <div class="menu-text">
-              <div class="menu-title">主题切换</div>
-              <div class="menu-desc">当前：{{ themeLabel }}</div>
-            </div>
-          </div>
-          <div class="menu-right">
-            <span class="menu-extra">{{ pref.isLightTheme ? '切换夜间' : '切换白日' }}</span>
-            <span class="material-symbols-outlined chevron">chevron_right</span>
-          </div>
-        </button>
       </section>
     </main>
   </div>
