@@ -32,6 +32,9 @@ public class ImMessageService {
     private final ImProperties properties;
     private final SensitiveWordService sensitiveWordService;
     private final TransactionTemplate transactionTemplate;
+    private final ImMessageExpiryPolicy expiryPolicy;
+
+    public record EnqueuedMessage(String msgId, ImMessageExpiryPolicy.Snapshot expiry) {}
 
     public void markOnline(Long userId, String channelId) {
         markOnline(userId, null, channelId);
@@ -180,7 +183,7 @@ public class ImMessageService {
      * 3) 消息入 Redis Stream 后立即返回 msgId（由调用方回 ACK 并推送）；
      * 4) Redis Stream 不可用时回退到同步落库，保证消息不丢。
      */
-    public String enqueueMessage(Long fromUserId, long conversationId, long toUserId,
+    public EnqueuedMessage enqueueMessage(Long fromUserId, long conversationId, long toUserId,
                                   int msgType, String content, String clientMsgId) {
         return enqueueMessage(fromUserId, conversationId, toUserId, msgType, content, clientMsgId,
                 "", List.of(), false);
@@ -190,7 +193,7 @@ public class ImMessageService {
      * Metadata-only WebSocket enqueue with the same reply/mention semantics as
      * the HTTP message endpoint. Attachment bytes never enter this payload.
      */
-    public String enqueueMessage(Long fromUserId, long conversationId, long toUserId,
+    public EnqueuedMessage enqueueMessage(Long fromUserId, long conversationId, long toUserId,
                                   int msgType, String content, String clientMsgId,
                                   String replyToMsgId, List<Long> mentionUserIds, boolean atAll) {
         validateMessage(fromUserId, conversationId, toUserId, msgType, content);
@@ -239,6 +242,8 @@ public class ImMessageService {
         }
 
         String msgId = UUID.randomUUID().toString().replace("-", "");
+        ImMessageExpiryPolicy.Snapshot expiry = expiryPolicy.resolve(
+                fromUserId, conversationId, msgType, OffsetDateTime.now());
         Map<String, Object> fields = new HashMap<>();
         fields.put("msgId", msgId);
         fields.put("conversationId", String.valueOf(conversationId));
@@ -252,6 +257,9 @@ public class ImMessageService {
         fields.put("mentionUserIds", joinIds(normalizedMentions));
         fields.put("atAll", String.valueOf(useAtAll));
         fields.put("sendTime", String.valueOf(System.currentTimeMillis()));
+        fields.put("burnAfterRead", String.valueOf(expiry.burnAfterRead()));
+        fields.put("burnSeconds", expiry.burnSeconds() == null ? "" : String.valueOf(expiry.burnSeconds()));
+        fields.put("autoDeleteExpiresAt", expiry.autoDeleteExpiresAt() == null ? "" : expiry.autoDeleteExpiresAt().toString());
         try {
             // 近似 MAXLEN 增量裁剪，避免大批量精确 XTRIM 阻塞 Redis 单线程
             redis.execute((RedisConnection c) -> {
@@ -265,11 +273,11 @@ public class ImMessageService {
                         RedisStreamCommands.XAddOptions.maxlen(100_000).approximateTrimming(true));
                 return null;
             });
-            return msgId;
+            return new EnqueuedMessage(msgId, expiry);
         } catch (Exception e) {
             log.warn("IM stream enqueue failed, fallback to sync persist: {}", e.getMessage());
-            return persistSync(fromUserId, conversationId, toUserId, msgType, content, clientMsgId, msgId,
-                    normalizedReplyToMsgId, normalizedMentions, useAtAll);
+            return new EnqueuedMessage(persistSync(fromUserId, conversationId, toUserId, msgType, content, clientMsgId, msgId,
+                    normalizedReplyToMsgId, normalizedMentions, useAtAll, expiry), expiry);
         }
     }
 
@@ -278,15 +286,18 @@ public class ImMessageService {
      */
     private String persistSync(Long fromUserId, long conversationId, long toUserId,
                                int msgType, String content, String clientMsgId, String msgId,
-                               String replyToMsgId, List<Long> mentionUserIds, boolean atAll) {
+                               String replyToMsgId, List<Long> mentionUserIds, boolean atAll,
+                               ImMessageExpiryPolicy.Snapshot expiry) {
         transactionTemplate.executeWithoutResult(status -> {
             jdbcTemplate.update("""
                             INSERT INTO im_message(msg_id, conversation_id, from_user_id, msg_type, content, file_id,
-                                                    client_msg_id, reply_to_msg_id, mention_user_ids, at_all, send_time)
-                            VALUES (?,?,?,?,?,?,?,?,?,?,NOW())
+                                                    client_msg_id, reply_to_msg_id, mention_user_ids, at_all,
+                                                    burn_after_read, burn_seconds, auto_delete_expires_at, send_time)
+                            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,NOW())
                             """,
                     msgId, conversationId, fromUserId, msgType, content, fileIdFromContent(content), clientMsgId,
-                    StringUtils.hasText(replyToMsgId) ? replyToMsgId : null, joinIds(mentionUserIds), atAll);
+                    StringUtils.hasText(replyToMsgId) ? replyToMsgId : null, joinIds(mentionUserIds), atAll,
+                    expiry.burnAfterRead(), expiry.burnSeconds(), expiry.autoDeleteExpiresAt());
             jdbcTemplate.update("""
                             UPDATE im_conversation
                             SET last_msg_preview = ?, last_msg_time = NOW(), updated_at = NOW()

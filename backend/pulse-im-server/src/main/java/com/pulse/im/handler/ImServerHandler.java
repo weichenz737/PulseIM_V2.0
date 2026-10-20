@@ -137,7 +137,7 @@ public class ImServerHandler extends SimpleChannelInboundHandler<ImEnvelope> {
         try {
             Long fromUserId = sessionManager.getUserId(ctx.channel());
             ChatMessage chat = ChatMessage.parseFrom(msg.getPayload());
-            String msgId = messageService.enqueueMessage(
+            ImMessageService.EnqueuedMessage enqueued = messageService.enqueueMessage(
                     fromUserId,
                     chat.getConversationId(),
                     chat.getToUserId(),
@@ -154,13 +154,13 @@ public class ImServerHandler extends SimpleChannelInboundHandler<ImEnvelope> {
                     .setTimestamp(System.currentTimeMillis())
                     .setPayload(MsgAckPayload.newBuilder()
                             .setClientMsgId(chat.getClientMsgId())
-                            .setMsgId(msgId)
+                            .setMsgId(enqueued.msgId())
                             .setSuccess(true)
                             .build().toByteString())
                     .build());
 
             ChatMessage push = chat.toBuilder()
-                    .setMsgId(msgId)
+                    .setMsgId(enqueued.msgId())
                     .setFromUserId(fromUserId)
                     .setSendTime(System.currentTimeMillis())
                     .build();
@@ -182,11 +182,21 @@ public class ImServerHandler extends SimpleChannelInboundHandler<ImEnvelope> {
                     }
                     json.put("clientMsgId", push.getClientMsgId());
                     json.put("sendTime", push.getSendTime());
+                    json.put("burnAfterRead", enqueued.expiry().burnAfterRead());
+                    if (enqueued.expiry().burnSeconds() != null) {
+                        json.put("burnSeconds", enqueued.expiry().burnSeconds());
+                    }
+                    if (enqueued.expiry().autoDeleteExpiresAt() != null) {
+                        json.put("autoDeleteExpiresAt", enqueued.expiry().autoDeleteExpiresAt().toString());
+                    }
                     if (!push.getReplyToMsgId().isBlank()) json.put("replyToMsgId", push.getReplyToMsgId());
                     json.put("atAll", push.getAtAll());
                     json.set("mentionUserIds", MAPPER.valueToTree(push.getMentionUserIdsList()));
                     json.put("sourceDeviceId", sourceDeviceId == null ? "" : sourceDeviceId);
-                    json.put("excludeSourceDevice", true);
+                    // Retention metadata is not part of the protobuf ACK. Echo these
+                    // messages to the sending device so its bubble reflects server truth.
+                    json.put("excludeSourceDevice",
+                            !enqueued.expiry().burnAfterRead() && enqueued.expiry().autoDeleteExpiresAt() == null);
                     redis.convertAndSend(RedisKeys.IM_PUSH_CHANNEL, json.toString());
                 } catch (Exception e) {
                     log.warn("IM push publish failed to userId={}: {}", uid, e.getMessage());

@@ -25,6 +25,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -62,7 +63,8 @@ public class ImMessageBatchConsumer {
 
     private record Entry(RecordId id, String msgId, long conversationId, long fromUserId,
                          long toUserId, int msgType, String content, String fileId, String clientMsgId,
-                         String replyToMsgId, String mentionUserIds, boolean atAll) {
+                         String replyToMsgId, String mentionUserIds, boolean atAll,
+                         boolean burnAfterRead, Integer burnSeconds, OffsetDateTime autoDeleteExpiresAt) {
     }
 
     @PostConstruct
@@ -134,14 +136,16 @@ public class ImMessageBatchConsumer {
                             e.msgId(), e.conversationId(), e.fromUserId(), e.msgType(),
                             e.content(), e.fileId(), e.clientMsgId() == null ? null : e.clientMsgId(),
                             e.replyToMsgId().isBlank() ? null : e.replyToMsgId(),
-                            e.mentionUserIds().isBlank() ? null : e.mentionUserIds(), e.atAll()
+                            e.mentionUserIds().isBlank() ? null : e.mentionUserIds(), e.atAll(),
+                            e.burnAfterRead(), e.burnSeconds(), e.autoDeleteExpiresAt()
                     });
                 }
                 if (!inserts.isEmpty()) {
                     jdbcTemplate.batchUpdate("""
                             INSERT INTO im_message(msg_id, conversation_id, from_user_id, msg_type, content, file_id,
-                                                    client_msg_id, reply_to_msg_id, mention_user_ids, at_all, send_time)
-                            VALUES (?,?,?,?,?,?,?,?,?,?,NOW())
+                                                    client_msg_id, reply_to_msg_id, mention_user_ids, at_all,
+                                                    burn_after_read, burn_seconds, auto_delete_expires_at, send_time)
+                            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,NOW())
                             """, inserts);
                 }
 
@@ -269,7 +273,11 @@ public class ImMessageBatchConsumer {
                     str(v, "clientMsgId"),
                     str(v, "replyToMsgId"),
                     str(v, "mentionUserIds"),
-                    Boolean.parseBoolean(str(v, "atAll")));
+                    Boolean.parseBoolean(str(v, "atAll")),
+                    Boolean.parseBoolean(str(v, "burnAfterRead")),
+                    str(v, "burnSeconds").isBlank() ? null : Integer.parseInt(str(v, "burnSeconds")),
+                    str(v, "autoDeleteExpiresAt").isBlank() ? null
+                            : OffsetDateTime.parse(str(v, "autoDeleteExpiresAt")));
         } catch (Exception e) {
             log.warn("IM stream entry parse failed id={}: {}", id.getValue(), e.getMessage());
             return null;

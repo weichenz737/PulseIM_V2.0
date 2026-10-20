@@ -1765,6 +1765,11 @@ function mergeMessage(conversationId, message) {
           ...item,
           ...message,
           id: message.id || item.id,
+          burnAfterRead: Boolean(message.burnAfterRead || item.burnAfterRead),
+          burnSeconds: message.burnSeconds || item.burnSeconds || 0,
+          burnReadAt: message.burnReadAt || item.burnReadAt || '',
+          burnExpiresAt: message.burnExpiresAt || item.burnExpiresAt || '',
+          autoDeleteExpiresAt: message.autoDeleteExpiresAt || item.autoDeleteExpiresAt || '',
           ...(keepLoadedFile
             ? { content: item.content, file: item.file, fileMetadataLoaded: true }
             : {}),

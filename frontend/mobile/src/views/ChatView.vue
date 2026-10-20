@@ -264,6 +264,14 @@ function onBurnSettingUpdated(event: Event) {
   void refreshLatest(false)
 }
 
+function outgoingRetention(message: ChatMessage, existing?: ChatMessage): Pick<ChatMessage, 'burnAfterRead' | 'burnSeconds' | 'autoDeleteExpiresAt'> {
+  return {
+    burnAfterRead: existing?.burnAfterRead || message.burnAfterRead,
+    burnSeconds: existing?.burnSeconds ?? message.burnSeconds,
+    autoDeleteExpiresAt: existing?.autoDeleteExpiresAt ?? message.autoDeleteExpiresAt,
+  }
+}
+
 const peerNameRowRef = ref<HTMLElement | null>(null)
 const peerNameTrackRef = ref<HTMLElement | null>(null)
 const peerNameScrolling = ref(false)
@@ -2668,7 +2676,20 @@ function appendIncoming(msg: Record<string, unknown>) {
     void refreshGroupMuteState()
     return
   }
-  if (existingIdx >= 0 || hasMessage(id) || (clientMsgId && hasMessage(clientMsgId))) return
+  if (existingIdx >= 0) {
+    const existing = messages.value[existingIdx]
+    messages.value[existingIdx] = {
+      ...existing,
+      id: incoming.id || existing.id,
+      burnAfterRead: incoming.burnAfterRead || existing.burnAfterRead,
+      burnSeconds: incoming.burnSeconds ?? existing.burnSeconds,
+      burnReadAt: incoming.burnReadAt ?? existing.burnReadAt,
+      burnExpiresAt: incoming.burnExpiresAt ?? existing.burnExpiresAt,
+      autoDeleteExpiresAt: incoming.autoDeleteExpiresAt ?? existing.autoDeleteExpiresAt,
+    }
+    return
+  }
+  if (hasMessage(id) || (clientMsgId && hasMessage(clientMsgId))) return
   // 发送者的其他设备也会收到推送；本端重复消息已在上面按 id/clientMsgId 去重。
   // 因此只有已存在的乐观消息会被忽略，未存在的同账号跨设备消息仍需插入。
   messages.value.push(incoming)
@@ -3782,6 +3803,7 @@ async function sendMessage() {
     if (idx >= 0) {
       messages.value[idx] = {
         ...saved,
+        ...outgoingRetention(saved, messages.value[idx]),
         fromUserId: myUserId.value || saved.fromUserId,
         fromNickname: saved.fromNickname || userStore.nickname || '我',
         fromAvatarUrl: saved.fromAvatarUrl || userStore.avatar || '',
@@ -5487,6 +5509,7 @@ async function sendTypedMessage(content: string, msgType: MsgType, fileId?: stri
     if (idx >= 0) {
       messages.value[idx] = {
         ...saved,
+        ...outgoingRetention(saved, messages.value[idx]),
         fromUserId: myUserId.value || saved.fromUserId,
         fromNickname: saved.fromNickname || userStore.nickname || '我',
         fromAvatarUrl: saved.fromAvatarUrl || userStore.avatar || '',
