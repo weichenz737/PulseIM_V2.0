@@ -971,7 +971,7 @@ button {
   box-shadow: 0 8px 20px rgba(34, 112, 165, 0.08) !important;
 }
 
-:root[data-theme='light'] .me-page :is(.qr-card, .setting-group, .logout-btn) {
+:root[data-theme='light'] .me-page :is(.setting-group, .logout-btn) {
   border-radius: 16px !important;
   background: #ffffff !important;
   border-color: rgba(137, 196, 228, 0.4) !important;

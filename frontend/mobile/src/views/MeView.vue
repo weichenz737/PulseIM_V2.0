@@ -6,7 +6,6 @@ import { useUserStore } from '@/stores/user'
 import { fetchUserProfile } from '@/api/contact'
 import { userQrPayload } from '@/utils/qrcode'
 import { isNativeApp, nativeClipboard } from '@/native'
-import QrCodeCard from '@/components/QrCodeCard.vue'
 import QrPreviewModal from '@/components/QrPreviewModal.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
 
@@ -328,6 +327,16 @@ async function handleLogout() {
         <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M9 18l6-6-6-6"/>
         </svg>
+        <button
+          v-if="qrPayload"
+          type="button"
+          class="profile-qr-btn"
+          aria-label="展示我的二维码"
+          title="我的二维码"
+          @click.stop="previewVisible = true"
+        >
+          <span class="material-symbols-outlined" aria-hidden="true">qr_code_2</span>
+        </button>
       </div>
 
       <button type="button" class="switch-account-btn" @click="goSwitchAccount">
@@ -337,18 +346,6 @@ async function handleLogout() {
           <path d="M9 18l6-6-6-6" />
         </svg>
       </button>
-
-      <section v-if="qrPayload" class="qr-card">
-        <QrCodeCard
-          :payload="qrPayload"
-          :size="128"
-          :title="userStore.nickname || '我的二维码'"
-          :subtitle="`PulseID ${displayPulseId}`"
-          :filename="`pulse-${displayPulseId}.png`"
-          @preview="previewVisible = true"
-        />
-        <p class="qr-tip">点击二维码可放大预览</p>
-      </section>
 
       <div class="groups">
         <section v-for="(group, gi) in settingGroups" :key="gi" class="setting-group">
@@ -462,6 +459,7 @@ async function handleLogout() {
 }
 
 .profile-card {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 16px;
@@ -482,6 +480,35 @@ async function handleLogout() {
 
 .profile-card:active {
   background: var(--pulse-surface-high);
+}
+
+.profile-qr-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--pulse-primary);
+  cursor: pointer;
+}
+
+.profile-qr-btn .material-symbols-outlined {
+  font-size: 25px;
+}
+
+.profile-qr-btn:active {
+  background: var(--pulse-pressed);
+}
+
+.profile-qr-btn:focus-visible {
+  outline: 2px solid var(--pulse-primary);
+  outline-offset: -2px;
 }
 
 .switch-account-btn {
@@ -628,23 +655,6 @@ async function handleLogout() {
 .chevron {
   flex-shrink: 0;
   color: var(--pulse-text-secondary);
-}
-
-.qr-card {
-  margin-top: 8px;
-  padding: 14px 16px 12px;
-  background: var(--pulse-surface-container);
-  border: 1px solid var(--pulse-border);
-  border-radius: var(--pulse-radius-lg, 16px);
-  overflow: hidden;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-}
-
-.qr-tip {
-  margin: 8px 0 0;
-  text-align: center;
-  font-size: 12px;
-  color: var(--pulse-outline);
 }
 
 .groups {
