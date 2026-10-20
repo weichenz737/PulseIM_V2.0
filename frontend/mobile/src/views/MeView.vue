@@ -162,9 +162,7 @@ const settingGroups: { items: SettingItem[] }[] = [
       { icon: 'groups_3', label: '我的圈子', action: () => router.push('/communities') },
       { icon: 'account_balance_wallet', label: '我的钱包', action: () => router.push('/wallet') },
       { icon: 'bookmark', label: '我的收藏', action: () => router.push('/favorites') },
-      { icon: 'shield', label: '账号与安全', action: () => router.push('/settings/security') },
       { icon: 'photo', label: '朋友圈', action: () => router.push('/me/moments') },
-      { icon: 'group', label: '朋友权限', action: () => router.push('/settings/friends') },
     ],
   },
   {
