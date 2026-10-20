@@ -122,7 +122,7 @@ export function cacheVoiceBlob(url: string, blob: Blob): void {
   void decodeFromUrlOrBlob(key, localBlobs.get(key)).catch(() => null)
 }
 
-/** 读取本地缓存或远端语音文件，供转文字 / 播放使用 */
+/** 读取本地缓存或远端语音文件，供播放使用 */
 export async function loadVoiceBlob(url: string): Promise<Blob | null> {
   const key = cacheKey(url)
   if (!key) return null

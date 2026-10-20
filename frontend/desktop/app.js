@@ -7982,7 +7982,6 @@ function renderDesktopSharedContentMenu() {
   const item = (action, label, extra = '') => `<button type="button" data-shared-content-action="${action}" data-shared-content-message-id="${escapeHtml(menu.messageId)}"${extra}>${label}</button>`
   return `<div class="file-context-menu desktop-shared-content-context-menu" data-shared-content-menu style="left:${left}px;top:${top}px" role="menu" aria-label="共享文件操作">
     ${item('forward', `${icon('share')}转发`)}
-    ${item('favorite', `${icon('bookmark')}收藏`)}
     ${item('download', `${icon('download')}下载到本地`)}
     ${item('delete', `${icon('close')}删除`, ' class="danger"')}
   </div>`
@@ -8036,22 +8035,6 @@ async function handleDesktopSharedContentAction(action, messageId) {
   render()
   if (action === 'forward') {
     openDesktopMessageForward([message.id])
-    return
-  }
-  if (action === 'favorite') {
-    if (state.dataSource !== 'remote') {
-      showToast('在线数据未加载，暂不支持保存文件收藏')
-      return
-    }
-    try {
-      await addDesktopFavorite(selected.id, message.id)
-      state.favoritesLoaded = false
-      showToast('文件已收藏')
-    } catch (error) {
-      showToast(error instanceof Error ? error.message : '文件收藏失败')
-    } finally {
-      render()
-    }
     return
   }
   if (action === 'download') {
@@ -8254,8 +8237,8 @@ async function handleMessageAction(action, messageId, confirmed = false) {
     }
     return
   }
-  if ((action === 'copy' || action === 'favorite') && desktopIsBurnMessage(message)) {
-    showToast('阅后即焚消息不能复制或收藏')
+  if (action === 'copy' && desktopIsBurnMessage(message)) {
+    showToast('阅后即焚消息不能复制')
     return
   }
   if (action === 'save-as') {
@@ -8285,8 +8268,6 @@ async function handleMessageAction(action, messageId, confirmed = false) {
       mergeMessage(selected.id, { ...message, recalled: true })
       refreshDesktopConversationPreview(selected.id)
       showToast('消息已撤回')
-    } else if (action === 'favorite') {
-      showToast('在线数据未加载，暂不保存收藏')
     }
     render()
     return
@@ -8298,10 +8279,6 @@ async function handleMessageAction(action, messageId, confirmed = false) {
       mergeMessage(selected.id, { ...recalledMessage, recalled: true, content: message.content, msgType: message.msgType, mine: message.mine })
       refreshDesktopConversationPreview(selected.id)
       showToast('消息已撤回')
-    } else if (action === 'favorite') {
-      await addDesktopFavorite(selected.id, message.id)
-      state.favoritesLoaded = false
-      showToast('消息已收藏')
     }
   } catch (error) {
     showToast(error instanceof Error ? error.message : '消息操作失败')
@@ -12035,7 +12012,7 @@ function renderMessageMenu(selected) {
   const editAction = desktopMessageImageInfo(message)
     ? `<button data-message-action="edit-image" data-message-id="${escapeHtml(message.id)}">${icon('edit')}编辑图片</button>`
     : ''
-  return `<div class="message-context-menu" data-message-menu-panel>${editAction}${saveAction}<button data-message-action="copy" data-message-id="${escapeHtml(message.id)}">${icon('edit')}复制</button><button data-message-action="forward" data-message-id="${escapeHtml(message.id)}">${icon('share')}转发</button><button data-message-action="multi-select" data-message-id="${escapeHtml(message.id)}">${icon('grid')}多选</button>${message.recalled ? '' : `<button data-message-action="favorite" data-message-id="${escapeHtml(message.id)}">${icon('bookmark')}收藏</button>`}<button data-message-action="quote" data-message-id="${escapeHtml(message.id)}">${icon('chat')}引用（回复）</button>${message.mine && !message.recalled ? `<button data-message-action="recall" data-message-id="${escapeHtml(message.id)}">${icon('arrow')}撤回</button>` : ''}<button class="danger" data-message-action="delete-self" data-message-id="${escapeHtml(message.id)}">${icon('close')}单向删除</button>${selected.type === 'group' ? '' : `<button class="danger" data-message-action="delete-both" data-message-id="${escapeHtml(message.id)}">${icon('close')}双向删除</button>`}</div>`
+  return `<div class="message-context-menu" data-message-menu-panel>${editAction}${saveAction}<button data-message-action="copy" data-message-id="${escapeHtml(message.id)}">${icon('edit')}复制</button><button data-message-action="forward" data-message-id="${escapeHtml(message.id)}">${icon('share')}转发</button><button data-message-action="multi-select" data-message-id="${escapeHtml(message.id)}">${icon('grid')}多选</button><button data-message-action="quote" data-message-id="${escapeHtml(message.id)}">${icon('chat')}引用（回复）</button>${message.mine && !message.recalled ? `<button data-message-action="recall" data-message-id="${escapeHtml(message.id)}">${icon('arrow')}撤回</button>` : ''}<button class="danger" data-message-action="delete-self" data-message-id="${escapeHtml(message.id)}">${icon('close')}单向删除</button>${selected.type === 'group' ? '' : `<button class="danger" data-message-action="delete-both" data-message-id="${escapeHtml(message.id)}">${icon('close')}双向删除</button>`}</div>`
 }
 
 function renderChatPanelLegacy2(selected) {
@@ -12063,9 +12040,6 @@ function renderDesktopPlusMenu() {
     ['send-photo', '图片', 'image'],
     ['send-video', '视频', 'video'],
     ['send-file', '文件', 'folder'],
-    ['send-location', '位置', 'location'],
-    ['send-card', '名片', 'card'],
-    ['send-favorite', '收藏', 'bookmark'],
     ...(isDesktopWalletEnabled() ? [['send-redpacket', '红包', 'gift'], ['send-transfer', '转账', 'money']] : []),
   ]
   return `<div class="desktop-plus-menu">${actions.map(([action, label, iconName]) => `<button type="button" data-action="${action}"><span>${icon(iconName)}</span><small>${label}</small></button>`).join('')}</div>`
@@ -12076,9 +12050,6 @@ function renderDesktopComposerActions() {
     ['send-photo', '图片', 'image'],
     ['send-video', '视频', 'video'],
     ['send-file', '文件', 'folder'],
-    ['send-location', '位置', 'location'],
-    ['send-card', '名片', 'card'],
-    ['send-favorite', '收藏', 'bookmark'],
     ...(isDesktopWalletEnabled() ? [['send-redpacket', '红包', 'gift'], ['send-transfer', '转账', 'money']] : []),
   ]
   return `<span class="desktop-composer-actions">${actions.map(([action, label, iconName]) => `<button type="button" data-action="${action}" aria-label="${label}" title="${label}">${icon(iconName)}</button>`).join('')}</span>`
@@ -12145,7 +12116,7 @@ function renderContextPanelLegacy(selected) {
     <div class="context-card profile-context"><div class="context-card-label">${profileTitle} <button>${icon('more')}</button></div><div class="profile-context-main">${avatar(selected, 'avatar-large')}<h3>${selected.name}</h3><p>${profileSubtitle}</p>${renderDesktopFriendTag(selected.tag, !isGroup ? (selected.peerUserId || selected.name) : '', 'profile-tag')}</div><div class="profile-actions"><button>${icon('phone')}<span>语音</span></button><button>${icon('video')}<span>视频</span></button><button type="button" ${isGroup ? 'data-action="group-info" data-group-info-focus="members" aria-label="查看群成员" title="查看群成员"' : ''}>${icon('person')}<span>${profileAction}</span></button></div></div>
     <div class="context-card"><div class="context-card-label"><span>共享内容</span><button>${icon('arrow')}</button></div><div class="shared-grid"><button class="shared-tile"><span class="shared-preview shared-image"></span><strong>3 张图片</strong></button><button class="shared-tile"><span class="shared-preview shared-file">${icon('folder')}</span><strong>6 个文件</strong></button></div></div>
     ${groupMembersCard}
-    <div class="context-card context-list"><button><span class="list-icon">${icon('bookmark')}</span><span><strong>已收藏消息</strong><small>查看对话中的收藏</small></span>${icon('arrow')}</button><button><span class="list-icon">${icon('settings')}</span><span><strong>聊天设置</strong><small>通知、置顶与隐私</small></span>${icon('arrow')}</button></div>
+    <div class="context-card context-list"><button><span class="list-icon">${icon('settings')}</span><span><strong>聊天设置</strong><small>通知、置顶与隐私</small></span>${icon('arrow')}</button></div>
   </aside>`
 }
 
@@ -13266,8 +13237,6 @@ function renderModal() {
   if (state.modal === 'contact-moments') return renderContactMomentsModal()
   if (state.modal === 'contact-groups') return renderContactGroupsModal()
   if (state.modal === 'notifications') return renderNotificationsModal()
-  if (state.modal === 'send-card') return renderSendCardModal()
-  if (state.modal === 'send-favorite') return renderSendFavoriteModal()
   if (state.modal === 'message-forward') return renderMessageForwardModal()
   if (state.modal === 'forward-detail') return renderDesktopForwardDetailModal()
   if (state.modal === 'file-preview') return renderDesktopFilePreviewModal()
@@ -13522,23 +13491,6 @@ async function confirmDialogAction() {
   else if (dialog.type === 'revoke-device') await revokeDeviceSession(dialog.deviceId)
   else if (dialog.type === 'revoke-other-devices') await revokeOtherDeviceSessions()
   else if (dialog.type === 'group-action') await executeDesktopGroupAction(dialog)
-}
-
-function renderSendCardModal() {
-  const groupItems = conversations.filter((item) => item.type === 'group')
-  const friendItems = contacts.filter((item) => contactUserId(item))
-  const body = `<div class="desktop-modal-results"><div class="desktop-modal-section-title">联系人</div>${friendItems.length ? friendItems.map((item) => `<button class="desktop-result-row" data-send-card="user" data-card-id="${escapeHtml(contactUserId(item))}"><span class="result-avatar">${avatar(item, 'avatar-small')}</span><span><strong>${escapeHtml(item.name)}</strong><small>个人名片</small></span>${icon('arrow')}</button>`).join('') : '<div class="desktop-modal-hint">暂无联系人</div>'}<div class="desktop-modal-section-title">群聊</div>${groupItems.length ? groupItems.map((item) => `<button class="desktop-result-row" data-send-card="group" data-card-id="${escapeHtml(item.id)}"><span class="result-avatar">${avatar(item, 'avatar-small')}</span><span><strong>${escapeHtml(item.name)}</strong><small>群名片</small></span>${icon('arrow')}</button>`).join('') : '<div class="desktop-modal-hint">暂无群聊</div>'}</div>`
-  return modalFrame('发送名片', '选择一个联系人或群聊发送名片。', body)
-}
-
-function renderSendFavoriteModal() {
-  const items = state.favorites || []
-  const body = state.favoritesLoading
-    ? '<div class="desktop-modal-hint">正在加载收藏…</div>'
-    : items.length
-      ? `<div class="desktop-modal-results">${items.map((item) => `<button class="desktop-result-row" data-send-favorite="${escapeHtml(item.id)}"><span class="result-avatar">${icon(Number(item.msgType) === 1 ? 'image' : Number(item.msgType) === 2 ? 'folder' : 'bookmark')}</span><span><strong>${escapeHtml(item.sourceTitle || '收藏消息')}</strong><small>${escapeHtml(desktopMessagePreview(item))}</small></span>${icon('arrow')}</button>`).join('')}</div>`
-      : '<div class="desktop-modal-empty">暂无可发送的收藏</div>'
-  return modalFrame('发送收藏', '把移动端收藏的消息转发到当前会话。', body)
 }
 
 function renderMessageForwardModal() {
@@ -14934,51 +14886,6 @@ function toggleContactProfile() {
   syncContactProfile()
 }
 
-function openSendCardModal() {
-  state.showPlusMenu = false
-  state.showEmojiPanel = false
-  state.modal = 'send-card'
-  render()
-}
-
-async function sendDesktopContactCard(cardType, cardId) {
-  const selected = conversations[state.selectedConversation]
-  if (!selected?.id || !cardId || !ensureDesktopCanSend(selected)) return
-  const item = cardType === 'group'
-    ? conversations.find((conversation) => String(conversation.id) === String(cardId))
-    : contacts.find((contact) => String(contactUserId(contact)) === String(cardId))
-  if (!item) return
-  const payload = cardType === 'group'
-    ? { cardType: 'group', conversationId: String(item.id), nickname: item.name, avatarUrl: item.avatarUrl || '' }
-    : { cardType: 'user', userId: String(contactUserId(item)), nickname: item.name, avatarUrl: item.avatarUrl || '', pulseId: item.pulseId || '' }
-  resetModal()
-  await sendDesktopTypedMessage(JSON.stringify(payload), 5, `[名片] ${item.name}`)
-}
-
-async function openSendFavoriteModal() {
-  state.showPlusMenu = false
-  state.showEmojiPanel = false
-  state.modal = 'send-favorite'
-  state.favoritesLoaded = false
-  render()
-  await loadFavorites()
-  render()
-}
-
-async function sendDesktopFavorite(favoriteId) {
-  const selected = conversations[state.selectedConversation]
-  if (!selected?.id || !favoriteId || !ensureDesktopCanSend(selected)) return
-  try {
-    await forwardDesktopFavorite(String(favoriteId), String(selected.id))
-    resetModal()
-    state.scrollChatToBottom = true
-    await loadSelectedMessages()
-    showToast('收藏已发送')
-  } catch (error) {
-    showToast(error instanceof Error ? error.message : '收藏发送失败')
-  }
-}
-
 async function sendDesktopRedPacketFlow() {
   const selected = conversations[state.selectedConversation]
   if (!selected?.id || state.dataSource !== 'remote') return showToast('当前没有可发送的在线会话')
@@ -15600,12 +15507,6 @@ function bindEvents() {
       if (file) setPendingDesktopFile(file)
     })
   }
-  document.querySelectorAll('[data-send-card]').forEach((element) => element.addEventListener('click', () => {
-    void sendDesktopContactCard(element.dataset.sendCard, element.dataset.cardId)
-  }))
-  document.querySelectorAll('[data-send-favorite]').forEach((element) => element.addEventListener('click', () => {
-    void sendDesktopFavorite(element.dataset.sendFavorite)
-  }))
   document.querySelectorAll('a[href*="/api/v1/files/raw/"]').forEach((element) => element.addEventListener('click', (event) => {
     if (!(element instanceof HTMLAnchorElement)) return
     if (element.matches('[data-desktop-file-preview], [data-chat-media-preview]')) return
@@ -17062,21 +16963,8 @@ function bindEvents() {
       state.showPlusMenu = false
       return
     }
-    if (action === 'send-location') {
-      state.showPlusMenu = false
-      openDesktopLocationPicker()
-      return
-    }
     if (action === 'moment-location-picker') {
       openDesktopLocationPicker('moment')
-      return
-    }
-    if (action === 'send-card') {
-      openSendCardModal()
-      return
-    }
-    if (action === 'send-favorite') {
-      void openSendFavoriteModal()
       return
     }
     if (action === 'send-redpacket') {

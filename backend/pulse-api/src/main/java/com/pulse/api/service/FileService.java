@@ -52,7 +52,6 @@ public class FileService {
             ".cmd", ".ps1", ".vbs", ".jar", ".war", ".msi", ".com",
             ".scr", ".pif"
     );
-    private static final int ASR_PER_MINUTE_LIMIT = 6;
     private static final int WAV_PER_MINUTE_LIMIT = 12;
 
     private static final ExecutorService VIDEO_TRANSCODE_EXECUTOR =
@@ -71,10 +70,6 @@ public class FileService {
 
     @Value("${pulse.ffmpeg.path:}")
     private String ffmpegPath;
-
-    /** ASR 常驻服务地址，例如 http://pulse-asr:3978/transcribe */
-    @Value("${pulse.asr.url:http://127.0.0.1:3978/transcribe}")
-    private String asrUrl;
 
     private Path uploadRoot;
 
@@ -852,184 +847,6 @@ public class FileService {
         return runFfmpegToWav16k(source);
     }
 
-    /**
-     * 语音转文字：ffmpeg → wav → Node Whisper。
-     * 返回识别文本（可能为空串）。
-     */
-    public String transcribeRawFile(Long userId, String filename) {
-        checkAudioRateLimit(userId, "asr", ASR_PER_MINUTE_LIMIT);
-        return transcribeSource(resolveRawPath(filename));
-    }
-
-    /** Transcribes a materialized private chat attachment without exposing its bytes in JSON. */
-    public String transcribePath(Long userId, Path source) {
-        checkAudioRateLimit(userId, "asr", ASR_PER_MINUTE_LIMIT);
-        if (source == null || !Files.isRegularFile(source)) {
-            throw new BizException("语音文件不存在");
-        }
-        return transcribeSource(source);
-    }
-
-    private String transcribeSource(Path src) {
-        Path wav = null;
-        try {
-            byte[] wavBytes = runFfmpegToWav16k(src);
-            Path root = resolveUploadRoot().resolve("tmp-asr");
-            Files.createDirectories(root);
-            wav = root.resolve(UUID.randomUUID().toString().replace("-", "") + ".wav");
-            Files.write(wav, wavBytes);
-            return runNodeWhisper(wav);
-        } catch (BizException e) {
-            throw e;
-        } catch (Exception e) {
-            log.warn("transcribe failed: {}", e.toString());
-            throw new BizException("语音识别失败，请重试");
-        } finally {
-            if (wav != null) {
-                try {
-                    Files.deleteIfExists(wav);
-                } catch (IOException ignored) {
-                    /* ignore */
-                }
-            }
-        }
-    }
-
-    private String runNodeWhisper(Path wav) {
-        // 1) 优先常驻 ASR 服务（whisper 常驻内存，更快更准）
-        String endpoint = StringUtils.hasText(asrUrl) ? asrUrl.trim() : "http://127.0.0.1:3978/transcribe";
-        try {
-            byte[] wavBytes = Files.readAllBytes(wav);
-            java.net.HttpURLConnection conn = (java.net.HttpURLConnection)
-                    new java.net.URI(endpoint).toURL().openConnection();
-            conn.setConnectTimeout(1500);
-            conn.setReadTimeout(180_000);
-            conn.setRequestMethod("POST");
-            conn.setDoOutput(true);
-            conn.setRequestProperty("Content-Type", "application/octet-stream");
-            conn.setFixedLengthStreamingMode(wavBytes.length);
-            try (java.io.OutputStream os = conn.getOutputStream()) {
-                os.write(wavBytes);
-            }
-            int code = conn.getResponseCode();
-            java.io.InputStream in = code >= 200 && code < 300 ? conn.getInputStream() : conn.getErrorStream();
-            String out = in == null ? "" : new String(in.readAllBytes(), StandardCharsets.UTF_8).trim();
-            if (code >= 200 && code < 300) {
-                String text = extractJsonString(out, "text");
-                if (text != null) return text.trim();
-            }
-            log.warn("asr http failed status={} body={}", code,
-                    out.length() > 200 ? out.substring(0, 200) : out);
-        } catch (Exception e) {
-            log.info("asr http unavailable ({}), fallback to node cli: {}", endpoint, e.toString());
-        }
-
-        // 2) 回退：临时拉起 node 脚本
-        String node = resolveNodeBinary();
-        Path script = resolveAsrScript();
-        if (!Files.isRegularFile(script)) {
-            throw new BizException("识别服务未配置");
-        }
-        try {
-            ProcessBuilder pb = new ProcessBuilder(
-                    node,
-                    script.toAbsolutePath().toString(),
-                    wav.toAbsolutePath().toString()
-            );
-            pb.redirectErrorStream(true);
-            pb.directory(script.getParent() != null ? script.getParent().toFile() : null);
-            Process p = pb.start();
-            String out = new String(p.getInputStream().readAllBytes(), StandardCharsets.UTF_8).trim();
-            boolean finished = p.waitFor(240, TimeUnit.SECONDS);
-            if (!finished) {
-                p.destroyForcibly();
-                throw new BizException("语音识别超时");
-            }
-            String jsonLine = out;
-            int brace = out.lastIndexOf('{');
-            if (brace >= 0) {
-                jsonLine = out.substring(brace);
-            }
-            if (!StringUtils.hasText(jsonLine) || !jsonLine.startsWith("{")) {
-                log.warn("asr empty output: {}", out.length() > 300 ? out.substring(out.length() - 300) : out);
-                throw new BizException("语音识别失败");
-            }
-            String text = extractJsonString(jsonLine, "text");
-            String error = extractJsonString(jsonLine, "error");
-            if (StringUtils.hasText(error) && !StringUtils.hasText(text)) {
-                log.warn("asr error: {}", error);
-                throw new BizException("语音识别失败");
-            }
-            return text == null ? "" : text.trim();
-        } catch (BizException e) {
-            throw e;
-        } catch (Exception e) {
-            log.warn("asr process failed: {}", e.toString());
-            throw new BizException("语音识别失败");
-        }
-    }
-
-    private static String extractJsonString(String json, String key) {
-        String pattern = "\"" + key + "\"";
-        int i = json.indexOf(pattern);
-        if (i < 0) return null;
-        int colon = json.indexOf(':', i + pattern.length());
-        if (colon < 0) return null;
-        int startQuote = json.indexOf('"', colon + 1);
-        if (startQuote < 0) return null;
-        StringBuilder sb = new StringBuilder();
-        for (int p = startQuote + 1; p < json.length(); p++) {
-            char c = json.charAt(p);
-            if (c == '\\' && p + 1 < json.length()) {
-                sb.append(json.charAt(p + 1));
-                p++;
-                continue;
-            }
-            if (c == '"') break;
-            sb.append(c);
-        }
-        return sb.toString();
-    }
-
-    private String resolveNodeBinary() {
-        if (StringUtils.hasText(System.getenv("NODE_PATH"))) {
-            Path p = Paths.get(System.getenv("NODE_PATH"));
-            if (Files.isRegularFile(p)) return p.toAbsolutePath().toString();
-        }
-        Path[] candidates = new Path[] {
-                Paths.get("D:/node.js/node.exe"),
-                Paths.get("C:/Program Files/nodejs/node.exe"),
-                Paths.get(System.getProperty("user.home"), "AppData/Local/Programs/nodejs/node.exe"),
-        };
-        for (Path c : candidates) {
-            try {
-                if (Files.isRegularFile(c)) return c.toAbsolutePath().toString();
-            } catch (Exception ignored) {
-                /* next */
-            }
-        }
-        return "node";
-    }
-
-    private Path resolveAsrScript() {
-        Path[] candidates = new Path[] {
-                Paths.get("E:/Desk/PulseIM（脉冲）/tools/asr/transcribe.mjs"),
-                Paths.get(System.getProperty("user.dir")).resolve("tools/asr/transcribe.mjs"),
-                Paths.get(System.getProperty("user.dir")).resolve("../tools/asr/transcribe.mjs"),
-                Paths.get(System.getProperty("user.dir")).resolve("../../tools/asr/transcribe.mjs"),
-                Paths.get(System.getProperty("user.dir")).resolve("../../../tools/asr/transcribe.mjs"),
-        };
-        for (Path c : candidates) {
-            try {
-                Path n = c.normalize().toAbsolutePath();
-                if (Files.isRegularFile(n)) return n;
-            } catch (Exception ignored) {
-                /* next */
-            }
-        }
-        return candidates[0];
-    }
-
     /** 上传临时语音并转为 16kHz 单声道 WAV */
     public byte[] convertUploadToWav16k(Long userId, MultipartFile file) {
         checkAudioRateLimit(userId, "wav", WAV_PER_MINUTE_LIMIT);
@@ -1050,7 +867,7 @@ public class FileService {
         }
         Path tmp = null;
         try {
-            Path root = resolveUploadRoot().resolve("tmp-asr");
+            Path root = resolveUploadRoot().resolve("tmp-audio");
             Files.createDirectories(root);
             tmp = root.resolve(UUID.randomUUID().toString().replace("-", "") + ext);
             file.transferTo(tmp);
@@ -1074,7 +891,7 @@ public class FileService {
         String ffmpeg = resolveFfmpegBinary();
         Path out = null;
         try {
-            out = Files.createTempFile("pulse-asr-", ".wav");
+            out = Files.createTempFile("pulse-audio-", ".wav");
             ProcessBuilder pb = new ProcessBuilder(
                     ffmpeg,
                     "-y",

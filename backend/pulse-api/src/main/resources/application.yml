@@ -42,8 +42,6 @@ pulse:
   upload:
     # 建议配置绝对路径；未配置绝对路径时会自动选用历史文件最多的 uploads 目录
     dir: ${PULSE_UPLOAD_DIR:uploads}
-  asr:
-    url: ${PULSE_ASR_URL:http://127.0.0.1:3978/transcribe}
   ffmpeg:
     # HEVC(相册/拍摄) → H.264，安卓 Chrome 才能页内播放
     path: ${FFMPEG_PATH:E:/Desk/PulseIM（脉冲）/tools/ffmpeg/node_modules/ffmpeg-static/ffmpeg.exe}

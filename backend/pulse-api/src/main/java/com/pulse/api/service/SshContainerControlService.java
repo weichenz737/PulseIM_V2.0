@@ -52,7 +52,7 @@ public class SshContainerControlService {
             printf 'user='; id -un
             printf 'project_root='; if [ -d /opt/pulseim ]; then echo present; else echo missing; fi
             printf 'pulseim_containers='
-            $D ps -a --format '{{.Names}}' | grep -E '^(pulse-api|pulse-im|pulse-mobile|pulse-admin|pulse-asr|pulse-coturn|pulse-minio|pulse-nginx)$' | tr '\n' ',' | sed 's/,$//' || true
+            $D ps -a --format '{{.Names}}' | grep -E '^(pulse-api|pulse-im|pulse-mobile|pulse-admin|pulse-coturn|pulse-minio|pulse-nginx)$' | tr '\n' ',' | sed 's/,$//' || true
             echo
             echo '目标服务器 SSH、Docker 和 PulseIM 项目目录预检通过'
             """;
@@ -60,7 +60,7 @@ public class SshContainerControlService {
     private static final String CLEANUP_PREVIEW_COMMAND = DOCKER_SETUP + """
             [ -d /opt/pulseim ] || { echo '未找到 /opt/pulseim，已停止预览以避免误操作'; exit 22; }
             printf 'containers='
-            $D ps -a --format '{{.Names}}' | grep -E '^(pulse-api|pulse-im|pulse-mobile|pulse-admin|pulse-asr|pulse-coturn|pulse-minio|pulse-nginx)$' | tr '\n' ',' | sed 's/,$//' || true
+            $D ps -a --format '{{.Names}}' | grep -E '^(pulse-api|pulse-im|pulse-mobile|pulse-admin|pulse-coturn|pulse-minio|pulse-nginx)$' | tr '\n' ',' | sed 's/,$//' || true
             echo
             echo '将只处理上述精确匹配的 PulseIM 容器'
             echo '将保留数据库、Redis、上传文件、其他项目容器和 Docker 网络'
@@ -68,7 +68,7 @@ public class SshContainerControlService {
 
     private static final String CLEANUP_COMMAND = DOCKER_SETUP + """
             [ -d /opt/pulseim ] || { echo '未找到 /opt/pulseim，已停止清理以避免误操作'; exit 22; }
-            names='pulse-api pulse-im pulse-mobile pulse-admin pulse-asr pulse-coturn pulse-minio pulse-nginx'
+            names='pulse-api pulse-im pulse-mobile pulse-admin pulse-coturn pulse-minio pulse-nginx'
             for name in $names; do
               id=$($D ps -aq --filter "name=^/${name}$")
               if [ -n "$id" ]; then

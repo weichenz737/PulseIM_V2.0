@@ -48,23 +48,6 @@ services:
       retries: 12
     restart: unless-stopped
 
-  pulse-asr:
-    build:
-      context: ./artifacts/asr
-      dockerfile: Dockerfile
-    container_name: pulse-asr
-    environment:
-      PULSE_ASR_PORT: 3978
-      PULSE_ASR_MODEL: small
-      PULSE_ASR_COMPUTE_TYPE: int8
-      PULSE_ASR_CPU_THREADS: 2
-      HF_ENDPOINT: https://hf-mirror.com
-      HF_HOME: /data/hf-cache
-      HF_HUB_DISABLE_XET: 1
-    volumes:
-      - /opt/pulseim/data/asr-cache:/data/hf-cache
-    restart: unless-stopped
-
   coturn:
     image: docker.m.daocloud.io/coturn/coturn:4.6.2
     container_name: pulse-coturn
@@ -120,7 +103,6 @@ services:
       WPS_WEBOFFICE_PUBLIC_BASE_URL: ${WPS_WEBOFFICE_PUBLIC_BASE_URL:-}
       WPS_WEBOFFICE_TOKEN_SECRET: ${WPS_WEBOFFICE_TOKEN_SECRET:-}
       WPS_WEBOFFICE_SDK_URL: ${WPS_WEBOFFICE_SDK_URL:-/vendor/wps/web-office-sdk-solution.umd.js}
-      PULSE_ASR_URL: http://pulse-asr:3978/transcribe
       BAIDU_MAP_AK: ${BAIDU_MAP_AK:-}
       BAIDU_MAP_APP_AK: ${BAIDU_MAP_APP_AK:-}
       TURN_URLS: "turn:110.42.238.238:3478?transport=udp,turn:110.42.238.238:3478?transport=tcp"

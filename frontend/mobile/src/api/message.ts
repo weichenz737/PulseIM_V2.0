@@ -63,7 +63,7 @@ export interface FilePayload {
   height?: number
   /** 语音时长（毫秒） */
   durationMs?: number
-  /** 语音转文字（录音时或事后识别） */
+  /** 兼容旧语音消息中已保存的转写文本 */
   transcript?: string
   /** 发送方勾选“原图/原视频”后保留该标记，接收方不再提示查看原图。 */
   originalSent?: boolean

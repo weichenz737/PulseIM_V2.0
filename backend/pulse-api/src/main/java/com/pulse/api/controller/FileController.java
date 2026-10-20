@@ -238,52 +238,6 @@ public class FileController {
     }
 
     /**
-     * 语音转文字（服务端 Whisper）。
-     * body: { "url": "/api/v1/files/raw/xxx.webm" }
-     */
-    @PostMapping("/audio/transcribe")
-    public R<Map<String, String>> transcribe(@RequestBody Map<String, String> body) {
-        Long userId = AuthContext.currentUserId();
-        String url = body == null ? null : body.get("url");
-        if (!StringUtils.hasText(url)) {
-            throw new com.pulse.common.exception.BizException("url required");
-        }
-        String filename = extractRawFilename(url);
-        if (!StringUtils.hasText(filename)) {
-            throw new com.pulse.common.exception.BizException("invalid url");
-        }
-        String text = fileService.transcribeRawFile(userId, filename);
-        if (!StringUtils.hasText(text)) {
-            throw new com.pulse.common.exception.BizException("未能识别出文字");
-        }
-        return R.ok(Map.of("text", text));
-    }
-
-    /** Server-side transcription for a private MinIO-backed voice file. */
-    @PostMapping("/audio/transcribe-file")
-    public R<Map<String, String>> transcribeFile(@RequestBody Map<String, String> body) throws IOException {
-        Long userId = AuthContext.currentUserId();
-        String fileId = body == null ? null : body.get("fileId");
-        if (!StringUtils.hasText(fileId)) {
-            throw new com.pulse.common.exception.BizException("fileId required");
-        }
-        FileMetadataVO metadata = chatFileStorageService.metadata(userId, fileId);
-        String extension = extensionOf(metadata.getName());
-        Path source = Files.createTempFile("pulse-chat-audio-asr-",
-                StringUtils.hasText(extension) ? "." + extension : ".bin");
-        try {
-            try (GetObjectResponse input = chatFileStorageService.open(userId, fileId, "original", 0, 0)) {
-                Files.copy(input, source, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-            }
-            String text = fileService.transcribePath(userId, source);
-            if (!StringUtils.hasText(text)) throw new com.pulse.common.exception.BizException("未能识别出文字");
-            return R.ok(Map.of("text", text));
-        } finally {
-            Files.deleteIfExists(source);
-        }
-    }
-
-    /**
      * 将聊天语音转为 16kHz 单声道 WAV（浏览器 decodeAudioData 常解不开 webm）。
      * body: { "url": "/api/v1/files/raw/xxx.webm" }
      * 返回 base64，避免代理/axios 弄坏二进制。

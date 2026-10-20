@@ -11,7 +11,6 @@ import {
   canRecallMessage,
   deleteMessages,
   forwardMessages,
-  addFavorite,
   copyableText,
   favoritePreviewLabel,
   parseForwardCard,
@@ -32,7 +31,6 @@ import {
   fetchPrivacySettings,
   fetchUserOnline,
   fetchUserProfile,
-  type ContactItem,
 } from '@/api/contact'
 import {
   uploadChatFile,
@@ -66,7 +64,6 @@ import {
   stopCachedVoice,
   warmVoiceAudio,
 } from '@/utils/voiceCache'
-import { transcribeVoiceUrl, speechRecognitionSupported, resetSpeechRecognize } from '@/utils/speechRecognize'
 import { isVideoMedia, saveMediaToDevice, toastForSaveResult } from '@/utils/saveMedia'
 import { onWsMessage, isWsAuthed, sendTypingStatus } from '@/im/ws'
 import { retryQueuedMessage } from '@/im/messageOutbox'
@@ -759,7 +756,6 @@ let imageEditorDrawingFrame = 0
 const showDeleteModeSheet = ref(false)
 const pendingDeleteIds = ref<string[]>([])
 const showForwardSheet = ref(false)
-const showContactPick = ref(false)
 const showEmojiPanel = ref(false)
 const voiceMode = ref(false)
 const recording = ref(false)
@@ -767,14 +763,6 @@ const recordCancel = ref(false)
 const recordSeconds = ref(0)
 const playingVoiceId = ref('')
 const voiceLoadingId = ref('')
-/** 语音转文字：展示中 / 加载中 / 文本缓存 */
-const voiceTextShown = ref<Record<string, boolean>>({})
-const voiceTextLoading = ref<Record<string, boolean>>({})
-const voiceTextCache = ref<Record<string, string>>({})
-const contactPickTab = ref<'friend' | 'group'>('friend')
-const contactPickList = ref<ContactItem[]>([])
-const groupPickList = ref<ConversationItem[]>([])
-const contactPickLoading = ref(false)
 const uploading = ref(false)
 const showFileSendConfirm = ref(false)
 const pendingFileToSend = ref<File | null>(null)
@@ -929,8 +917,6 @@ function onNativeBack(event: Event) {
     closeVideoCapture()
   } else if (showForwardSheet.value) {
     showForwardSheet.value = false
-  } else if (showContactPick.value) {
-    showContactPick.value = false
   } else if (showGroupCallPicker.value) {
     showGroupCallPicker.value = false
   } else if (showMapSourceSheet.value) {
@@ -1129,7 +1115,6 @@ const msgActions = computed(() => {
   }
   actions.push(
     { name: '转发' },
-    { name: '收藏' },
     { name: '删除' },
     { name: '多选' },
     { name: '引用' },
@@ -2532,11 +2517,6 @@ onUnmounted(() => {
   }
   clearLongPress()
   clearMediaLongPress()
-  // 语音转文字：离开页面自动取消，避免识别中的 toast 一直挂着
-  resetSpeechRecognize()
-  closeToast()
-  voiceTextLoading.value = {}
-  voiceTextShown.value = {}
   stopVoicePlayback()
   void abortVoiceRecord()
   clearVoiceCache()
@@ -3261,7 +3241,7 @@ function onMsgAction(action: { name: string }) {
     if (videoPlayerMsg) closeVideoPlayer()
   }
   if (
-    ['保存到相册', '编辑图片', '复制', '复制文件名', '转发', '收藏'].includes(action.name) &&
+    ['保存到相册', '编辑图片', '复制', '复制文件名', '转发'].includes(action.name) &&
     blockBurnExport(msg)
   ) return
   switch (action.name) {
@@ -3281,9 +3261,6 @@ function onMsgAction(action: { name: string }) {
     case '转发':
       selectedIds.value = new Set([msg.id])
       void openForwardPicker()
-      break
-    case '收藏':
-      void doFavorite(msg)
       break
     case '删除':
       void doDelete([msg.id])
@@ -3534,16 +3511,6 @@ async function doCopy(msg: ChatMessage) {
     showToast('已复制')
   } catch {
     showToast('复制失败')
-  }
-}
-
-async function doFavorite(msg: ChatMessage) {
-  if (blockBurnExport(msg)) return
-  try {
-    await addFavorite(conversationId.value, msg.id)
-    showToast('已收藏')
-  } catch (e) {
-    showToast(e instanceof Error ? e.message : '收藏失败')
   }
 }
 
@@ -4074,7 +4041,6 @@ async function sendVoiceBlob(
   blob: Blob,
   mimeType: string,
   durationMs: number,
-  transcript = '',
 ) {
   if (!canChat.value) {
     showToast(chatBlockTip.value || '无法发送消息')
@@ -4100,7 +4066,6 @@ async function sendVoiceBlob(
       size: uploaded.size,
       contentType: uploaded.contentType || baseMime,
        durationMs,
-      ...(transcript ? { transcript } : {}),
     })
      await sendTypedMessage(payload, 3, uploaded.fileId)
   } catch (err) {
@@ -4122,82 +4087,6 @@ function onVoicePressEnd() {
 
 function voiceOf(msg: ChatMessage) {
   return msg.msgType === 3 ? parseFilePayload(msg.content) : null
-}
-
-function voiceTextOf(msg: ChatMessage): string {
-  return voiceTextCache.value[msg.id] || voiceOf(msg)?.transcript || ''
-}
-
-function isVoiceTextShown(msgId: string): boolean {
-  return !!voiceTextShown.value[msgId]
-}
-
-function isVoiceTextLoading(msgId: string): boolean {
-  return !!voiceTextLoading.value[msgId]
-}
-
-async function toggleVoiceText(msg: ChatMessage) {
-  if (multiMode.value || msg.msgType !== 3) return
-  const id = msg.id
-  // 正在转时再点：取消并允许重试，避免一直转圈
-  if (voiceTextLoading.value[id]) {
-    resetSpeechRecognize()
-    closeToast()
-    voiceTextLoading.value = { ...voiceTextLoading.value, [id]: false }
-    showToast('已取消，请再点一次转文字')
-    return
-  }
-  if (voiceTextShown.value[id]) {
-    voiceTextShown.value = { ...voiceTextShown.value, [id]: false }
-    return
-  }
-  const existing = voiceTextOf(msg)
-  if (existing) {
-    voiceTextShown.value = { ...voiceTextShown.value, [id]: true }
-    return
-  }
-  if (!speechRecognitionSupported()) {
-    showToast('当前浏览器不支持转文字')
-    return
-  }
-  const f = voiceOf(msg)
-  if (!f?.url) {
-    showToast('无法识别该语音')
-    return
-  }
-  stopVoicePlayback()
-  voiceTextLoading.value = { ...voiceTextLoading.value, [id]: true }
-  // 允许再点取消，避免卡死时点不了
-  showLoadingToast({ message: '正在识别…', forbidClick: false, duration: 0 })
-  let errTip = ''
-  const safetyTimer = window.setTimeout(() => {
-    if (voiceTextLoading.value[id]) {
-      resetSpeechRecognize()
-      closeToast()
-      voiceTextLoading.value = { ...voiceTextLoading.value, [id]: false }
-      showToast('识别超时，请再试一次')
-    }
-  }, 120000)
-  try {
-    const text = await transcribeVoiceUrl(f.url, 'zh-CN', (msgText) => {
-      showLoadingToast({ message: msgText, forbidClick: false, duration: 0 })
-    })
-    const finalText = (text || '').trim()
-    if (!finalText) {
-      errTip = '未能识别出文字，请重试'
-      return
-    }
-    voiceTextCache.value = { ...voiceTextCache.value, [id]: finalText }
-    voiceTextShown.value = { ...voiceTextShown.value, [id]: true }
-  } catch (err) {
-    const tip = err instanceof Error && err.message ? err.message : '转文字失败，请重试'
-    if (tip !== '已取消') errTip = tip
-  } finally {
-    window.clearTimeout(safetyTimer)
-    closeToast()
-    voiceTextLoading.value = { ...voiceTextLoading.value, [id]: false }
-  }
-  if (errTip) showToast(errTip)
 }
 
 let voiceTouchPlayedAt = 0
@@ -4277,10 +4166,6 @@ const plusActions = computed(() => {
     { key: 'album' as const, label: '相册', icon: 'photo_library', enabled: true },
     { key: 'capture' as const, label: '拍摄', icon: 'photo_camera', enabled: true },
     { key: 'file' as const, label: '文件', icon: 'draft', enabled: true },
-    { key: 'location' as const, label: '位置', icon: 'location_on', enabled: true },
-    { key: 'live_location' as const, label: '位置共享', icon: 'share_location', enabled: true },
-    { key: 'card' as const, label: '名片', icon: 'badge', enabled: true },
-    { key: 'favorite' as const, label: '收藏', icon: 'bookmark', enabled: true },
     { key: 'redpacket' as const, label: '红包', icon: 'redeem', enabled: true },
     { key: 'transfer' as const, label: '转账', icon: 'currency_yen', enabled: true },
     {
@@ -4298,7 +4183,7 @@ const plusActions = computed(() => {
   ] as const
   if (!isFileTransferAssistant.value) return items
   return items.filter((item) =>
-    !['live_location', 'redpacket', 'transfer', 'call', 'videocall'].includes(item.key),
+    !['redpacket', 'transfer', 'call', 'videocall'].includes(item.key),
   )
 })
 
@@ -4454,27 +4339,6 @@ function onPlusAction(key: (typeof plusActions.value)[number]['key']) {
   if (key === 'album') void openAlbumFilePicker(mediaInputRef.value)
   else if (key === 'capture') void openHdCapture('photo')
   else if (key === 'file') fileInputRef.value?.click()
-  else if (key === 'location') {
-    void router.push({
-      path: `/chat/${conversationId.value}/location`,
-      query: { returnTo: route.fullPath },
-    })
-  }
-  else if (key === 'live_location') {
-    void router.push({
-      path: `/chat/${conversationId.value}/live-location`,
-      query: { title: peerTitle.value, type: isGroup.value ? 'group' : 'personal', entry: 'start' },
-    })
-  }
-  else if (key === 'card') void openContactPicker()
-  else if (key === 'favorite') void router.push({
-    path: '/favorites',
-    query: {
-      sendTo: conversationId.value,
-      sendToName: peerTitle.value,
-      returnTo: route.fullPath,
-    },
-  })
   else if (key === 'redpacket') void router.push({
     path: `/chat/${conversationId.value}/red-packet`,
     query: { ...route.query },
@@ -4936,30 +4800,6 @@ async function stopHdVideoRecordAndSend() {
   // 录像完成进入视频编辑页，裁剪后点击底部“完成”直接发送。
   closeVideoCapture()
   openMediaPicker([file], { initialMode: 'trim', directSend: true })
-}
-
-async function openContactPicker() {
-  showContactPick.value = true
-  contactPickTab.value = 'friend'
-  contactPickLoading.value = true
-  try {
-    const [friends, convs] = await Promise.all([
-      fetchContacts(),
-      fetchConversations('all'),
-    ])
-    contactPickList.value = friends.filter(
-      (friend) => !friend.fileTransferAssistant && friend.nickname !== '文件传输助手',
-    )
-    groupPickList.value = convs.filter(
-      (c) => c.type === 'group' && c.id !== conversationId.value,
-    )
-  } catch {
-    contactPickList.value = []
-    groupPickList.value = []
-    showToast('加载失败')
-  } finally {
-    contactPickLoading.value = false
-  }
 }
 
 function openMediaPicker(
@@ -5446,64 +5286,6 @@ async function uploadChatFileWithTimeout(
     throw error
   } finally {
     window.clearTimeout(timer)
-  }
-}
-
-async function sendContactCard(c: ContactItem) {
-  if (!canChat.value) {
-    showToast(chatBlockTip.value || '无法发送消息')
-    return
-  }
-  try {
-    await showConfirmDialog({
-      title: '确认发送名片',
-      message: `确定将「${c.nickname}」的个人名片发送给${peerTitle.value || '当前会话'}吗？`,
-      cancelButtonText: '取消',
-      confirmButtonText: '发送',
-    })
-  } catch {
-    return
-  }
-  showContactPick.value = false
-  const payload = JSON.stringify({
-    cardType: 'user',
-    userId: c.userId,
-    nickname: c.nickname,
-    avatarUrl: c.avatarUrl || '',
-  })
-  try {
-    await sendTypedMessage(payload, 5)
-  } catch (err) {
-    showToast(err instanceof Error ? err.message : '名片发送失败')
-  }
-}
-
-async function sendGroupCard(g: ConversationItem) {
-  if (!canChat.value) {
-    showToast(chatBlockTip.value || '无法发送消息')
-    return
-  }
-  try {
-    await showConfirmDialog({
-      title: '确认发送名片',
-      message: `确定将「${g.name}」的群名片发送给${peerTitle.value || '当前会话'}吗？`,
-      cancelButtonText: '取消',
-      confirmButtonText: '发送',
-    })
-  } catch {
-    return
-  }
-  showContactPick.value = false
-  const payload = JSON.stringify({
-    cardType: 'group',
-    conversationId: g.id,
-    nickname: g.name,
-    avatarUrl: g.avatar || '',
-  })
-  try {
-    await sendTypedMessage(payload, 5)
-  } catch (err) {
-    showToast(err instanceof Error ? err.message : '群名片发送失败')
   }
 }
 
@@ -8667,29 +8449,6 @@ function onDeleteModeSelect(action: { name?: string }) {
               </span>
             </div>
 
-            <div
-              v-if="!msg.recalled && msg.msgType === 3 && voiceOf(msg)"
-              class="voice-extra"
-              :class="{ mine: isMine(msg) }"
-            >
-              <div v-if="isVoiceTextShown(msg.id) && voiceTextOf(msg)" class="voice-text-box">
-                {{ voiceTextOf(msg) }}
-      </div>
-              <button
-                type="button"
-                class="voice-text-btn"
-                @click.stop="toggleVoiceText(msg)"
-              >
-                {{
-                  isVoiceTextLoading(msg.id)
-                    ? '取消识别'
-                    : isVoiceTextShown(msg.id)
-                      ? '取消转文字'
-                      : '转文字'
-                }}
-              </button>
-    </div>
-
             <div v-if="!msg.recalled" class="msg-meta" :class="{ mine: isMine(msg) }">
               <span v-if="formatMsgTime(msg.createdAt)" class="msg-time">{{ formatMsgTime(msg.createdAt) }}</span>
               <template v-if="isMine(msg)">
@@ -9144,79 +8903,6 @@ function onDeleteModeSelect(action: { name?: string }) {
         </div>
         <div v-if="plusPages.length > 1" class="plus-dots">
           <i v-for="(_, i) in plusPages" :key="i" :class="{ on: plusPage === i }" />
-        </div>
-      </div>
-    </van-popup>
-
-    <van-popup
-      v-model:show="showContactPick"
-      position="bottom"
-      round
-      teleport="body"
-      close-on-click-overlay
-      safe-area-inset-bottom
-      class="card-pick-popup"
-      :style="{ height: '68%', maxHeight: '68vh', background: 'var(--pulse-surface-container)' }"
-    >
-      <div class="forward-panel card-pick-panel">
-        <div class="forward-header">
-          <div class="forward-title">选择名片</div>
-          <div class="forward-hint">可发送好友名片或群名片</div>
-          <div class="card-pick-tabs">
-            <button
-              type="button"
-              class="card-pick-tab"
-              :class="{ on: contactPickTab === 'friend' }"
-              @click="contactPickTab = 'friend'"
-            >
-              好友
-            </button>
-            <button
-              type="button"
-              class="card-pick-tab"
-              :class="{ on: contactPickTab === 'group' }"
-              @click="contactPickTab = 'group'"
-            >
-              群聊
-            </button>
-          </div>
-        </div>
-        <div class="forward-list">
-          <div v-if="contactPickLoading" class="forward-empty">加载中...</div>
-          <template v-else-if="contactPickTab === 'friend'">
-            <div v-if="!contactPickList.length" class="forward-empty">暂无好友</div>
-            <button
-              v-for="c in contactPickList"
-              :key="c.userId"
-              type="button"
-              class="forward-item"
-              @click="sendContactCard(c)"
-            >
-              <img v-if="c.avatarUrl" :src="c.avatarUrl" :alt="c.nickname" class="forward-avatar" />
-              <div v-else class="forward-avatar initials">{{ c.nickname.slice(0, 1) }}</div>
-              <div class="forward-meta">
-                <div class="forward-name">{{ c.nickname }}</div>
-                <div class="forward-sub">好友</div>
-              </div>
-            </button>
-          </template>
-          <template v-else>
-            <div v-if="!groupPickList.length" class="forward-empty">暂无群聊</div>
-            <button
-              v-for="g in groupPickList"
-              :key="g.id"
-              type="button"
-              class="forward-item"
-              @click="sendGroupCard(g)"
-            >
-              <img v-if="g.avatar" :src="g.avatar" :alt="g.name" class="forward-avatar" />
-              <div v-else class="forward-avatar initials">{{ g.name.slice(0, 1) }}</div>
-              <div class="forward-meta">
-                <div class="forward-name">{{ g.name }}</div>
-                <div class="forward-sub">群聊</div>
-              </div>
-            </button>
-          </template>
         </div>
       </div>
     </van-popup>
@@ -11501,34 +11187,6 @@ function onDeleteModeSelect(action: { name?: string }) {
   color: #c5c6cb;
 }
 
-.card-pick-panel {
-  background: var(--pulse-surface-container);
-  height: 100%;
-}
-
-.card-pick-tabs {
-  display: flex;
-  gap: 8px;
-  margin-top: 12px;
-}
-
-.card-pick-tab {
-  flex: 1;
-  height: 34px;
-  border: none;
-  border-radius: 999px;
-  background: var(--pulse-surface-high);
-  color: var(--pulse-outline);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.card-pick-tab.on {
-  background: var(--pulse-primary-container);
-  color: #fff;
-}
-
 .bubble-text {
   display: block;
 }
@@ -12496,51 +12154,6 @@ function onDeleteModeSelect(action: { name?: string }) {
   min-width: 1.2em;
 }
 
-.voice-extra {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 6px;
-  margin-top: 4px;
-  max-width: var(--chat-bubble-max, 78%);
-}
-
-.voice-extra.mine {
-  align-items: flex-end;
-  margin-left: auto;
-}
-
-.voice-text-box {
-  width: 100%;
-  padding: 8px 10px;
-  border-radius: 8px;
-  background: rgba(56, 57, 61, 0.7);
-  color: var(--pulse-text);
-  font-size: 13px;
-  line-height: 1.45;
-  word-break: break-word;
-}
-
-.voice-extra.mine .voice-text-box {
-  background: rgba(75, 142, 255, 0.18);
-}
-
-.voice-text-btn {
-  border: none;
-  padding: 0;
-  background: transparent;
-  color: var(--pulse-primary);
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.voice-text-btn:disabled {
-  opacity: 0.55;
-  cursor: default;
-}
-
 .voice-record-mask {
   position: fixed;
   inset: 0;
@@ -12767,9 +12380,7 @@ function onDeleteModeSelect(action: { name?: string }) {
 <style>
 /* teleported popups：去掉默认白底两侧露边 */
 .plus-popup.van-popup,
-.plus-popup.van-popup--bottom,
-.card-pick-popup.van-popup,
-.card-pick-popup.van-popup--bottom {
+.plus-popup.van-popup--bottom {
   background: var(--pulse-surface-container) !important;
   overflow: hidden;
 }

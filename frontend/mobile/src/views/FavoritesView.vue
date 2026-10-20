@@ -415,7 +415,7 @@ async function removeSelected() {
         >
           <div v-if="loading" class="hint">加载中...</div>
           <div v-else-if="!visibleList.length" class="hint">
-            {{ sendTo ? '暂无可发送的聊天收藏' : '暂无收藏，聊天消息和圈子动态均可收藏' }}
+            {{ sendTo ? '暂无可发送的聊天收藏' : '暂无收藏内容' }}
           </div>
           <van-swipe-cell v-for="item in visibleList" :key="item.key">
             <button
