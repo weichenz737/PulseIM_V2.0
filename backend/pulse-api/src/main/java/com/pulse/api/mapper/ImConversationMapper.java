@@ -64,7 +64,7 @@ public interface ImConversationMapper extends BaseMapper<ImConversation> {
                                  THEN COALESCE(NULLIF(TRIM(last_sender.nickname), ''), '成员') || ': '
                                WHEN lm.from_user_id = m.user_id THEN '我: '
                                ELSE ''
-                             END) || COALESCE(NULLIF(TRIM(c.last_msg_preview), ''), '[群提示]')
+                             END) || COALESCE(NULLIF(TRIM(lm.content), ''), '[群提示]')
                       WHEN lm.msg_type = 0
                         THEN (CASE
                                WHEN c.type = 2 AND lm.from_user_id <> m.user_id

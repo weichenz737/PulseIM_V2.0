@@ -239,7 +239,7 @@ public class BurnAfterReadService {
                             WHEN m.msg_type = 4 THEN '[聊天记录]'
                             WHEN m.msg_type = 5 THEN '[名片]'
                             WHEN m.msg_type = 6 THEN '[位置]'
-                            WHEN m.msg_type = 9 THEN '[通话]'
+                            WHEN m.msg_type = 9 THEN COALESCE(m.content, '[系统消息]')
                             ELSE LEFT(COALESCE(m.content, ''), 100)
                         END
                         FROM im_message m
