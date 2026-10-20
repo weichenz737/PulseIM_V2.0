@@ -280,8 +280,9 @@ function isSelfConversation(item: ConversationItem): boolean {
   return false
 }
 
-function formatListPreview(preview?: string): string {
+function formatListPreview(preview?: string, msgType?: number): string {
   const raw = String(preview || '')
+  if (msgType === 0) return raw
   return (
     formatCallPreview(raw) ||
     formatContactCardPreview(raw) ||
@@ -311,9 +312,9 @@ function withPreviewPatches(list: ConversationItem[]): ConversationItem[] {
   const patches = inbox.patches
   return list.map((c) => {
     const p = patches[c.id]
-    const serverPreview = formatListPreview(c.preview)
+    const serverPreview = formatListPreview(c.preview, c.lastMsgType)
     if (!p) return { ...c, preview: serverPreview }
-    const patchedPreview = formatListPreview(p.preview)
+    const patchedPreview = formatListPreview(p.preview, p.msgType)
     const keepBurnTombstone = serverPreview === '[阅后即焚消息已销毁]'
       && p.at <= (c.lastMsgTimeMs || 0)
     const nextPreview = keepBurnTombstone

@@ -13,6 +13,8 @@ public class ConversationVO {
     /** 单聊对方真实昵称，仅用于无头像占位字；不受好友备注影响。 */
     private String peerNickname;
     private String lastMsgPreview;
+    /** Actual latest message type, used to preserve plain text that resembles attachment JSON. */
+    private Integer lastMsgType;
     private OffsetDateTime lastMsgTime;
     private Integer unreadCount;
     private Long peerUserId;

@@ -1673,18 +1673,26 @@ function mapRemoteMessage(item) {
   // some return `file:<id>`, while others keep the file id inside JSON
   // content (or inside a nested `file` object). Recover all of those forms
   // before deciding whether metadata hydration should be scheduled.
-  const parsedFile = parseDesktopFile(rawContent)
+  const rawMsgType = item.msgType ?? item.msg_type ?? item.messageType ?? item.message_type
+  const numericMsgType = Number(rawMsgType)
+  const hasExplicitType = rawMsgType != null && rawMsgType !== ''
+    && Number.isInteger(numericMsgType) && numericMsgType >= 0 && numericMsgType <= 10
+  const explicitMsgType = hasExplicitType ? numericMsgType : 0
+  const parsedFile = !hasExplicitType || [1, 2, 3].includes(explicitMsgType)
+    ? parseDesktopFile(rawContent)
+    : null
   const contentFileId = rawContent.startsWith('file:') ? rawContent.slice('file:'.length).trim() : ''
   const rawFile = item.file || item.attachment || item.fileMetadata || item.file_metadata || {}
-  const fileId = String(item.fileId || item.file_id || rawFile.fileId || rawFile.file_id || parsedFile?.fileId || parsedFile?.file_id || contentFileId || '').trim()
+  const fileId = hasExplicitType && explicitMsgType === 0
+    ? ''
+    : String(item.fileId || item.file_id || rawFile.fileId || rawFile.file_id || parsedFile?.fileId || parsedFile?.file_id || contentFileId || '').trim()
   const filePayload = {
     ...(parsedFile && typeof parsedFile === 'object' ? parsedFile : {}),
     ...(rawFile && typeof rawFile === 'object' ? rawFile : {}),
   }
   const file = fileId ? normalizeDesktopFilePayload(fileId, filePayload) : null
   const content = fileId ? JSON.stringify(file) : rawContent
-  const explicitMsgType = Number(item.msgType ?? item.msg_type ?? item.messageType ?? item.message_type ?? 0) || 0
-  const msgType = explicitMsgType || inferDesktopMessageType(rawContent, file)
+  const msgType = hasExplicitType ? explicitMsgType : inferDesktopMessageType(rawContent, file)
   const explicitlyLoaded = Boolean(item.fileMetadataLoaded || item.file_metadata_loaded)
   const hasFileDescriptor = Boolean(
     file?.objectKey
@@ -8748,8 +8756,10 @@ function desktopMessageAttachment(message, content = '') {
 
 function desktopReplyMessageType(message, replyTarget = null) {
   if (message?.replyToRecalled) return -1
-  const explicitType = Number(message?.replyToMsgType || 0)
-  if (explicitType > 0) return explicitType
+  if (message?.replyToMsgType != null) {
+    const explicitType = Number(message.replyToMsgType)
+    if (Number.isInteger(explicitType) && explicitType >= 0 && explicitType <= 10) return explicitType
+  }
   const targetType = Number(replyTarget?.msgType || 0)
   if (targetType > 0) return targetType
   const content = desktopReplyContent(message, replyTarget)
@@ -8778,12 +8788,7 @@ function desktopReplyPreview(message, replyTarget = null) {
   const content = desktopReplyContent(message, replyTarget)
   const type = desktopReplyMessageType(message, replyTarget)
   if (!content) return '原消息'
-  if (type === 0) {
-    const payload = parseDesktopJson(content)
-    if (payload?.text || payload?.message) return String(payload.text || payload.message)
-    if (payload) return '消息'
-    return content
-  }
+  if (type === 0) return content
   return desktopMessagePreview({ content, msgType: type })
 }
 
@@ -9079,9 +9084,10 @@ function refreshDesktopConversationPreview(conversationId, expiredBurnMessage = 
   updateDesktopConversationListRow(conversation)
 }
 
-function desktopPreviewText(content, msgType = 0) {
+function desktopPreviewText(content, msgType = null) {
   const raw = String(content || '').trim()
   if (!raw) return ''
+  if (msgType != null && Number(msgType) === 0) return raw
   const type = Number(msgType || 0)
   if (type > 0 && type !== 9) return desktopMessagePreview({ content: raw, msgType: type })
   const looksLikeJson = raw.startsWith('{') || /^\[\s*(?:\{|\[|"|-?\d|true|false|null)/.test(raw)
@@ -9235,8 +9241,13 @@ function renderDesktopMessageContent(message) {
     return `<span class="message-recalled-copy">${message.mine ? '你撤回了一条消息' : '这条消息已被撤回'}</span>${editButton}`
   }
   const content = String(message.content || message.rawContent || '')
-  const file = desktopMessageAttachment(message, content)
-  const type = Number(message.msgType || 0) || inferDesktopMessageType(message.rawContent || content, file)
+  const numericType = Number(message.msgType)
+  const hasExplicitType = message.msgType != null && message.msgType !== ''
+    && Number.isInteger(numericType) && numericType >= 0 && numericType <= 10
+  const file = hasExplicitType && numericType === 0
+    ? null
+    : desktopMessageAttachment(message, content)
+  const type = hasExplicitType ? numericType : inferDesktopMessageType(message.rawContent || content, file)
   if (content.startsWith('__PULSE_LIVE_LOCATION__')) {
     const location = parseDesktopLocation(content.slice('__PULSE_LIVE_LOCATION__'.length).trim())
     if (!location) return `<div class="typed-location-card typed-location-invalid typed-live-location-card"><span class="typed-location-pin">${icon('location')}</span><span class="typed-location-meta"><strong>位置共享</strong><small>实时位置共享</small></span></div>`

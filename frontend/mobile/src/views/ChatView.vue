@@ -2102,7 +2102,7 @@ function onLocalCallSystemTip(event: Event) {
   }
   scrollToBottom()
   if (tip.preview) {
-    inbox.notifyLocalMessage(conversationId.value, tip.preview)
+    inbox.notifyLocalMessage(conversationId.value, tip.preview, 9)
   }
 }
 
@@ -2633,9 +2633,11 @@ function appendIncoming(msg: Record<string, unknown>) {
     ? msg.file as Partial<import('@/api/message').FilePayload> & { downloadUrl?: string }
     : undefined
   const incomingFileId = String(msg.fileId ?? rawFile?.fileId ?? '').trim()
-  const contentFile = parseFilePayload(String(msg.content ?? ''))
-  const rawContentFile = parseFilePayload(String(msg.rawContent ?? ''))
-  const incomingFile = incomingFileId || rawFile?.fileId || rawContentFile?.fileId
+  const isAttachment = [1, 2, 3].includes(Number(msg.msgType))
+    || Boolean(incomingFileId)
+  const contentFile = isAttachment ? parseFilePayload(String(msg.content ?? '')) : null
+  const rawContentFile = isAttachment ? parseFilePayload(String(msg.rawContent ?? '')) : null
+  const incomingFile = isAttachment && (incomingFileId || rawFile?.fileId || rawContentFile?.fileId)
     ? normalizeMessageFilePayload(incomingFileId, {
         ...(contentFile || {}),
         ...(rawContentFile || {}),
@@ -2696,7 +2698,7 @@ function appendIncoming(msg: Record<string, unknown>) {
     }
     if (shouldFollowLatest) scrollToBottom()
     markReadNow()
-    inbox.notifyLocalMessage(convId, incoming.burnAfterRead ? '[阅后即焚消息]' : msgLabel(incoming))
+    inbox.notifyLocalMessage(convId, incoming.burnAfterRead ? '[阅后即焚消息]' : msgLabel(incoming), incoming.msgType)
     void refreshGroupMuteState()
     return
   }
@@ -2723,7 +2725,7 @@ function appendIncoming(msg: Record<string, unknown>) {
   if (incoming.msgType === 3) prefetchVoiceMessages([incoming])
   if (shouldFollowLatest) scrollToBottom()
   markReadNow()
-  inbox.notifyLocalMessage(convId, incoming.burnAfterRead ? '[阅后即焚消息]' : msgLabel(incoming))
+  inbox.notifyLocalMessage(convId, incoming.burnAfterRead ? '[阅后即焚消息]' : msgLabel(incoming), incoming.msgType)
 }
 
 async function refreshLatest(full = false) {
@@ -3680,8 +3682,10 @@ function replyQuoteType(msg: {
   replyToRecalled?: boolean
 }): number {
   if (msg.replyToRecalled) return -1
-  const explicitType = Number(msg.replyToMsgType || 0)
-  if (explicitType > 0) return explicitType
+  if (msg.replyToMsgType != null) {
+    const explicitType = Number(msg.replyToMsgType)
+    if (Number.isInteger(explicitType) && explicitType >= 0 && explicitType <= 10) return explicitType
+  }
   const target = msg.replyToMsgId
     ? messages.value.find((item) => item.id === msg.replyToMsgId)
     : null
@@ -3815,7 +3819,7 @@ async function sendMessage() {
   clearPendingMentions()
   restoreComposerFocusAfterSend(keepKeyboardOpen)
   scrollToBottom()
-  inbox.notifyLocalMessage(conversationId.value, text)
+  inbox.notifyLocalMessage(conversationId.value, text, 0)
 
   try {
     const saved = await sendTextMessage({
@@ -5521,7 +5525,7 @@ async function sendTypedMessage(content: string, msgType: MsgType, fileId?: stri
   }
   messages.value.push(optimistic)
   scrollToBottom()
-  inbox.notifyLocalMessage(conversationId.value, msgLabel(optimistic))
+  inbox.notifyLocalMessage(conversationId.value, msgLabel(optimistic), msgType)
 
   try {
     const saved = await sendTextMessage({
@@ -5797,6 +5801,7 @@ async function waitForVideoPlaybackRendition(message: ChatMessage, openToken: nu
 function warmAttachments(list: ChatMessage[]) {
   list.forEach((message) => {
     if (message.recalled) return
+    if (message.msgType !== 1 && message.msgType !== 2) return
     const payload = parseFilePayload(message.content)
     const normalizedType = normalizeMessageType(message.msgType, message.content, payload)
     const normalizedMessage = normalizedType === message.msgType

@@ -98,7 +98,9 @@ public class ConversationService {
         for (ConversationVO vo : list) {
             // 兼容早期版本把系统消息 JSON 直接写进会话预览的历史数据。
             // 普通文本消息保持原样，只有能识别为结构化消息的内容才转换成摘要。
-            vo.setLastMsgPreview(normalizeConversationPreview(vo.getLastMsgPreview()));
+            if (Integer.valueOf(9).equals(vo.getLastMsgType())) {
+                vo.setLastMsgPreview(normalizeConversationPreview(vo.getLastMsgPreview()));
+            }
             if (vo.getArchived() == null) {
                 vo.setArchived(false);
             }

@@ -20,6 +20,7 @@ export interface ConversationItem {
   /** 无头像时使用的对方真实昵称，不受好友备注影响 */
   avatarName?: string
   preview: string
+  lastMsgType?: number
   time: string
   lastMsgTimeMs?: number
   unread: number
@@ -44,6 +45,7 @@ interface BackendConversationVO {
   avatarUrl?: string
   peerNickname?: string
   lastMsgPreview?: string
+  lastMsgType?: number
   lastMsgTime?: string
   unreadCount?: number
   peerUserId?: number
@@ -84,7 +86,10 @@ function mapItem(vo: BackendConversationVO): ConversationItem {
     name: vo.title || '会话',
     avatar: resolveAvatarUrl(vo.avatarUrl || ''),
     avatarName: vo.peerNickname ? String(vo.peerNickname) : undefined,
-    preview: formatCallPreview(rawPreview) || formatBusinessPreview(rawPreview),
+    preview: Number(vo.lastMsgType) === 0 && vo.lastMsgType != null
+      ? rawPreview
+      : formatCallPreview(rawPreview) || formatBusinessPreview(rawPreview),
+    lastMsgType: vo.lastMsgType,
     time: formatTime(vo.lastMsgTime),
     lastMsgTimeMs: vo.lastMsgTime ? Date.parse(vo.lastMsgTime) || 0 : 0,
     unread: vo.unreadCount || 0,

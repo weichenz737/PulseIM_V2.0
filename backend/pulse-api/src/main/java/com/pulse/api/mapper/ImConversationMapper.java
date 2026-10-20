@@ -131,6 +131,7 @@ public interface ImConversationMapper extends BaseMapper<ImConversation> {
                             END)
                            || COALESCE(lm.content, '')
                    END AS last_msg_preview,
+                   lm.msg_type AS last_msg_type,
                    CASE
                      WHEN c.type = 2 AND m.joined_at IS NOT NULL
                           AND (lm.send_time IS NULL OR lm.send_time < m.joined_at)

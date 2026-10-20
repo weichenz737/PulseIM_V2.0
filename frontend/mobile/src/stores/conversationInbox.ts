@@ -17,6 +17,7 @@ export interface ConversationPreviewPatch {
   conversationId: string
   msgId?: string
   preview: string
+  msgType?: number
   at: number
   time?: string
   /** 是否自己发出；自己发出不加未读 */
@@ -65,6 +66,11 @@ function previewFromPayload(msg: Record<string, unknown>): string {
     ? normalizeMessageFilePayload(fileId, rawFile)
     : null
   const content = file ? JSON.stringify(file) : String(msg.content ?? '')
+  if (msg.msgType != null && msgType === 0) {
+    const text = String(msg.content ?? '').trim()
+    if (text.startsWith('__PULSE_LIVE_LOCATION__')) return '[实时位置共享]'
+    return text.length > 40 ? text.slice(0, 40) + '…' : text
+  }
   if (msgType === 9) {
     const formatted = formatCallPreview(content) || formatBusinessPreview(content)
     if (formatted && formatted !== content) return formatted
@@ -263,11 +269,12 @@ export const useConversationInboxStore = defineStore('conversationInbox', () => 
     revision.value += 1
   }
 
-  function notifyLocalMessage(conversationId: string, preview: string) {
+  function notifyLocalMessage(conversationId: string, preview: string, msgType?: number) {
     applyPatch({
       conversationId,
       msgId: '',
       preview,
+      msgType,
       at: Date.now(),
       fromSelf: true,
       fromNickname: String(userStore.nickname || '').trim() || undefined,
@@ -314,6 +321,7 @@ export const useConversationInboxStore = defineStore('conversationInbox', () => 
       conversationId: id,
       msgId: latest ? String(latest.id ?? latest.msgId ?? '') : undefined,
       preview,
+      msgType: latest?.msgType != null ? Number(latest.msgType) : undefined,
       at,
       time: formatMessageTime(at),
       fromSelf: latest ? String(latest.fromUserId ?? latest.from_user_id ?? '') === String(userStore.userId || '') : false,
@@ -414,6 +422,7 @@ export const useConversationInboxStore = defineStore('conversationInbox', () => 
           conversationId,
           msgId: String(msg.msgId ?? msg.id ?? ''),
           preview,
+          msgType: msg.msgType != null ? Number(msg.msgType) : undefined,
           at: Number(msg.sendTime) || Date.now(),
           fromSelf,
           fromNickname: String(msg.fromNickname ?? msg.from_nickname ?? '').trim() || undefined,

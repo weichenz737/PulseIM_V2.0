@@ -169,14 +169,16 @@ function mapMessage(vo: BackendMessageVO, myUserId: string): ChatMessage {
   // legacy rows can still only contain the JSON/file marker in `content`.
   // Normalize both shapes here so re-entering a chat cannot turn media back
   // into a generic file message.
-  const contentFile = parseFilePayload(vo.content)
-  const rawContentFile = parseFilePayload(vo.rawContent)
+  const isAttachment = [1, 2, 3].includes(Number(vo.msgType))
+    || Boolean(vo.fileId || vo.file?.fileId)
+  const contentFile = isAttachment ? parseFilePayload(vo.content) : null
+  const rawContentFile = isAttachment ? parseFilePayload(vo.rawContent) : null
   const attachmentSource = {
     ...(contentFile || {}),
     ...(rawContentFile || {}),
     ...(vo.file || {}),
   }
-  const file = vo.fileId || vo.file?.fileId || rawContentFile?.fileId
+  const file = isAttachment && (vo.fileId || vo.file?.fileId || rawContentFile?.fileId)
     ? normalizeBackendFile(vo.fileId, attachmentSource)
     : rawContentFile || contentFile
   return {
@@ -219,7 +221,8 @@ export function normalizeMessageType(
   file?: Pick<FilePayload, 'contentType' | 'name' | 'url'> | null,
 ): MsgType {
   const value = Number(rawType)
-  const valid = Number.isInteger(value) && value >= 0 && value <= 10
+  const valid = rawType != null && rawType !== ''
+    && Number.isInteger(value) && value >= 0 && value <= 10
   const attachment = file || parseFilePayload(content || '')
   const contentType = normalizeFileContentType(attachment?.contentType, attachment?.name || attachment?.url)
   const inferredType = inferMediaContentType(attachment?.name) || inferMediaContentType(attachment?.url)
@@ -231,6 +234,9 @@ export function normalizeMessageType(
     if (value === 2 && (contentType.startsWith('video/') || inferredType.startsWith('video/'))) return 2
     return value as MsgType
   }
+  // A server-declared text message stays text even if its contents are a URL
+  // or structured JSON. Only messages without a declared type use inference.
+  if (valid && value === 0) return 0
   if (contentType.startsWith('image/') || inferredType.startsWith('image/')) return 1
   if (contentType.startsWith('video/') || inferredType.startsWith('video/')) return 2
   if (parseContactCard(content || '')) return 5
