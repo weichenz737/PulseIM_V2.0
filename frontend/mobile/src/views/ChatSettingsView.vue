@@ -32,8 +32,9 @@ const muted = ref(false)
 const burnEnabled = ref(false)
 const BURN_SECONDS_OPTIONS = [5, 15, 30] as const
 const burnSeconds = ref(15)
-const savedBurnSeconds = ref(15)
 const burnSaving = ref(false)
+const showBurnSheet = ref(false)
+const burnOptions = BURN_SECONDS_OPTIONS.map((seconds) => ({ name: `${seconds}秒`, seconds }))
 const hasLegacyBurnSeconds = computed(() =>
   burnEnabled.value && !BURN_SECONDS_OPTIONS.some((seconds) => seconds === burnSeconds.value),
 )
@@ -105,7 +106,6 @@ onMounted(async () => {
         const setting = await fetchBurnSetting(conversationId.value)
         burnEnabled.value = !!setting.enabled
         burnSeconds.value = Math.min(300, Math.max(0, Number(setting.ttlSeconds) || 0))
-        savedBurnSeconds.value = burnSeconds.value
       } catch {
         // Keep the safe default when an older server has no setting yet.
       }
@@ -222,17 +222,18 @@ async function deleteFileTransferAssistant() {
   }
 }
 
-async function saveBurnSetting(nextEnabled: boolean, nextSeconds: number, previousSeconds: number) {
+async function saveBurnSetting(nextEnabled: boolean, nextSeconds = burnSeconds.value) {
   if (burnSaving.value) return
+  const oldEnabled = burnEnabled.value
+  const oldSeconds = burnSeconds.value
+  burnEnabled.value = nextEnabled
+  burnSeconds.value = nextSeconds
   burnSaving.value = true
   try {
     await updateBurnSetting(conversationId.value, {
       enabled: nextEnabled,
       ttlSeconds: nextSeconds,
     })
-    burnEnabled.value = nextEnabled
-    burnSeconds.value = nextSeconds
-    savedBurnSeconds.value = nextSeconds
     window.dispatchEvent(new CustomEvent('pulse:burn-setting-updated', {
       detail: {
         conversationId: conversationId.value,
@@ -240,29 +241,26 @@ async function saveBurnSetting(nextEnabled: boolean, nextSeconds: number, previo
         burnSeconds: nextSeconds,
       },
     }))
-    showToast(nextEnabled ? `已开启，${burnTimeLabel.value}` : '已关闭阅后即焚')
+    showToast(nextEnabled ? `已开启阅后即焚，新发送的消息将在对方阅读后${nextSeconds}秒销毁` : '已关闭阅后即焚')
   } catch (e) {
-    burnSeconds.value = previousSeconds
+    burnEnabled.value = oldEnabled
+    burnSeconds.value = oldSeconds
     showToast(e instanceof Error ? e.message : '阅后即焚设置失败')
   } finally {
     burnSaving.value = false
   }
 }
 
-function onBurnToggleClick() {
-  if (!burnEnabled.value) {
-    const seconds = BURN_SECONDS_OPTIONS.some((option) => option === burnSeconds.value)
-      ? burnSeconds.value
-      : 15
-    void saveBurnSetting(true, seconds, savedBurnSeconds.value)
-    return
-  }
-  void saveBurnSetting(false, burnSeconds.value, savedBurnSeconds.value)
+function onBurnToggle() {
+  if (burnEnabled.value) void saveBurnSetting(false)
+  else showBurnSheet.value = true
 }
 
-function onBurnTimeSelect(seconds: number) {
-  if (burnSaving.value || (burnEnabled.value && burnSeconds.value === seconds)) return
-  void saveBurnSetting(true, seconds, savedBurnSeconds.value)
+function chooseBurnTime(action: { seconds?: number }) {
+  showBurnSheet.value = false
+  if (action.seconds && (!burnEnabled.value || burnSeconds.value !== action.seconds)) {
+    void saveBurnSetting(true, action.seconds)
+  }
 }
 
 async function saveAutoDelete(enabled: boolean, seconds = autoDeleteSeconds.value) {
@@ -384,37 +382,29 @@ async function onDeleteScopeSelect(action: { name?: string }) {
         </button>
       </section>
 
-      <section v-if="!isGroup && !isFileTransferAssistant" class="card burn-card">
-        <div class="menu-row burn-switch-row">
+      <section v-if="!isGroup && !isFileTransferAssistant" class="card">
+        <div class="menu-row">
           <div class="burn-heading">
             <span class="menu-label">阅后即焚</span>
             <span class="burn-current">{{ burnEnabled ? burnTimeLabel : '已关闭' }}</span>
           </div>
-          <label class="switch">
-            <input
-              :checked="burnEnabled"
-              type="checkbox"
-              :disabled="burnSaving"
-              @click.prevent.stop="onBurnToggleClick"
-            />
+          <button
+            type="button"
+            class="switch switch-button"
+            :class="{ active: burnEnabled }"
+            :aria-pressed="burnEnabled"
+            :disabled="burnSaving"
+            @click.stop="onBurnToggle"
+          >
             <span class="slider" />
-          </label>
+          </button>
         </div>
-        <div class="burn-time">
-          <div class="burn-options" role="group" aria-label="阅后即焚时间">
-            <button
-              v-for="seconds in BURN_SECONDS_OPTIONS"
-              :key="seconds"
-              type="button"
-              class="burn-option"
-              :class="{ active: burnEnabled && burnSeconds === seconds }"
-              :aria-pressed="burnEnabled && burnSeconds === seconds"
-              :disabled="burnSaving"
-              @click="onBurnTimeSelect(seconds)"
-            >{{ seconds }}S</button>
-          </div>
-          <small v-if="hasLegacyBurnSeconds" class="burn-legacy">当前为旧设置：{{ burnTimeLabel }}，请选择新的时间</small>
-        </div>
+        <button v-if="burnEnabled" type="button" class="menu-row" :disabled="burnSaving" @click="showBurnSheet = true">
+          <span class="menu-label">销毁时间</span>
+          <span class="menu-value">{{ burnTimeLabel }}</span>
+          <span class="material-symbols-outlined chevron">chevron_right</span>
+        </button>
+        <small v-if="hasLegacyBurnSeconds" class="burn-legacy">当前为旧设置，请选择 5、15 或 30 秒</small>
       </section>
 
       <section v-if="!isGroup && !isFileTransferAssistant" class="card">
@@ -472,6 +462,8 @@ async function onDeleteScopeSelect(action: { name?: string }) {
     />
     <van-action-sheet v-if="!isFileTransferAssistant" v-model:show="showAutoDeleteSheet" title="自动删除时间"
       :actions="autoDeleteOptions" cancel-text="取消" @select="chooseAutoDelete" />
+    <van-action-sheet v-if="!isFileTransferAssistant" v-model:show="showBurnSheet" title="阅后即焚时间"
+      :actions="burnOptions" cancel-text="取消" @select="chooseBurnTime" />
     <van-action-sheet v-if="!isFileTransferAssistant" v-model:show="showMoreAutoDeleteSheet" title="更多时间选项"
       :actions="moreAutoDeleteOptions" cancel-text="取消" @select="chooseMoreAutoDelete" />
   </div>
@@ -616,10 +608,6 @@ async function onDeleteScopeSelect(action: { name?: string }) {
   font-size: 15px;
 }
 
-.burn-switch-row {
-  cursor: default;
-}
-
 .burn-heading {
   display: flex;
   flex-direction: column;
@@ -631,46 +619,9 @@ async function onDeleteScopeSelect(action: { name?: string }) {
   font-size: 12px;
 }
 
-.burn-time {
-  padding: 12px 16px 16px;
-}
-
-.burn-options {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.burn-option {
-  min-height: 40px;
-  border: 1px solid var(--pulse-outline-variant);
-  border-radius: 10px;
-  background: var(--pulse-surface);
-  color: var(--pulse-text);
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.burn-option.active {
-  border-color: var(--pulse-primary);
-  background: var(--pulse-primary);
-  color: var(--pulse-on-primary);
-}
-
-.burn-option:focus-visible {
-  outline: 2px solid var(--pulse-primary);
-  outline-offset: 2px;
-}
-
-.burn-option:disabled {
-  opacity: 0.55;
-  cursor: wait;
-}
-
 .burn-legacy {
   display: block;
-  margin-top: 8px;
+  padding: 0 16px 12px;
   color: var(--pulse-text-secondary);
   font-size: 12px;
 }

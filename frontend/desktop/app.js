@@ -2760,14 +2760,13 @@ function defaultDesktopConversationSettings(conversationId) {
 const DESKTOP_BURN_SECONDS_OPTIONS = [5, 15, 30]
 
 function desktopBurnOptionsMarkup(settings, disabled) {
-  const buttons = DESKTOP_BURN_SECONDS_OPTIONS.map((seconds) => {
-    const active = settings.burnEnabled && Number(settings.burnSeconds) === seconds
-    return `<button type="button" class="desktop-burn-option ${active ? 'active' : ''}" data-chat-burn-option="${seconds}" aria-pressed="${active}" ${disabled ? 'disabled' : ''}>${seconds}S</button>`
-  }).join('')
-  const legacy = settings.burnEnabled && !DESKTOP_BURN_SECONDS_OPTIONS.includes(Number(settings.burnSeconds))
+  const supported = DESKTOP_BURN_SECONDS_OPTIONS.includes(Number(settings.burnSeconds))
+  const options = DESKTOP_BURN_SECONDS_OPTIONS.map((seconds) =>
+    `<option value="${seconds}" ${Number(settings.burnSeconds) === seconds ? 'selected' : ''}>${seconds}秒</option>`).join('')
+  const legacy = settings.burnEnabled && !supported
     ? `<small class="desktop-burn-legacy">当前旧设置：${escapeHtml(desktopDurationLabel(settings.burnSeconds, 'burn'))}，请选择新的时间</small>`
     : ''
-  return `<div class="desktop-setting-control"><div class="desktop-burn-options" role="group" aria-label="阅后即焚时间">${buttons}</div>${legacy}</div>`
+  return `<label class="desktop-setting-select ${settings.burnEnabled ? '' : 'is-disabled'}"><span>销毁时间</span><select data-chat-burn-select ${!settings.burnEnabled || disabled ? 'disabled' : ''}>${legacy ? '<option value="" selected disabled>旧设置</option>' : ''}${options}</select></label>${legacy}`
 }
 
 function desktopConversationSettings(selected) {
@@ -15444,9 +15443,9 @@ function bindEvents() {
     const settings = desktopConversationSettings(conversations[state.selectedConversation])
     void saveDesktopBurnSetting(event.currentTarget.checked, settings.burnSeconds)
   })
-  document.querySelectorAll('[data-chat-burn-option]').forEach((button) => button.addEventListener('click', () => {
-    void saveDesktopBurnSetting(true, Number(button.dataset.chatBurnOption))
-  }))
+  document.querySelector('[data-chat-burn-select]')?.addEventListener('change', (event) => {
+    void saveDesktopBurnSetting(true, Number(event.currentTarget.value))
+  })
   document.querySelector('[data-chat-auto-delete-toggle]')?.addEventListener('change', (event) => {
     const select = document.querySelector('[data-chat-auto-delete-select]')
     void saveDesktopAutoDeleteSetting(event.currentTarget.checked, Number(select?.value || 86400))

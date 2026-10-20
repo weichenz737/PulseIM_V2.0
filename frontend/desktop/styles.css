@@ -692,12 +692,6 @@ html[data-electron='true'] .desktop-login-shell select { -webkit-app-region: no-
 .desktop-switch input:focus-visible + i { outline: 2px solid color-mix(in srgb, var(--primary) 45%, transparent); outline-offset: 2px; }
 .desktop-switch:active i { transform: scale(.94); }
 @keyframes desktop-switch-on { 0% { transform: scale(.92); } 65% { transform: scale(1.04); } 100% { transform: scale(1); } }
-.desktop-setting-control { margin-top: 12px; }
-.desktop-setting-control .desktop-burn-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-.desktop-burn-option { min-height: 34px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--text); font-size: 12px; font-weight: 600; cursor: pointer; }
-.desktop-burn-option.active { border-color: var(--primary); background: var(--primary); color: #fff; }
-.desktop-burn-option:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
-.desktop-burn-option:disabled { opacity: .55; cursor: wait; }
 .desktop-burn-legacy { display: block; margin-top: 6px; color: var(--muted); font-size: 10px; }
 .desktop-setting-select { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px; color: var(--muted-strong); font-size: 11px; }
 .desktop-setting-select.is-disabled { opacity: .45; }
@@ -716,9 +710,7 @@ html[data-electron='true'] .desktop-login-shell select { -webkit-app-region: no-
 .context-settings-card .desktop-setting-icon { width: 25px; height: 25px; border-radius: 7px; }
 .context-settings-card .desktop-setting-icon .ui-icon { width: 13px; height: 13px; }
 .context-settings-card .desktop-switch { transform: none; }
-.context-settings-card .desktop-setting-control { margin-top: 9px; }
 .context-settings-card .desktop-setting-select { font-size: 9px; }
-.context-settings-card .desktop-burn-option { min-height: 30px; font-size: 10px; }
 .context-settings-card .desktop-setting-select { gap: 6px; margin-top: 9px; }
 .context-settings-card .desktop-setting-select select { min-width: 78px; padding: 4px 5px; font-size: 10px; }
 .context-settings-card .desktop-peer-setting, .context-settings-card .desktop-settings-note { margin-top: 8px; padding: 6px; font-size: 9px; }
