@@ -25,6 +25,11 @@ public interface ImConversationMapper extends BaseMapper<ImConversation> {
                           AND (lm.send_time IS NULL OR lm.send_time < m.joined_at)
                        THEN NULL
                      WHEN lm.msg_id IS NULL THEN NULL
+                     WHEN lm.burn_after_read = TRUE THEN
+                       CASE WHEN lm.hidden_for_viewer = TRUE
+                                  OR (lm.burn_expires_at IS NOT NULL AND lm.burn_expires_at <= NOW())
+                                  OR (lm.auto_delete_expires_at IS NOT NULL AND lm.auto_delete_expires_at <= NOW())
+                         THEN '[阅后即焚消息已销毁]' ELSE '[阅后即焚消息]' END
                       WHEN lm.msg_type = 7
                         THEN (CASE
                                WHEN c.type = 2 AND lm.from_user_id <> m.user_id
@@ -156,17 +161,22 @@ public interface ImConversationMapper extends BaseMapper<ImConversation> {
             LEFT JOIN sys_user peer ON peer.id = resolved_peer.peer_id
             LEFT JOIN im_friend fr ON fr.user_id = m.user_id AND fr.friend_id = resolved_peer.peer_id
             LEFT JOIN LATERAL (
-                SELECT msg_id, from_user_id, msg_type, content, file_id, send_time
+                SELECT msg_id, from_user_id, msg_type, content, file_id, send_time,
+                       burn_after_read, burn_expires_at, auto_delete_expires_at,
+                       EXISTS (
+                         SELECT 1 FROM im_message_hide hh
+                         WHERE hh.user_id = #{userId} AND hh.msg_id = im_message.msg_id
+                       ) AS hidden_for_viewer
                 FROM im_message
                 WHERE conversation_id = c.id
                   AND (c.type <> 2 OR m.joined_at IS NULL OR send_time >= m.joined_at)
                   AND COALESCE(recalled, FALSE) = FALSE
-                  AND (burn_expires_at IS NULL OR burn_expires_at > NOW())
-                  AND (auto_delete_expires_at IS NULL OR auto_delete_expires_at > NOW())
-                  AND NOT EXISTS (
+                  AND (auto_delete_expires_at IS NULL OR auto_delete_expires_at > NOW()
+                       OR burn_after_read = TRUE)
+                  AND (burn_after_read = TRUE OR NOT EXISTS (
                       SELECT 1 FROM im_message_hide hh
                       WHERE hh.user_id = #{userId} AND hh.msg_id = im_message.msg_id
-                  )
+                  ))
                 ORDER BY send_time DESC NULLS LAST, id DESC
                 LIMIT 1
              ) lm ON TRUE

@@ -1125,6 +1125,7 @@ function syncDesktopShellBadge() {
 }
 
 function desktopNotificationText(message) {
+  if (desktopIsBurnMessage(message)) return '[阅后即焚消息]'
   const type = Number(message?.msgType || 0)
   if (type === 1) return '[图片]'
   if (type === 2) return '[文件]'
@@ -1461,6 +1462,7 @@ function mapRemoteConversation(item) {
     tone: group ? 'violet' : 'blue',
     preview: desktopPreviewText(item.lastMsgPreview, item.lastMsgType),
     time: formatRemoteTime(item.lastMsgTime),
+    lastMsgTimeMs: desktopTimestamp(item.lastMsgTime),
     unread: Number(item.unreadCount || 0),
     mentionUnread: Boolean(item.mentionUnread),
     online: Boolean(item.online),
@@ -5075,8 +5077,14 @@ function syncRemoteMessage(payload) {
     const messageId = String(normalized.msgId || normalized.id || '')
     if (conversationId && messageId) {
       const messages = state.messagesByConversation[conversationId] || []
+      const expired = messages.find((message) => String(message.id) === messageId)
       state.messagesByConversation[conversationId] = messages.filter((message) => String(message.id) !== messageId)
-      refreshDesktopConversationPreview(conversationId)
+      refreshDesktopConversationPreview(conversationId, expired)
+      if (desktopIsBurnMessage(expired)) {
+        const conversation = conversations.find((item) => String(item.id) === conversationId)
+        if (conversation) conversation.lastMsgTimeMs = Math.max(
+          conversation.lastMsgTimeMs || 0, desktopMessageTimeMs(expired))
+      }
       if (String(conversations[state.selectedConversation]?.id) === conversationId) requestDesktopRender()
     }
     return
@@ -9028,6 +9036,7 @@ function renderDesktopPendingFile(selected) {
 }
 
 function desktopMessagePreview(message) {
+  if (desktopIsBurnMessage(message)) return '[阅后即焚消息]'
   const type = Number(message?.msgType || 0)
   if (String(message?.content || '').startsWith('__PULSE_LIVE_LOCATION__')) return '[实时位置共享]'
   if (type === 1) return '[图片]'
@@ -9051,7 +9060,7 @@ function desktopMessageCanBeConversationPreview(message) {
   return !expiry.at || expiry.at > Date.now()
 }
 
-function refreshDesktopConversationPreview(conversationId) {
+function refreshDesktopConversationPreview(conversationId, expiredBurnMessage = null) {
   const id = String(conversationId || '')
   const conversation = conversations.find((item) => String(item.id || '') === id)
   if (!conversation) return
@@ -9059,7 +9068,13 @@ function refreshDesktopConversationPreview(conversationId) {
     .filter(desktopMessageCanBeConversationPreview)
     .sort((left, right) => desktopMessageTimeMs(left) - desktopMessageTimeMs(right))
   const latest = messages[messages.length - 1]
-  conversation.preview = latest ? formatDesktopConversationPreview(desktopMessagePreview(latest), latest.mine) : ''
+  const expiredWasLatest = desktopIsBurnMessage(expiredBurnMessage)
+    && (!latest || desktopMessageTimeMs(expiredBurnMessage) >= desktopMessageTimeMs(latest))
+  const keepBurnTombstone = conversation.preview === '[阅后即焚消息已销毁]'
+    && (!latest || desktopMessageTimeMs(latest) <= Number(conversation.lastMsgTimeMs || 0))
+  conversation.preview = expiredWasLatest || keepBurnTombstone
+    ? '[阅后即焚消息已销毁]'
+    : latest ? formatDesktopConversationPreview(desktopMessagePreview(latest), latest.mine) : ''
   conversation.time = latest?.time || ''
   updateDesktopConversationListRow(conversation)
 }

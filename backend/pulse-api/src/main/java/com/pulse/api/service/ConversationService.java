@@ -270,6 +270,8 @@ public class ConversationService {
         member.setMentionUnread(false);
 
         ImMessage target = resolveReadTarget(conversationId, lastReadMsgId);
+        boolean requestedReadMsgFound = !StringUtils.hasText(lastReadMsgId)
+                || (target != null && lastReadMsgId.trim().equals(target.getMsgId()));
         boolean advanced = false;
         if (target != null && StringUtils.hasText(target.getMsgId())) {
             if (shouldAdvanceRead(conversationId, member.getLastReadMsgId(), target)) {
@@ -282,8 +284,12 @@ public class ConversationService {
 
         String effectiveMsgId = member.getLastReadMsgId();
         Long sendTimeMs = lookupMsgSendTimeMs(conversationId, effectiveMsgId);
+        List<Map<String, Object>> burnStarted = List.of();
+        if (StringUtils.hasText(effectiveMsgId)) {
+            // Idempotent: a message may arrive after the read watermark was advanced.
+            burnStarted = burnAfterReadService.startCountdowns(userId, conversationId, effectiveMsgId);
+        }
         if (advanced && StringUtils.hasText(effectiveMsgId)) {
-            burnAfterReadService.startCountdowns(userId, conversationId, effectiveMsgId);
             // 已读回执开关：关闭后不向对方推送已读状态
             if (readReceiptEnabled(userId)) {
                 publishReadReceipt(conversationId, userId, effectiveMsgId, sendTimeMs);
@@ -295,6 +301,12 @@ public class ConversationService {
         out.put("lastReadMsgId", effectiveMsgId == null ? "" : effectiveMsgId);
         out.put("lastReadSendTime", sendTimeMs == null ? 0L : sendTimeMs);
         out.put("lastReadAt", member.getLastReadAt());
+        out.put("requestedReadMsgFound", requestedReadMsgFound);
+        out.put("burnStarted", burnStarted.stream().map(row -> Map.of(
+                "msgId", row.get("msg_id"),
+                "burnReadAt", row.get("burn_read_at"),
+                "burnExpiresAt", row.get("burn_expires_at")
+        )).toList());
         return out;
     }
 

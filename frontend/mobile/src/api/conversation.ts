@@ -21,6 +21,7 @@ export interface ConversationItem {
   avatarName?: string
   preview: string
   time: string
+  lastMsgTimeMs?: number
   unread: number
   online: boolean
   onlineHidden?: boolean
@@ -85,6 +86,7 @@ function mapItem(vo: BackendConversationVO): ConversationItem {
     avatarName: vo.peerNickname ? String(vo.peerNickname) : undefined,
     preview: formatCallPreview(rawPreview) || formatBusinessPreview(rawPreview),
     time: formatTime(vo.lastMsgTime),
+    lastMsgTimeMs: vo.lastMsgTime ? Date.parse(vo.lastMsgTime) || 0 : 0,
     unread: vo.unreadCount || 0,
     online: !!vo.online,
     onlineHidden: !!vo.onlineHidden,
@@ -160,13 +162,23 @@ export async function openPrivateConversation(peerUserId: string): Promise<Conve
 export async function markConversationRead(
   conversationId: string,
   lastReadMsgId?: string,
-): Promise<{ lastReadMsgId?: string }> {
+): Promise<{
+  lastReadMsgId?: string
+  lastReadSendTime?: number
+  requestedReadMsgFound?: boolean
+  burnStarted?: Array<{ msgId: string; burnReadAt: string; burnExpiresAt: string }>
+}> {
   if (!conversationId || conversationId.startsWith('tmp_')) return {}
   const body =
     lastReadMsgId && !lastReadMsgId.startsWith('tmp_') && !lastReadMsgId.startsWith('local_')
       ? { lastReadMsgId }
       : {}
-  const { data } = await http.post<ApiResult<{ lastReadMsgId?: string }>>(
+  const { data } = await http.post<ApiResult<{
+    lastReadMsgId?: string
+    lastReadSendTime?: number
+    requestedReadMsgFound?: boolean
+    burnStarted?: Array<{ msgId: string; burnReadAt: string; burnExpiresAt: string }>
+  }>>(
     `/v1/conversations/${conversationId}/read`,
     body,
   )

@@ -15,6 +15,7 @@ import { updateSavedAccountUnreadCount } from './accounts'
 
 export interface ConversationPreviewPatch {
   conversationId: string
+  msgId?: string
   preview: string
   at: number
   time?: string
@@ -54,6 +55,7 @@ function previewFromPayload(msg: Record<string, unknown>): string {
   if (msg.type === 'recall' || String(msg.cmd ?? '') === 'RECALL_MSG') {
     return '撤回了一条消息'
   }
+  if (msg.burnAfterRead === true || msg.burn_after_read === true) return '[阅后即焚消息]'
   const msgType = Number(msg.msgType ?? 0)
   const rawFile = msg.file && typeof msg.file === 'object'
     ? msg.file as Partial<FilePayload> & { downloadUrl?: string }
@@ -264,11 +266,23 @@ export const useConversationInboxStore = defineStore('conversationInbox', () => 
   function notifyLocalMessage(conversationId: string, preview: string) {
     applyPatch({
       conversationId,
+      msgId: '',
       preview,
       at: Date.now(),
       fromSelf: true,
       fromNickname: String(userStore.nickname || '').trim() || undefined,
       mentionUnread: false,
+    })
+  }
+
+  function notifyBurnExpired(conversationId: string) {
+    applyPatch({
+      conversationId,
+      preview: '[阅后即焚消息已销毁]',
+      at: Date.now(),
+      time: formatNowTime(),
+      fromSelf: false,
+      replaceServerPreview: true,
     })
   }
 
@@ -298,6 +312,7 @@ export const useConversationInboxStore = defineStore('conversationInbox', () => 
     const preview = latest ? previewFromPayload(latest) : ''
     applyPatch({
       conversationId: id,
+      msgId: latest ? String(latest.id ?? latest.msgId ?? '') : undefined,
       preview,
       at,
       time: formatMessageTime(at),
@@ -372,6 +387,11 @@ export const useConversationInboxStore = defineStore('conversationInbox', () => 
         )
         return
       }
+      if (normalizedCmd === 'BURN_EXPIRED') {
+        const id = String(msg.conversationId ?? '')
+        if (id && patches.value[id]?.msgId === String(msg.msgId ?? '')) notifyBurnExpired(id)
+        return
+      }
       if (
         !(
           normalizedCmd === 'PUSH_MSG' ||
@@ -392,6 +412,7 @@ export const useConversationInboxStore = defineStore('conversationInbox', () => 
       if (!preview) return
         applyPatch({
           conversationId,
+          msgId: String(msg.msgId ?? msg.id ?? ''),
           preview,
           at: Number(msg.sendTime) || Date.now(),
           fromSelf,
@@ -439,6 +460,7 @@ export const useConversationInboxStore = defineStore('conversationInbox', () => 
     unreadNavigationSummary,
     applyPatch,
     notifyLocalMessage,
+    notifyBurnExpired,
     notifyConversationRead,
     notifyRecall,
     syncFromMessages,

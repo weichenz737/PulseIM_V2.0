@@ -228,6 +228,10 @@ public class BurnAfterReadService {
                 UPDATE im_conversation c
                 SET last_msg_preview = COALESCE((
                         SELECT CASE
+                            WHEN m.burn_after_read = TRUE THEN
+                                CASE WHEN m.burn_expires_at IS NOT NULL AND m.burn_expires_at <= NOW()
+                                          OR (m.auto_delete_expires_at IS NOT NULL AND m.auto_delete_expires_at <= NOW())
+                                    THEN '[阅后即焚消息已销毁]' ELSE '[阅后即焚消息]' END
                             WHEN m.recalled = TRUE THEN '撤回了一条消息'
                             WHEN m.msg_type = 1 THEN '[图片]'
                             WHEN m.msg_type = 2 THEN '[文件]'
@@ -240,7 +244,8 @@ public class BurnAfterReadService {
                         END
                         FROM im_message m
                         WHERE m.conversation_id = c.id
-                          AND (m.burn_expires_at IS NULL OR m.burn_expires_at > NOW())
+                          AND (m.auto_delete_expires_at IS NULL OR m.auto_delete_expires_at > NOW()
+                               OR m.burn_after_read = TRUE)
                         ORDER BY m.send_time DESC, m.id DESC
                         LIMIT 1
                     ), ''),
@@ -248,7 +253,8 @@ public class BurnAfterReadService {
                         SELECT m.send_time
                         FROM im_message m
                         WHERE m.conversation_id = c.id
-                          AND (m.burn_expires_at IS NULL OR m.burn_expires_at > NOW())
+                          AND (m.auto_delete_expires_at IS NULL OR m.auto_delete_expires_at > NOW()
+                               OR m.burn_after_read = TRUE)
                         ORDER BY m.send_time DESC, m.id DESC
                         LIMIT 1
                     ),

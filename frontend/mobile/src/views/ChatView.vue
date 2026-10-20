@@ -1204,6 +1204,13 @@ function burnRemainingSeconds(msg: ChatMessage): number | null {
   return Math.max(0, Math.ceil((expires - burnClock.value) / 1000))
 }
 
+function burnProgressPercent(msg: ChatMessage): number {
+  const expires = burnExpireTime(msg)
+  const duration = Number(msg.burnSeconds || 0) * 1000
+  if (!expires || duration <= 0) return 0
+  return Math.max(0, Math.min(100, (expires - burnClock.value) / duration * 100))
+}
+
 function burnStatusLabel(msg: ChatMessage): string {
   if (isBurnMediaLocked(msg)) return '点击查看后开始计时'
   const remaining = burnRemainingSeconds(msg)
@@ -1226,8 +1233,11 @@ function removeExpiredBurnMessages() {
       .map((msg) => msg.id),
   )
   if (!expiredIds.size) return
+  const latestBefore = messages.value[messages.value.length - 1]
+  const latestBurnExpired = !!latestBefore?.burnAfterRead && expiredIds.has(latestBefore.id)
   messages.value = messages.value.filter((msg) => !expiredIds.has(msg.id))
   syncConversationPreviewFromMessages()
+  if (latestBurnExpired) inbox.notifyBurnExpired(conversationId.value)
   selectedIds.value = new Set([...selectedIds.value].filter((id) => !expiredIds.has(id)))
   if (activeMsg.value && expiredIds.has(activeMsg.value.id)) {
     activeMsg.value = null
@@ -1243,8 +1253,12 @@ function tickBurnMessages() {
 
 function removeBurnMessageById(msgId: string) {
   if (!msgId) return
+  const latestBefore = messages.value[messages.value.length - 1]
   messages.value = messages.value.filter((msg) => msg.id !== msgId)
   syncConversationPreviewFromMessages()
+  if (latestBefore?.id === msgId && latestBefore.burnAfterRead) {
+    inbox.notifyBurnExpired(conversationId.value)
+  }
   selectedIds.value = new Set([...selectedIds.value].filter((id) => id !== msgId))
   if (activeMsg.value?.id === msgId) {
     activeMsg.value = null
@@ -1551,15 +1565,26 @@ function flushReadMark() {
   void markConversationRead(cid, targetId || undefined)
     .then((result) => {
       const effectiveId = String(
-        (result as { lastReadMsgId?: string } | undefined)?.lastReadMsgId || targetId,
+        result?.lastReadMsgId || targetId,
       )
-      lastReadMarkId = readMarkKey(effectiveId)
+      lastReadMarkId = readMarkKey(result?.requestedReadMsgFound === false ? effectiveId : targetId)
       inbox.notifyConversationRead(
         cid,
         myUserId.value,
         effectiveId,
-        Number((result as { lastReadSendTime?: number } | undefined)?.lastReadSendTime) || 0,
+        Number(result?.lastReadSendTime) || 0,
       )
+      for (const started of result?.burnStarted || []) {
+        const message = messages.value.find((item) => item.id === started.msgId)
+        if (!message) continue
+        message.burnReadAt = started.burnReadAt
+        message.burnExpiresAt = started.burnExpiresAt
+      }
+      if (result?.burnStarted?.length) {
+        messages.value = messages.value.slice()
+        tickBurnMessages()
+      }
+      if (result?.requestedReadMsgFound === false) retryDelay = 100
       scheduleBurnReadSync()
     })
     .catch(() => {
@@ -1585,8 +1610,10 @@ function markReadNow(immediate = false) {
   pendingReadMarkId = latestReadableMsgId() || ''
   if (readMarkKey(pendingReadMarkId) === lastReadMarkId) return
   if (readMarkTimer) clearTimeout(readMarkTimer)
-  readMarkTimer = immediate ? null : setTimeout(flushReadMark, 60)
-  if (immediate) flushReadMark()
+  const hasUnreadBurn = messages.value.some((message) =>
+    message.burnAfterRead && !isMine(message) && !message.burnReadAt && !isBurnMedia(message))
+  readMarkTimer = immediate || hasUnreadBurn ? null : setTimeout(flushReadMark, 60)
+  if (immediate || hasUnreadBurn) flushReadMark()
 }
 
 function syncConversationPreviewFromMessages() {
@@ -1610,10 +1637,7 @@ function scheduleBurnReadSync() {
       messages.value = messages.value.filter((message) => {
         if (!message.burnAfterRead) return true
         const server = serverById.get(message.id)
-        if (!server) {
-          changed = true
-          return false
-        }
+        if (!server) return true
         if (server.burnExpiresAt !== message.burnExpiresAt) {
           message.burnExpiresAt = server.burnExpiresAt
           message.burnReadAt = server.burnReadAt
@@ -2445,7 +2469,7 @@ onMounted(async () => {
     })
   }
   tickBurnMessages()
-  burnCountdownTimer = setInterval(tickBurnMessages, 1000)
+  burnCountdownTimer = setInterval(tickBurnMessages, 250)
 })
 
 onUnmounted(() => {
@@ -2672,7 +2696,7 @@ function appendIncoming(msg: Record<string, unknown>) {
     }
     if (shouldFollowLatest) scrollToBottom()
     markReadNow()
-    inbox.notifyLocalMessage(convId, msgLabel(incoming))
+    inbox.notifyLocalMessage(convId, incoming.burnAfterRead ? '[阅后即焚消息]' : msgLabel(incoming))
     void refreshGroupMuteState()
     return
   }
@@ -2699,7 +2723,7 @@ function appendIncoming(msg: Record<string, unknown>) {
   if (incoming.msgType === 3) prefetchVoiceMessages([incoming])
   if (shouldFollowLatest) scrollToBottom()
   markReadNow()
-  inbox.notifyLocalMessage(convId, msgLabel(incoming))
+  inbox.notifyLocalMessage(convId, incoming.burnAfterRead ? '[阅后即焚消息]' : msgLabel(incoming))
 }
 
 async function refreshLatest(full = false) {
@@ -3550,8 +3574,12 @@ async function confirmDeleteMode(mode: 'self' | 'both') {
   try {
     await deleteMessages(conversationId.value, ids, mode)
     const idSet = new Set(ids)
+    const latestBefore = messages.value[messages.value.length - 1]
     messages.value = messages.value.filter((m) => !idSet.has(m.id))
     syncConversationPreviewFromMessages()
+    if (latestBefore?.burnAfterRead && idSet.has(latestBefore.id)) {
+      inbox.notifyBurnExpired(conversationId.value)
+    }
     if (replyTarget.value && idSet.has(replyTarget.value.id)) clearReply()
     exitMultiMode()
     pendingDeleteIds.value = []
@@ -8629,6 +8657,9 @@ function onDeleteModeSelect(action: { name?: string }) {
             >
               <span class="material-symbols-outlined">local_fire_department</span>
               <span>{{ burnStatusLabel(msg) }}</span>
+              <span v-if="burnRemainingSeconds(msg) != null && Number(burnRemainingSeconds(msg)) > 0" class="burn-progress-track">
+                <span class="burn-progress-fill" :style="{ width: `${burnProgressPercent(msg)}%` }" />
+              </span>
             </div>
 
             <div
@@ -12041,6 +12072,22 @@ function onDeleteModeSelect(action: { name?: string }) {
 
 .burn-status .material-symbols-outlined {
   font-size: 14px;
+}
+
+.burn-progress-track {
+  width: 32px;
+  height: 3px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: color-mix(in srgb, currentColor 20%, transparent);
+}
+
+.burn-progress-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: currentColor;
+  transition: width 250ms linear;
 }
 
 .burn-media-locked {

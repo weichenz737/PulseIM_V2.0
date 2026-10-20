@@ -314,7 +314,11 @@ function withPreviewPatches(list: ConversationItem[]): ConversationItem[] {
     const serverPreview = formatListPreview(c.preview)
     if (!p) return { ...c, preview: serverPreview }
     const patchedPreview = formatListPreview(p.preview)
-    const nextPreview = p.replaceServerPreview ? patchedPreview : (patchedPreview || serverPreview)
+    const keepBurnTombstone = serverPreview === '[阅后即焚消息已销毁]'
+      && p.at <= (c.lastMsgTimeMs || 0)
+    const nextPreview = keepBurnTombstone
+      ? serverPreview
+      : p.replaceServerPreview ? patchedPreview : (patchedPreview || serverPreview)
     return {
       ...c,
       preview: formatGroupPreview(c, nextPreview, p.fromSelf, p.fromNickname),
