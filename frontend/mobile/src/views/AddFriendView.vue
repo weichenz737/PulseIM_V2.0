@@ -83,8 +83,8 @@ async function copyMyId() {
 
     <header class="page-header glass-header">
       <div class="header-left">
-        <button type="button" class="icon-btn" @click="goBack">
-          <span class="material-symbols-outlined">arrow_back_ios</span>
+        <button type="button" class="icon-btn" @click="goBack" aria-label="返回">
+          <IconBack />
         </button>
         <h1 class="page-title">添加好友</h1>
       </div>
@@ -260,7 +260,7 @@ async function copyMyId() {
 
 .page-title {
   margin: 0;
-  font-size: 20px;
+  font-size: var(--pulse-font-heading);
   font-weight: 600;
   line-height: 25px;
   color: var(--pulse-text);
@@ -299,7 +299,7 @@ async function copyMyId() {
   border-radius: 12px;
   background: var(--pulse-surface-high);
   color: var(--pulse-text);
-  font-size: 17px;
+  font-size: var(--pulse-font-title);
   outline: none;
   transition: box-shadow 0.3s;
 }
@@ -328,13 +328,13 @@ async function copyMyId() {
 }
 
 .my-id-label {
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   font-weight: 500;
   color: var(--pulse-text-secondary);
 }
 
 .my-id-value {
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   font-weight: 700;
   color: var(--pulse-primary);
 }
@@ -361,7 +361,7 @@ async function copyMyId() {
   border-radius: 12px;
   background: var(--pulse-primary-container);
   color: var(--pulse-on-primary-container);
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
   cursor: pointer;
   transition: opacity 0.2s;
@@ -428,20 +428,20 @@ async function copyMyId() {
 
 .qr-title {
   margin: 0;
-  font-size: 20px;
+  font-size: var(--pulse-font-heading);
   font-weight: 600;
   color: var(--pulse-text);
 }
 
 .qr-sub {
   margin: 4px 0 0;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   font-weight: 500;
   color: var(--pulse-text-secondary);
 }
 
 .qr-arrow {
-  font-size: 22px;
+  font-size: var(--pulse-font-heading);
   color: var(--pulse-outline);
   position: relative;
   z-index: 1;
@@ -494,14 +494,14 @@ async function copyMyId() {
 
 .scan-title {
   margin: 0;
-  font-size: 20px;
+  font-size: var(--pulse-font-heading);
   font-weight: 600;
   color: var(--pulse-text);
 }
 
 .scan-sub {
   margin: 4px 0 0;
-  font-size: 11px;
+  font-size: var(--pulse-font-caption);
   font-weight: 600;
   color: var(--pulse-text-secondary);
 }
@@ -513,7 +513,7 @@ async function copyMyId() {
 .info-text {
   margin: 0;
   padding: 0 24px;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   font-weight: 500;
   line-height: 18px;
   color: var(--pulse-outline);
@@ -563,19 +563,19 @@ async function copyMyId() {
 }
 
 .result-name {
-  font-size: 16px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
   color: var(--pulse-text);
 }
 
 .result-phone {
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   color: var(--pulse-text-secondary);
   margin-top: 2px;
 }
 
 .view-label {
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
   font-weight: 500;
   color: var(--pulse-primary);
   flex-shrink: 0;

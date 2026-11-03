@@ -1099,7 +1099,7 @@ function goSearch() {
       </button>
     </div>
 
-    <van-popup
+    <AppBottomSheet
       v-model:show="showDesktopSessions"
       position="bottom"
       round
@@ -1149,7 +1149,7 @@ function goSearch() {
         </div>
         <p class="desktop-sessions-footnote">退出后，电脑端当前登录会立即失效，需要重新扫码登录。</p>
       </section>
-    </van-popup>
+    </AppBottomSheet>
   </div>
 </template>
 
@@ -1379,14 +1379,14 @@ function goSearch() {
 
 .desktop-sessions-heading h2 {
   margin: 0;
-  font-size: 18px;
+  font-size: var(--pulse-font-title);
   line-height: 26px;
 }
 
 .desktop-sessions-heading p {
   margin: 2px 0 0;
   color: var(--pulse-text-secondary);
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   line-height: 19px;
 }
 
@@ -1422,8 +1422,8 @@ function goSearch() {
 .desktop-session-copy strong {
   overflow: hidden;
   color: var(--pulse-text);
-  font-size: 15px;
-  font-weight: 650;
+  font-size: var(--pulse-font-body);
+  font-weight: 600;
   line-height: 21px;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1431,7 +1431,7 @@ function goSearch() {
 
 .desktop-session-copy span {
   color: var(--pulse-text-secondary);
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   line-height: 18px;
 }
 
@@ -1444,7 +1444,7 @@ function goSearch() {
   border-radius: 999px;
   background: transparent;
   color: #f04450;
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   cursor: pointer;
 }
 
@@ -1472,7 +1472,7 @@ function goSearch() {
 
 .desktop-sessions-state p {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
 }
 
 .desktop-session-retry {
@@ -1483,7 +1483,7 @@ function goSearch() {
 .desktop-sessions-footnote {
   margin: 14px 0 0;
   color: var(--pulse-text-tertiary, var(--pulse-text-secondary));
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   line-height: 18px;
   text-align: center;
 }
@@ -1557,7 +1557,7 @@ function goSearch() {
   padding: 12px 18px;
   background: var(--pulse-primary);
   color: #fff;
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
   font-weight: 700;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
   cursor: pointer;
@@ -1703,7 +1703,7 @@ function goSearch() {
   box-sizing: border-box;
   padding: 1px 6px;
   border-radius: 999px;
-  font-size: 11px;
+  font-size: var(--pulse-font-caption);
   font-weight: 600;
   line-height: 16px;
   white-space: normal;
@@ -1712,7 +1712,7 @@ function goSearch() {
 
 .group-tag {
   flex-shrink: 0;
-  font-size: 10px;
+  font-size: var(--pulse-font-caption);
   font-weight: 700;
   line-height: 1;
   padding: 2px 5px;
@@ -1740,7 +1740,7 @@ function goSearch() {
 .pin-ico,
 .mute-ico {
   flex-shrink: 0;
-  font-size: 16px;
+  font-size: var(--pulse-font-body);
   color: var(--pulse-primary);
   font-variation-settings: 'FILL' 1;
 }
@@ -1759,7 +1759,7 @@ function goSearch() {
 
 .conv-time {
   flex-shrink: 0;
-  font-size: 10px;
+  font-size: var(--pulse-font-caption);
   font-weight: 600;
   line-height: 12px;
   color: var(--pulse-text-secondary);
@@ -1808,7 +1808,7 @@ function goSearch() {
   border-radius: 999px;
   background: var(--pulse-primary);
   color: var(--pulse-on-primary);
-  font-size: 10px;
+  font-size: var(--pulse-font-caption);
   font-weight: 700;
   display: flex;
   align-items: center;
@@ -1820,7 +1820,7 @@ function goSearch() {
   min-width: 72px;
   border: none;
   color: #fff;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   font-weight: 600;
   padding: 0 12px;
   cursor: pointer;
@@ -1864,7 +1864,7 @@ function goSearch() {
   border: none;
   background: transparent;
   color: var(--pulse-text);
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   cursor: pointer;
   padding: 6px 4px;
 }
@@ -1887,7 +1887,7 @@ function goSearch() {
   text-align: center;
   padding: 48px 16px;
   color: var(--pulse-text-secondary);
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
 }
 
 :deep(.van-swipe-cell__right) {

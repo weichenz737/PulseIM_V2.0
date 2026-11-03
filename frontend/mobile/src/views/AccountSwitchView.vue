@@ -271,7 +271,7 @@ async function selectAccount(account: SavedAccount) {
 .storage-hint {
   margin: 0 4px 12px;
   color: var(--pulse-text-secondary);
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   line-height: 1.5;
 }
 
@@ -350,7 +350,7 @@ async function selectAccount(account: SavedAccount) {
 .add-account-text strong {
   overflow: hidden;
   color: var(--pulse-text);
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   line-height: 20px;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -360,7 +360,7 @@ async function selectAccount(account: SavedAccount) {
 .add-account-text small {
   overflow: hidden;
   color: var(--pulse-text-secondary);
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   line-height: 16px;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -372,7 +372,7 @@ async function selectAccount(account: SavedAccount) {
   border-radius: 999px;
   background: color-mix(in srgb, var(--pulse-primary) 14%, transparent);
   color: var(--pulse-primary);
-  font-size: 11px;
+  font-size: var(--pulse-font-caption);
 }
 
 .account-state {
@@ -394,7 +394,7 @@ async function selectAccount(account: SavedAccount) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
+  font-size: var(--pulse-font-caption);
   font-weight: 600;
   line-height: 18px;
 }
@@ -402,7 +402,7 @@ async function selectAccount(account: SavedAccount) {
 .account-arrow {
   flex-shrink: 0;
   color: var(--pulse-text-secondary);
-  font-size: 21px;
+  font-size: var(--pulse-font-heading);
 }
 
 .add-account-icon {
@@ -423,6 +423,6 @@ async function selectAccount(account: SavedAccount) {
 .storage-hint {
   margin-top: 16px;
   text-align: center;
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
 }
 </style>

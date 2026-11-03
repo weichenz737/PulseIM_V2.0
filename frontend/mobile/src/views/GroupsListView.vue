@@ -81,8 +81,8 @@ function openGroupInfo(item: ConversationItem, e: Event) {
 <template>
   <div class="groups-page">
     <header class="page-header">
-      <button type="button" class="icon-btn" @click="goBack">
-        <span class="material-symbols-outlined">arrow_back_ios</span>
+      <button type="button" class="icon-btn" @click="goBack" aria-label="返回">
+        <IconBack />
       </button>
       <h1 class="page-title">群聊</h1>
       <button type="button" class="icon-btn" aria-label="发起群聊" @click="goCreate">
@@ -126,7 +126,7 @@ function openGroupInfo(item: ConversationItem, e: Event) {
         </div>
         <p class="empty-title">暂无群聊</p>
         <p class="empty-sub">创建群聊，邀请好友一起交流</p>
-        <button type="button" class="create-btn" @click="goCreate">发起群聊</button>
+        <AppButton variant="primary" type="button" class="create-btn" @click="goCreate">发起群聊</AppButton>
       </div>
 
       <div v-else-if="!filteredGroups.length" class="state">未找到相关群聊</div>
@@ -204,7 +204,7 @@ function openGroupInfo(item: ConversationItem, e: Event) {
 
 .page-title {
   margin: 0;
-  font-size: 17px;
+  font-size: var(--pulse-font-title);
   font-weight: 600;
 }
 
@@ -231,7 +231,7 @@ function openGroupInfo(item: ConversationItem, e: Event) {
   outline: none;
   background: transparent !important;
   color: var(--pulse-text);
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
 }
 
 .search-box input::placeholder {
@@ -262,7 +262,7 @@ function openGroupInfo(item: ConversationItem, e: Event) {
   padding: 48px 16px;
   text-align: center;
   color: var(--pulse-text-secondary);
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
 }
 
 .empty-wrap {
@@ -290,13 +290,13 @@ function openGroupInfo(item: ConversationItem, e: Event) {
 
 .empty-title {
   margin: 0 0 6px;
-  font-size: 16px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
 }
 
 .empty-sub {
   margin: 0 0 20px;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   color: var(--pulse-text-secondary);
 }
 
@@ -307,7 +307,7 @@ function openGroupInfo(item: ConversationItem, e: Event) {
   border-radius: 20px;
   background: #3b82f6;
   color: #fff;
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
   cursor: pointer;
 }
@@ -367,7 +367,7 @@ function openGroupInfo(item: ConversationItem, e: Event) {
   border-radius: 9px;
   background: #ef4444;
   color: #fff;
-  font-size: 11px;
+  font-size: var(--pulse-font-caption);
   font-weight: 700;
   line-height: 18px;
   text-align: center;
@@ -387,7 +387,7 @@ function openGroupInfo(item: ConversationItem, e: Event) {
 .group-title {
   flex: 1;
   min-width: 0;
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
@@ -396,7 +396,7 @@ function openGroupInfo(item: ConversationItem, e: Event) {
 
 .pin-tag {
   flex-shrink: 0;
-  font-size: 11px;
+  font-size: var(--pulse-font-caption);
   color: #3b82f6;
   background: rgba(59, 130, 246, 0.12);
   padding: 1px 6px;
@@ -405,7 +405,7 @@ function openGroupInfo(item: ConversationItem, e: Event) {
 
 .time {
   flex-shrink: 0;
-  font-size: 11px;
+  font-size: var(--pulse-font-caption);
   color: var(--pulse-text-secondary);
 }
 
@@ -419,7 +419,7 @@ function openGroupInfo(item: ConversationItem, e: Event) {
 .preview {
   flex: 1;
   min-width: 0;
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   color: var(--pulse-text-secondary);
   white-space: nowrap;
   overflow: hidden;

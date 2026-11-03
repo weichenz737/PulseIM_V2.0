@@ -29,7 +29,7 @@ defineExpose({ open })
 </script>
 
 <template>
-  <van-popup
+  <AppBottomSheet
     v-model:show="visible"
     position="bottom"
     round
@@ -44,7 +44,7 @@ defineExpose({ open })
       <van-loading v-if="loading" vertical>加载中...</van-loading>
       <div v-else class="legal-body">{{ content }}</div>
     </div>
-  </van-popup>
+  </AppBottomSheet>
 </template>
 
 <style scoped>
@@ -65,7 +65,7 @@ defineExpose({ open })
 
 .legal-header h2 {
   margin: 0;
-  font-size: 17px;
+  font-size: var(--pulse-font-title);
   line-height: 24px;
   font-weight: 600;
 }
@@ -84,7 +84,7 @@ defineExpose({ open })
 .legal-body {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
   line-height: 1.75;
   color: var(--pulse-text-secondary, var(--pulse-text-secondary));
 }

@@ -213,8 +213,8 @@ async function onDelete(type: string, id: string, label: string): Promise<void> 
 <template>
   <div class="group-invites-page">
     <header class="page-header glass-header">
-      <button type="button" class="icon-btn" @click="goBack">
-        <span class="material-symbols-outlined">arrow_back_ios</span>
+      <button type="button" class="icon-btn" @click="goBack" aria-label="返回">
+        <IconBack />
       </button>
       <h1 class="page-title">群通知</h1>
       <span class="header-spacer" />
@@ -401,7 +401,7 @@ async function onDelete(type: string, id: string, label: string): Promise<void> 
 
 .page-title {
   margin: 0;
-  font-size: 18px;
+  font-size: var(--pulse-font-title);
   font-weight: 600;
   color: var(--pulse-text);
 }
@@ -414,7 +414,7 @@ async function onDelete(type: string, id: string, label: string): Promise<void> 
   padding: 48px 16px;
   text-align: center;
   color: var(--pulse-text-secondary);
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
 }
 
 .req-item {
@@ -442,7 +442,7 @@ async function onDelete(type: string, id: string, label: string): Promise<void> 
   background: #ff5447;
   color: #fff;
   font: inherit;
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
 }
 
 .notification-delete .material-symbols-outlined {
@@ -456,7 +456,7 @@ async function onDelete(type: string, id: string, label: string): Promise<void> 
 .list-title {
   padding: 14px 16px 6px;
   color: var(--pulse-text-secondary);
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
 }
 
 .notice-avatar {
@@ -471,7 +471,7 @@ async function onDelete(type: string, id: string, label: string): Promise<void> 
   float: right;
   margin-left: 8px;
   color: var(--pulse-text-secondary);
-  font-size: 11px;
+  font-size: var(--pulse-font-caption);
   font-weight: 400;
 }
 
@@ -515,14 +515,14 @@ async function onDelete(type: string, id: string, label: string): Promise<void> 
 }
 
 .req-name {
-  font-size: 16px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
   color: var(--pulse-text);
 }
 
 .req-msg {
   margin-top: 2px;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   color: var(--pulse-text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -539,20 +539,20 @@ async function onDelete(type: string, id: string, label: string): Promise<void> 
 .invite-result {
   margin-top: 4px;
   color: #6fa8ff;
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
 }
 
 .req-time {
   margin-top: 3px;
   color: var(--pulse-text-secondary);
-  font-size: 11px;
+  font-size: var(--pulse-font-caption);
 }
 
 .btn {
   border: none;
   border-radius: 8px;
   padding: 6px 12px;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   font-weight: 600;
   cursor: pointer;
 }

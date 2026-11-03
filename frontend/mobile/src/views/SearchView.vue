@@ -395,7 +395,7 @@ function openConversationHits(c: SearchConversationHit) {
   border: none;
   background: transparent;
   color: var(--pulse-text-secondary);
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   cursor: pointer;
   padding: 6px 0;
 }
@@ -420,7 +420,7 @@ function openConversationHits(c: SearchConversationHit) {
 }
 
 .search-ico {
-  font-size: 22px;
+  font-size: var(--pulse-font-heading);
   color: var(--pulse-text-secondary);
 }
 
@@ -431,7 +431,7 @@ function openConversationHits(c: SearchConversationHit) {
   outline: none;
   background: transparent;
   color: var(--pulse-text);
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
 }
 
 .clear-btn {
@@ -456,7 +456,7 @@ function openConversationHits(c: SearchConversationHit) {
   text-align: center;
   padding: 48px 16px;
   color: var(--pulse-text-secondary);
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
 }
 
 .section {
@@ -473,7 +473,7 @@ function openConversationHits(c: SearchConversationHit) {
 
 .section-title {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   font-weight: 700;
   color: var(--pulse-text-secondary);
   letter-spacing: 0.02em;
@@ -483,7 +483,7 @@ function openConversationHits(c: SearchConversationHit) {
   border: none;
   background: transparent;
   color: var(--pulse-primary);
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   cursor: pointer;
   padding: 0;
 }
@@ -563,8 +563,8 @@ function openConversationHits(c: SearchConversationHit) {
 }
 
 .name {
-  font-size: 15px;
-  font-weight: 650;
+  font-size: var(--pulse-font-body);
+  font-weight: 600;
   color: var(--pulse-text);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -573,7 +573,7 @@ function openConversationHits(c: SearchConversationHit) {
 
 .sub {
   margin-top: 3px;
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   color: var(--pulse-text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -582,7 +582,7 @@ function openConversationHits(c: SearchConversationHit) {
 
 .chevron {
   color: var(--pulse-outline);
-  font-size: 22px;
+  font-size: var(--pulse-font-heading);
   flex-shrink: 0;
 }
 
@@ -644,8 +644,8 @@ function openConversationHits(c: SearchConversationHit) {
 }
 
 .conv-name {
-  font-size: 15px;
-  font-weight: 650;
+  font-size: var(--pulse-font-body);
+  font-weight: 600;
   color: var(--pulse-text);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -653,20 +653,20 @@ function openConversationHits(c: SearchConversationHit) {
 }
 
 .conv-time {
-  font-size: 11px;
+  font-size: var(--pulse-font-caption);
   color: var(--pulse-text-secondary);
   flex-shrink: 0;
 }
 
 .conv-count {
   margin: 4px 0 0;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   color: var(--pulse-text-secondary);
 }
 
 .conv-preview {
   margin: 4px 0 0;
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   color: var(--pulse-text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -679,7 +679,7 @@ function openConversationHits(c: SearchConversationHit) {
 }
 
 .brand {
-  font-size: 18px;
+  font-size: var(--pulse-font-title);
   font-weight: 800;
   letter-spacing: 0.08em;
   color: var(--pulse-outline);
@@ -687,7 +687,7 @@ function openConversationHits(c: SearchConversationHit) {
 
 .end-text {
   margin-top: 6px;
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   color: var(--pulse-outline);
 }
 

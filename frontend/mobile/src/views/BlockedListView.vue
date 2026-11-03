@@ -80,8 +80,8 @@ async function onUnblock(item: ContactItem) {
 <template>
   <div class="blocked-page">
     <header class="page-header">
-      <button type="button" class="icon-btn" @click="goBack">
-        <span class="material-symbols-outlined">arrow_back_ios</span>
+      <button type="button" class="icon-btn" @click="goBack" aria-label="返回">
+        <IconBack />
       </button>
       <h1 class="page-title">黑名单</h1>
       <div class="header-spacer" />
@@ -152,7 +152,7 @@ async function onUnblock(item: ContactItem) {
 
 .page-title {
   margin: 0;
-  font-size: 17px;
+  font-size: var(--pulse-font-title);
   font-weight: 600;
 }
 
@@ -162,7 +162,7 @@ async function onUnblock(item: ContactItem) {
 
 .page-tip {
   margin: 0 16px 16px;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   line-height: 1.5;
   color: var(--pulse-text-secondary);
 }
@@ -171,7 +171,7 @@ async function onUnblock(item: ContactItem) {
   padding: 48px 16px;
   text-align: center;
   color: var(--pulse-text-secondary);
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
 }
 
 .block-list {
@@ -240,7 +240,7 @@ async function onUnblock(item: ContactItem) {
 }
 
 .name {
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
@@ -248,7 +248,7 @@ async function onUnblock(item: ContactItem) {
 }
 
 .meta-line {
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   color: var(--pulse-text-secondary);
   white-space: nowrap;
   overflow: hidden;
@@ -260,7 +260,7 @@ async function onUnblock(item: ContactItem) {
   border: none;
   border-radius: 999px;
   padding: 7px 14px;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   font-weight: 600;
   color: var(--pulse-primary);
   background: rgba(173, 198, 255, 0.12);

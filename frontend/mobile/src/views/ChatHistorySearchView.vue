@@ -949,8 +949,8 @@ const calendarMinDate = new Date(new Date().getFullYear() - 5, 0, 1)
 <template>
   <div class="history-search-page">
     <header class="page-header" :class="{ 'filter-header': !!activeFilter }">
-      <button type="button" class="icon-btn" @click="goBack">
-        <span class="material-symbols-outlined">arrow_back_ios</span>
+      <button type="button" class="icon-btn" @click="goBack" aria-label="返回">
+        <IconBack />
       </button>
       <div v-if="activeFilter" class="filter-title-wrap">
         <h1 class="filter-title">{{ filterTitle }}</h1>
@@ -1222,7 +1222,7 @@ const calendarMinDate = new Date(new Date().getFullYear() - 5, 0, 1)
       @select="onFileActionSelect"
     />
 
-    <van-popup
+    <AppBottomSheet
       v-model:show="showFileForwardSheet"
       position="bottom"
       round
@@ -1261,14 +1261,14 @@ const calendarMinDate = new Date(new Date().getFullYear() - 5, 0, 1)
             </button>
           </template>
         </div>
-        <button
+        <AppButton variant="primary"
           type="button"
           class="file-forward-submit"
           :disabled="!fileForwardSelectedIds.size || fileForwarding"
           @click="submitFileForward"
-        >{{ fileForwarding ? '转发中...' : '确认转发' }}</button>
+        >{{ fileForwarding ? '转发中...' : '确认转发' }}</AppButton>
       </div>
-    </van-popup>
+    </AppBottomSheet>
   </div>
 </template>
 
@@ -1322,8 +1322,8 @@ const calendarMinDate = new Date(new Date().getFullYear() - 5, 0, 1)
   display: block !important;
   justify-self: stretch;
   text-align: center;
-  font-size: 17px;
-  font-weight: 650;
+  font-size: var(--pulse-font-title);
+  font-weight: 600;
   color: var(--pulse-text);
 }
 
@@ -1335,7 +1335,7 @@ const calendarMinDate = new Date(new Date().getFullYear() - 5, 0, 1)
   border: none;
   background: transparent;
   color: var(--pulse-primary);
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
   padding: 6px 4px;
   cursor: pointer;
 }
@@ -1357,7 +1357,7 @@ const calendarMinDate = new Date(new Date().getFullYear() - 5, 0, 1)
 }
 
 .search-ico {
-  font-size: 20px;
+  font-size: var(--pulse-font-heading);
   color: var(--pulse-outline);
 }
 
@@ -1368,7 +1368,7 @@ const calendarMinDate = new Date(new Date().getFullYear() - 5, 0, 1)
   outline: none;
   background: transparent;
   color: var(--pulse-text);
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
 }
 
 .clear-btn {
@@ -1400,7 +1400,7 @@ const calendarMinDate = new Date(new Date().getFullYear() - 5, 0, 1)
   padding: 6px 12px;
   background: var(--pulse-surface-container);
   color: var(--pulse-text-secondary);
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   cursor: pointer;
 }
 
@@ -1426,7 +1426,7 @@ const calendarMinDate = new Date(new Date().getFullYear() - 5, 0, 1)
   margin: 0 0 28px;
   text-align: center;
   color: var(--pulse-outline);
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
 }
 
 .filter-grid {
@@ -1466,7 +1466,7 @@ const calendarMinDate = new Date(new Date().getFullYear() - 5, 0, 1)
 }
 
 .filter-label {
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   color: var(--pulse-text-secondary);
 }
 
@@ -1474,12 +1474,12 @@ const calendarMinDate = new Date(new Date().getFullYear() - 5, 0, 1)
   text-align: center;
   padding: 48px 24px;
   color: var(--pulse-outline);
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
 }
 
 .section-title {
   padding: 10px 16px 6px;
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   color: var(--pulse-outline);
 }
 
@@ -1617,12 +1617,12 @@ const calendarMinDate = new Date(new Date().getFullYear() - 5, 0, 1)
 
 .file-selection-summary strong {
   color: var(--pulse-text);
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
 }
 
 .file-selection-summary small {
   color: var(--pulse-outline);
-  font-size: 11px;
+  font-size: var(--pulse-font-caption);
 }
 
 .file-selection-actions {
@@ -1650,8 +1650,8 @@ const calendarMinDate = new Date(new Date().getFullYear() - 5, 0, 1)
   border-radius: 12px;
   background: var(--pulse-surface-high);
   color: var(--pulse-text);
-  font-size: 11px;
-  font-weight: 550;
+  font-size: var(--pulse-font-caption);
+  font-weight: 500;
 }
 
 .file-selection-actions button:not(:disabled):active,
@@ -1706,20 +1706,20 @@ const calendarMinDate = new Date(new Date().getFullYear() - 5, 0, 1)
 }
 
 .file-forward-header strong {
-  font-size: 16px;
+  font-size: var(--pulse-font-body);
 }
 
 .file-forward-header small {
   margin-top: 4px;
   color: var(--pulse-outline);
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
 }
 
 .file-forward-header button {
   border: 0;
   background: transparent;
   color: var(--pulse-primary);
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
 }
 
 .file-forward-list {
@@ -1771,12 +1771,12 @@ const calendarMinDate = new Date(new Date().getFullYear() - 5, 0, 1)
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
 }
 
 .file-forward-item small {
   color: var(--pulse-outline);
-  font-size: 11px;
+  font-size: var(--pulse-font-caption);
 }
 
 .file-forward-submit {
@@ -1787,8 +1787,8 @@ const calendarMinDate = new Date(new Date().getFullYear() - 5, 0, 1)
   border-radius: 22px;
   background: linear-gradient(135deg, #4b8eff, #6675f5);
   color: #fff;
-  font-size: 15px;
-  font-weight: 650;
+  font-size: var(--pulse-font-body);
+  font-weight: 600;
 }
 
 .file-forward-submit:disabled {
@@ -1886,7 +1886,7 @@ const calendarMinDate = new Date(new Date().getFullYear() - 5, 0, 1)
 }
 
 .name {
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
   color: var(--pulse-text-secondary);
   overflow: hidden;
@@ -1895,14 +1895,14 @@ const calendarMinDate = new Date(new Date().getFullYear() - 5, 0, 1)
 }
 
 .time {
-  font-size: 11px;
+  font-size: var(--pulse-font-caption);
   color: var(--pulse-outline);
   flex-shrink: 0;
 }
 
 .role-tag {
   flex-shrink: 0;
-  font-size: 11px;
+  font-size: var(--pulse-font-caption);
   padding: 2px 6px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.08);
@@ -1921,7 +1921,7 @@ const calendarMinDate = new Date(new Date().getFullYear() - 5, 0, 1)
 
 .content {
   margin: 0;
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   line-height: 1.4;
   color: var(--pulse-text);
   overflow: hidden;
@@ -1930,7 +1930,7 @@ const calendarMinDate = new Date(new Date().getFullYear() - 5, 0, 1)
 }
 
 .content.sub {
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   color: var(--pulse-outline);
 }
 

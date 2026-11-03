@@ -153,8 +153,8 @@ function statusText(item: FriendRequestItem) {
 <template>
   <div class="new-friends-page">
     <header class="page-header glass-header">
-      <button type="button" class="icon-btn" @click="goBack">
-        <span class="material-symbols-outlined">arrow_back_ios</span>
+      <button type="button" class="icon-btn" @click="goBack" aria-label="返回">
+        <IconBack />
       </button>
       <h1 class="page-title">新的朋友</h1>
       <button type="button" class="icon-btn" @click="router.push('/contacts/add')">
@@ -237,10 +237,10 @@ function statusText(item: FriendRequestItem) {
           placeholder="备注名（可选）"
         />
         <div class="dialog-actions">
-          <button type="button" class="dialog-btn ghost" @click="closeAccept">取消</button>
-          <button type="button" class="dialog-btn primary" :disabled="accepting" @click="confirmAccept">
+          <AppButton variant="secondary" type="button" class="dialog-btn ghost" @click="closeAccept">取消</AppButton>
+          <AppButton variant="primary" type="button" class="dialog-btn primary" :disabled="accepting" @click="confirmAccept">
             {{ accepting ? '处理中...' : '通过' }}
-          </button>
+          </AppButton>
         </div>
       </div>
     </div>
@@ -281,7 +281,7 @@ function statusText(item: FriendRequestItem) {
 
 .page-title {
   margin: 0;
-  font-size: 18px;
+  font-size: var(--pulse-font-title);
   font-weight: 600;
   color: var(--pulse-text);
 }
@@ -294,7 +294,7 @@ function statusText(item: FriendRequestItem) {
   padding: 48px 16px;
   text-align: center;
   color: var(--pulse-text-secondary);
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
 }
 
 .req-item {
@@ -322,7 +322,7 @@ function statusText(item: FriendRequestItem) {
   background: #ff5447;
   color: #fff;
   font: inherit;
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
 }
 
 .notification-delete .material-symbols-outlined {
@@ -376,14 +376,14 @@ function statusText(item: FriendRequestItem) {
 }
 
 .req-name {
-  font-size: 16px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
   color: var(--pulse-text);
 }
 
 .req-msg {
   margin-top: 2px;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   color: var(--pulse-text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -401,7 +401,7 @@ function statusText(item: FriendRequestItem) {
   border: none;
   border-radius: 8px;
   padding: 6px 12px;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   font-weight: 600;
   cursor: pointer;
 }
@@ -417,7 +417,7 @@ function statusText(item: FriendRequestItem) {
 }
 
 .status {
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   color: var(--pulse-outline);
 }
 
@@ -442,14 +442,14 @@ function statusText(item: FriendRequestItem) {
 
 .dialog-title {
   margin: 0;
-  font-size: 17px;
+  font-size: var(--pulse-font-title);
   font-weight: 600;
   color: var(--pulse-text);
 }
 
 .dialog-sub {
   margin: 8px 0 16px;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   color: var(--pulse-text-secondary);
 }
 
@@ -461,7 +461,7 @@ function statusText(item: FriendRequestItem) {
   border-radius: 10px;
   background: var(--pulse-surface-high);
   color: var(--pulse-text);
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   outline: none;
 }
 
@@ -476,7 +476,7 @@ function statusText(item: FriendRequestItem) {
   border: none;
   border-radius: 10px;
   padding: 12px;
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
   cursor: pointer;
 }

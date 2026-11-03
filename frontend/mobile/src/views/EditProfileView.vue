@@ -398,7 +398,7 @@ onBeforeUnmount(() => {
       </section>
     </main>
 
-    <van-popup v-model:show="showGenderPicker" position="bottom" round>
+    <AppBottomSheet v-model:show="showGenderPicker" position="bottom" round>
       <van-picker
         v-model="genderPickerValue"
         title="选择性别"
@@ -406,9 +406,9 @@ onBeforeUnmount(() => {
         @confirm="onGenderConfirm"
         @cancel="showGenderPicker = false"
       />
-    </van-popup>
+    </AppBottomSheet>
 
-    <van-popup v-model:show="showBirthdayPicker" position="bottom" round>
+    <AppBottomSheet v-model:show="showBirthdayPicker" position="bottom" round>
       <van-date-picker
         v-model="birthdayPickerValue"
         title="选择生日"
@@ -417,9 +417,9 @@ onBeforeUnmount(() => {
         @confirm="onBirthdayConfirm"
         @cancel="showBirthdayPicker = false"
       />
-    </van-popup>
+    </AppBottomSheet>
 
-    <van-popup v-model:show="showRegionPicker" position="bottom" round>
+    <AppBottomSheet v-model:show="showRegionPicker" position="bottom" round>
       <van-area
         v-model="regionCode"
         title="选择地区"
@@ -427,7 +427,7 @@ onBeforeUnmount(() => {
         @confirm="onRegionConfirm"
         @cancel="showRegionPicker = false"
       />
-    </van-popup>
+    </AppBottomSheet>
   </div>
 </template>
 
@@ -472,7 +472,7 @@ onBeforeUnmount(() => {
 
 .page-title {
   margin: 0;
-  font-size: 20px;
+  font-size: var(--pulse-font-heading);
   font-weight: 600;
   color: var(--pulse-text);
 }
@@ -481,7 +481,7 @@ onBeforeUnmount(() => {
   border: none;
   background: var(--pulse-primary);
   color: var(--pulse-on-primary);
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   font-weight: 500;
   padding: 6px 24px;
   border-radius: 999px;
@@ -626,7 +626,7 @@ onBeforeUnmount(() => {
 }
 
 .form-label {
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   font-weight: 600;
   letter-spacing: 0.02em;
   color: var(--pulse-text-secondary);
@@ -636,7 +636,7 @@ onBeforeUnmount(() => {
   border: none;
   background: transparent;
   color: var(--pulse-text);
-  font-size: 16px;
+  font-size: var(--pulse-font-body);
   line-height: 22px;
   outline: none;
   width: 100%;

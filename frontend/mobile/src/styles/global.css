@@ -438,8 +438,8 @@ button:disabled {
   background: transparent !important;
 }
 
-:root[data-theme='light'] .pay-page .pay-submit,
-:root[data-theme='light'] .pay-page .confirm-pay {
+:root[data-theme='light'] .pay-page .pay-submit:not(.pulse-button),
+:root[data-theme='light'] .pay-page .confirm-pay:not(.pulse-button) {
   color: #ffffff !important;
   background: #07c160 !important;
 }
@@ -886,13 +886,13 @@ button:disabled {
 }
 
 /* 浅色模式转发弹窗：主按钮文字保持足够对比度。 */
-:root[data-theme='light'] .forward-submit {
+:root[data-theme='light'] .forward-submit:not(.pulse-button) {
   color: #0d2340 !important;
   font-weight: 700 !important;
   text-shadow: none !important;
 }
 
-:root[data-theme='light'] .forward-submit:disabled {
+:root[data-theme='light'] .forward-submit:not(.pulse-button):disabled {
   color: #526574 !important;
   opacity: 0.68 !important;
 }
@@ -1359,143 +1359,7 @@ button:disabled {
   border-bottom-color: rgba(169, 193, 211, 0.4) !important;
 }
 
-/* 全局弹层统一使用软件黑色主色调。 */
-:root {
-  --van-dialog-background: var(--pulse-surface-container);
-  --van-dialog-header-font-weight: 600;
-  --van-dialog-message-text-color: #d6d6da;
-  --van-dialog-confirm-button-text-color: #69a7ff;
-  --van-action-sheet-background: var(--pulse-surface-container);
-  --van-action-sheet-item-background: var(--pulse-surface-container);
-  --van-action-sheet-item-text-color: #f4f4f6;
-  --van-popup-background: var(--pulse-surface-container);
-  --van-picker-background: var(--pulse-surface-container);
-  --van-picker-option-text-color: #f4f4f6;
-  --van-picker-confirm-action-color: #69a7ff;
-  --van-picker-cancel-action-color: #aaaab2;
-  /* 深色模式下滚轮上下渐变遮罩改回黑色，避免出现白色渐变 */
-  --van-picker-mask-color: linear-gradient(180deg, rgba(30, 31, 35, 0.92), rgba(30, 31, 35, 0.35)), linear-gradient(0deg, rgba(30, 31, 35, 0.92), rgba(30, 31, 35, 0.35));
-  --van-picker-loading-mask-color: rgba(30, 31, 35, 0.75);
-  --van-calendar-background: var(--pulse-surface-container);
-}
-
-.van-dialog,
-.van-popup,
-.van-action-sheet,
-.van-picker,
-.van-calendar {
-  color: #f4f4f6 !important;
-  background: var(--pulse-surface-container) !important;
-}
-
-.van-dialog__header,
-.van-dialog__message,
-.van-action-sheet__name,
-.van-picker__title,
-.van-calendar__header-title,
-.van-calendar__header-subtitle,
-.van-calendar__month-title,
-.van-calendar__day {
-  color: #f4f4f6 !important;
-}
-
-.van-dialog__message {
-  color: #c9c9cf !important;
-}
-
-.van-dialog__footer,
-.van-dialog__cancel,
-.van-dialog__confirm,
-.van-action-sheet__cancel,
-.van-picker__toolbar,
-.van-calendar__header {
-  background: #222226 !important;
-  border-color: #343438 !important;
-}
-
-.van-dialog__cancel {
-  color: #aaaab2 !important;
-}
-
-.van-hairline--top::after,
-.van-hairline--bottom::after,
-.van-hairline--top-bottom::after,
-.van-hairline--surround::after {
-  border-color: #343438 !important;
-}
-
-.van-action-sheet__gap {
-  background: var(--pulse-page-bg, var(--pulse-bg)) !important;
-}
-
-/* White-mode modal controls must come after the dark defaults above. */
-:root[data-theme='light'] :is(
-  .van-dialog,
-  .van-popup,
-  .van-action-sheet,
-  .van-picker,
-  .van-calendar
-) {
-  color: #14243a !important;
-  background: #ffffff !important;
-}
-
-:root[data-theme='light'] :is(
-  .van-dialog__header,
-  .van-dialog__message,
-  .van-action-sheet__name,
-  .van-action-sheet__description,
-  .van-picker__title,
-  .van-picker-column__item,
-  .van-calendar__header-title,
-  .van-calendar__header-subtitle,
-  .van-calendar__month-title,
-  .van-calendar__day
-) {
-  color: #14243a !important;
-}
-
-:root[data-theme='light'] .van-dialog__message,
-:root[data-theme='light'] .van-action-sheet__description {
-  color: #526574 !important;
-}
-
-:root[data-theme='light'] :is(
-  .van-dialog__footer,
-  .van-dialog__cancel,
-  .van-dialog__confirm,
-  .van-action-sheet__item,
-  .van-action-sheet__cancel,
-  .van-picker__toolbar,
-  .van-calendar__header
-) {
-  background: #ffffff !important;
-  border-color: rgba(169, 193, 211, 0.45) !important;
-}
-
-:root[data-theme='light'] .van-dialog__cancel,
-:root[data-theme='light'] .van-action-sheet__cancel {
-  color: #738796 !important;
-}
-
-:root[data-theme='light'] .van-dialog__confirm,
-:root[data-theme='light'] :is(.van-picker__confirm, .van-calendar__confirm) {
-  color: #ffffff !important;
-  background: linear-gradient(135deg, #00c6ff, #007aff) !important;
-}
-
-:root[data-theme='light'] :is(.van-picker__cancel, .van-action-sheet__item) {
-  color: #087ed7 !important;
-}
-
-:root[data-theme='light'] :is(
-  .van-hairline--top,
-  .van-hairline--bottom,
-  .van-hairline--top-bottom,
-  .van-hairline--surround
-)::after {
-  border-color: rgba(169, 193, 211, 0.45) !important;
-}
+/* Vant modal styling is centralized in styles/design-system.css. */
 
 .scrollbar-hide::-webkit-scrollbar {
   display: none;

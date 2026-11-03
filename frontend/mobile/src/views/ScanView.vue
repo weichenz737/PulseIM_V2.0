@@ -328,8 +328,8 @@ onUnmounted(() => {
 <template>
   <div class="scan-page">
     <header class="page-header">
-      <button type="button" class="icon-btn" @click="goBack">
-        <span class="material-symbols-outlined">arrow_back</span>
+      <button type="button" class="icon-btn" @click="goBack" aria-label="返回">
+        <IconBack />
       </button>
       <h1 class="page-title">扫一扫</h1>
       <button type="button" class="icon-btn" @click="openAlbum">
@@ -429,7 +429,7 @@ onUnmounted(() => {
 
 .page-title {
   margin: 0;
-  font-size: 17px;
+  font-size: var(--pulse-font-title);
   font-weight: 600;
 }
 
@@ -522,7 +522,7 @@ onUnmounted(() => {
   bottom: 14px;
   margin: 0;
   text-align: center;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   color: rgba(255, 255, 255, 0.85);
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
 }
@@ -544,7 +544,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   font-weight: 600;
 }
 
@@ -567,7 +567,7 @@ onUnmounted(() => {
 
 .manual-title {
   margin: 0 0 10px;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   color: var(--pulse-text-secondary);
 }
 

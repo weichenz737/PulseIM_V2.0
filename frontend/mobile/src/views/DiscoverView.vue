@@ -228,7 +228,7 @@ function goCommunities() { void router.push('/communities') }
 
 .menu-desc {
   margin-top: 2px;
-  font-size: 11px;
+  font-size: var(--pulse-font-caption);
   font-weight: 600;
   color: var(--pulse-text-secondary);
 }
@@ -279,7 +279,7 @@ function goCommunities() { void router.push('/communities') }
   border-radius: 999px;
   background: #ff5447;
   color: #fff;
-  font-size: 11px;
+  font-size: var(--pulse-font-caption);
   font-weight: 700;
   line-height: 18px;
   text-align: center;
@@ -293,8 +293,8 @@ function goCommunities() { void router.push('/communities') }
   border-radius: 999px;
   background: var(--pulse-danger, #ff5447);
   color: #fff;
-  font-size: 10px;
-  font-weight: 750;
+  font-size: var(--pulse-font-caption);
+  font-weight: 700;
   line-height: 19px;
   text-align: center;
   box-shadow: 0 3px 9px color-mix(in srgb, var(--pulse-danger, #ff5447) 28%, transparent);

@@ -151,9 +151,9 @@ function accountFlowQuery(): Record<string, string> {
       </div>
 
       <div class="action-section">
-        <button type="button" class="submit-btn" :class="{ ready: codeComplete }" :disabled="!codeComplete" @click="handleContinue">
+        <AppButton variant="primary" type="button" class="submit-btn" :class="{ ready: codeComplete }" :disabled="!codeComplete" @click="handleContinue">
           提交
-        </button>
+        </AppButton>
         <p class="expire-hint">验证码将在 10 分钟后过期。如未收到短信，请检查垃圾短信或稍后重试。</p>
       </div>
     </main>
@@ -251,7 +251,7 @@ function accountFlowQuery(): Record<string, string> {
 
 .phone-hint {
   margin: 0;
-  font-size: 17px;
+  font-size: var(--pulse-font-title);
   line-height: 24px;
   color: var(--pulse-text-secondary);
 }
@@ -302,7 +302,7 @@ function accountFlowQuery(): Record<string, string> {
   border-radius: 999px;
   background: var(--pulse-surface-low);
   color: var(--pulse-text-secondary);
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   font-weight: 500;
   cursor: not-allowed;
   transition: background 0.2s, color 0.2s;
@@ -328,7 +328,7 @@ function accountFlowQuery(): Record<string, string> {
   border-radius: var(--pulse-radius);
   background: var(--pulse-primary);
   color: var(--pulse-on-primary);
-  font-size: 20px;
+  font-size: var(--pulse-font-heading);
   font-weight: 600;
   cursor: not-allowed;
   opacity: 0.5;
@@ -350,7 +350,7 @@ function accountFlowQuery(): Record<string, string> {
 .expire-hint {
   margin: 0;
   text-align: center;
-  font-size: 11px;
+  font-size: var(--pulse-font-caption);
   font-weight: 600;
   line-height: 1.5;
   color: var(--pulse-text-secondary);

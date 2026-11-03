@@ -123,7 +123,7 @@ onBeforeUnmount(() => {
 .announcement-bar > strong {
   flex: 0 0 auto;
   color: var(--pulse-primary);
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   letter-spacing: .06em;
 }
 
@@ -148,7 +148,7 @@ onBeforeUnmount(() => {
   width: 100%;
   min-width: 0;
   color: var(--pulse-text-secondary);
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   line-height: 1.5;
 }
 

@@ -863,7 +863,7 @@ async function handlePublish() {
       @select="onVisibilityAction"
     />
 
-    <van-popup
+    <AppBottomSheet
       v-model:show="showVisiblePopup"
       position="bottom"
       round
@@ -897,9 +897,9 @@ async function handlePublish() {
           <p v-if="!contacts.length" class="mention-empty">暂无好友可选</p>
         </div>
       </div>
-    </van-popup>
+    </AppBottomSheet>
 
-    <van-popup
+    <AppBottomSheet
       v-model:show="showMentionPopup"
       position="bottom"
       round
@@ -934,9 +934,9 @@ async function handlePublish() {
           <p v-if="!contacts.length" class="mention-empty">暂无好友可提醒</p>
         </div>
       </div>
-    </van-popup>
+    </AppBottomSheet>
 
-    <van-popup
+    <AppBottomSheet
       v-model:show="showLocationPopup"
       position="bottom"
       round
@@ -994,7 +994,7 @@ async function handlePublish() {
           </p>
         </div>
       </div>
-    </van-popup>
+    </AppBottomSheet>
   </div>
 </template>
 
@@ -1043,7 +1043,7 @@ async function handlePublish() {
 
 .title {
   margin: 0;
-  font-size: 20px;
+  font-size: var(--pulse-font-heading);
   font-weight: 600;
   line-height: 25px;
   color: var(--pulse-text);
@@ -1055,7 +1055,7 @@ async function handlePublish() {
   border-radius: 999px;
   background: var(--pulse-primary-container);
   color: var(--pulse-on-primary-container);
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   font-weight: 700;
   cursor: pointer;
   opacity: 0.5;
@@ -1100,7 +1100,7 @@ async function handlePublish() {
   border: none;
   background: transparent;
   color: var(--pulse-text);
-  font-size: 17px;
+  font-size: var(--pulse-font-title);
   line-height: 24px;
   resize: none;
   outline: none;
@@ -1195,7 +1195,7 @@ async function handlePublish() {
 }
 
 .add-label {
-  font-size: 11px;
+  font-size: var(--pulse-font-caption);
   font-weight: 600;
   color: var(--pulse-text-secondary);
 }
@@ -1251,14 +1251,14 @@ async function handlePublish() {
 
 .option-title {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   font-weight: 500;
   color: var(--pulse-text);
 }
 
 .option-sub {
   margin: 2px 0 0;
-  font-size: 11px;
+  font-size: var(--pulse-font-caption);
   font-weight: 600;
   color: var(--pulse-text-secondary);
   overflow: hidden;
@@ -1268,7 +1268,7 @@ async function handlePublish() {
 }
 
 .option-arrow {
-  font-size: 22px;
+  font-size: var(--pulse-font-heading);
   color: var(--pulse-outline);
   flex-shrink: 0;
 }
@@ -1294,14 +1294,14 @@ async function handlePublish() {
 
 .tip-title {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   font-weight: 500;
   color: var(--pulse-primary);
 }
 
 .tip-text {
   margin: 0;
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   line-height: 20px;
   color: var(--pulse-text-secondary);
 }
@@ -1323,7 +1323,7 @@ async function handlePublish() {
 
 .mention-title {
   margin: 0;
-  font-size: 16px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
   color: var(--pulse-text);
 }
@@ -1332,7 +1332,7 @@ async function handlePublish() {
 .mention-done {
   border: none;
   background: transparent;
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   cursor: pointer;
   padding: 4px 0;
 }
@@ -1349,7 +1349,7 @@ async function handlePublish() {
 .mention-hint {
   margin: 0;
   padding: 10px 16px 4px;
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   color: var(--pulse-text-secondary);
 }
 
@@ -1396,7 +1396,7 @@ async function handlePublish() {
 .mention-name {
   flex: 1;
   text-align: left;
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
 }
 
 .mention-check {
@@ -1412,7 +1412,7 @@ async function handlePublish() {
   text-align: center;
   padding: 40px 16px;
   color: var(--pulse-text-secondary);
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
 }
 
 .location-search {

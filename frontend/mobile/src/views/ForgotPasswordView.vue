@@ -183,9 +183,9 @@ function goLogin() {
             </div>
           </div>
 
-          <button type="button" class="submit-btn" :disabled="loading" @click="handleSubmit">
+          <AppButton variant="primary" type="button" class="submit-btn" :disabled="loading" @click="handleSubmit">
             重置密码
-          </button>
+          </AppButton>
         </div>
       </section>
     </main>
@@ -215,7 +215,7 @@ function goLogin() {
   border: none;
   background: transparent;
   color: var(--pulse-primary);
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
   padding: 0;
   margin-bottom: 16px;
@@ -231,7 +231,7 @@ function goLogin() {
 
 .subtitle {
   margin: 0;
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
   color: var(--pulse-text-secondary);
 }
 
@@ -258,7 +258,7 @@ function goLogin() {
 }
 
 .field-label {
-  font-size: 11px;
+  font-size: var(--pulse-font-caption);
   font-weight: 600;
   color: var(--pulse-text-secondary);
   padding-left: 4px;
@@ -302,7 +302,7 @@ function goLogin() {
   border: none;
   border-radius: var(--pulse-radius-lg);
   color: var(--pulse-text);
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   outline: none;
 }
 
@@ -322,7 +322,7 @@ function goLogin() {
   border: none;
   background: rgba(173, 198, 255, 0.1);
   color: var(--pulse-primary);
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   font-weight: 500;
   padding: 6px 16px;
   border-radius: 8px;
@@ -342,7 +342,7 @@ function goLogin() {
   border-radius: var(--pulse-radius-lg);
   background: var(--pulse-primary-container);
   color: #fff;
-  font-size: 18px;
+  font-size: var(--pulse-font-title);
   font-weight: 600;
   cursor: pointer;
   box-shadow: 0 8px 24px rgba(75, 142, 255, 0.35);

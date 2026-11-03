@@ -283,8 +283,8 @@ function mediaCount(item: MomentItem) {
 <template>
   <div class="album-page" @scroll.passive="onScroll">
     <header class="page-header" :class="{ solid: headerSolid }">
-      <button type="button" class="icon-btn" @click="goBack">
-        <span class="material-symbols-outlined">arrow_back_ios</span>
+      <button type="button" class="icon-btn" @click="goBack" aria-label="返回">
+        <IconBack />
       </button>
       <h1 class="page-title" :class="{ show: headerSolid }">我的朋友圈</h1>
       <button type="button" class="perm-btn" @click="openPermission">朋友圈权限</button>
@@ -447,7 +447,7 @@ function mediaCount(item: MomentItem) {
 
 .page-title {
   margin: 0;
-  font-size: 17px;
+  font-size: var(--pulse-font-title);
   font-weight: 600;
   color: #fff;
   opacity: 0;
@@ -462,7 +462,7 @@ function mediaCount(item: MomentItem) {
   min-width: 72px;
   height: 40px;
   padding: 0 6px;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   font-weight: 500;
 }
 
@@ -498,7 +498,7 @@ function mediaCount(item: MomentItem) {
 
 .cover-name {
   margin-bottom: 10px;
-  font-size: 17px;
+  font-size: var(--pulse-font-title);
   font-weight: 700;
   color: #fff;
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.55);
@@ -517,7 +517,7 @@ function mediaCount(item: MomentItem) {
   padding: 48px 16px;
   text-align: center;
   color: rgba(255, 255, 255, 0.45);
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
 }
 
 .state.empty {
@@ -530,7 +530,7 @@ function mediaCount(item: MomentItem) {
 
 .year-row {
   margin: 8px 0 16px;
-  font-size: 22px;
+  font-size: var(--pulse-font-heading);
   font-weight: 700;
   color: #fff;
 }
@@ -565,14 +565,14 @@ function mediaCount(item: MomentItem) {
 }
 
 .day.today {
-  font-size: 18px;
+  font-size: var(--pulse-font-title);
   font-weight: 700;
   padding-top: 6px;
 }
 
 .month {
   margin-top: 4px;
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   color: rgba(255, 255, 255, 0.55);
 }
 
@@ -584,7 +584,7 @@ function mediaCount(item: MomentItem) {
 
 .post-text {
   margin: 0 0 8px;
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   line-height: 1.45;
   color: rgba(255, 255, 255, 0.92);
   overflow: hidden;
@@ -660,7 +660,7 @@ video.thumb-media {
   place-items: center;
   background: rgba(0, 0, 0, 0.45);
   color: #fff;
-  font-size: 16px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
 }
 </style>

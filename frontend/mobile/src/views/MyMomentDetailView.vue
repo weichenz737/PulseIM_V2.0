@@ -282,8 +282,8 @@ async function onMore() {
 <template>
   <div class="detail-page">
     <header class="page-header">
-      <button type="button" class="icon-btn" @click="goBack">
-        <span class="material-symbols-outlined">arrow_back_ios</span>
+      <button type="button" class="icon-btn" @click="goBack" aria-label="返回">
+        <IconBack />
       </button>
       <h1 class="page-title">动态详情</h1>
       <button type="button" class="icon-btn" @click="onMore">
@@ -401,7 +401,7 @@ async function onMore() {
 
 .page-title {
   margin: 0;
-  font-size: 17px;
+  font-size: var(--pulse-font-title);
   font-weight: 600;
 }
 
@@ -418,14 +418,14 @@ async function onMore() {
 .meta-row {
   display: flex;
   gap: 12px;
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   color: var(--pulse-text-secondary);
   margin-bottom: 10px;
 }
 
 .content {
   margin: 0 0 12px;
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   line-height: 1.55;
   white-space: pre-wrap;
   word-break: break-word;
@@ -437,7 +437,7 @@ async function onMore() {
   gap: 3px;
   margin: 0 0 12px;
   color: var(--pulse-primary);
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
 }
 
 .moment-location .material-symbols-outlined {
@@ -514,7 +514,7 @@ async function onMore() {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   cursor: pointer;
 }
 
@@ -527,7 +527,7 @@ async function onMore() {
   padding: 8px 10px;
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.04);
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   color: var(--pulse-text-secondary);
 }
 

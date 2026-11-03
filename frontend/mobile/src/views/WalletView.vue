@@ -238,7 +238,7 @@ onMounted(load)
 <template>
   <div class="wallet-page">
     <header class="wallet-header">
-      <button type="button" class="back" aria-label="返回" @click="router.back()">‹</button>
+      <button type="button" class="back" aria-label="返回" @click="router.back()"><IconBack /></button>
       <h1 class="page-title">我的钱包</h1>
       <button type="button" class="setting" @click="passwordVisible = true">支付设置</button>
     </header>
@@ -334,7 +334,7 @@ onMounted(load)
       </section>
     </main>
     <van-calendar v-model:show="walletDatePickerVisible" teleport="body" :default-date="walletDateDefault(walletDatePickerField)" :min-date="walletDatePickerMinDate" :max-date="walletDatePickerMaxDate" :title="walletDatePickerField === 'from' ? '选择开始日期' : walletDatePickerField === 'to' ? '选择结束日期' : '选择日期'" color="var(--pulse-primary)" :show-confirm="false" @confirm="onWalletDateConfirm" />
-    <van-popup v-model:show="walletTypePickerVisible" position="bottom" round closeable teleport="body" class="wallet-type-popup">
+    <AppBottomSheet v-model:show="walletTypePickerVisible" position="bottom" round closeable teleport="body" class="wallet-type-popup">
       <section class="wallet-type-sheet">
         <div class="wallet-type-heading">
           <span><small>钱包筛选</small><strong>选择交易类型</strong></span>
@@ -357,8 +357,8 @@ onMounted(load)
           </button>
         </div>
       </section>
-    </van-popup>
-    <van-popup v-model:show="walletYearPickerVisible" position="bottom" round closeable teleport="body" class="wallet-picker-popup">
+    </AppBottomSheet>
+    <AppBottomSheet v-model:show="walletYearPickerVisible" position="bottom" round closeable teleport="body" class="wallet-picker-popup">
       <section class="wallet-picker-sheet">
         <div class="wallet-picker-heading">
           <span><small>钱包筛选</small><strong>选择年份</strong></span>
@@ -367,8 +367,8 @@ onMounted(load)
         <van-picker v-model="walletYearPickerValue" :columns="walletYearColumns" :show-toolbar="false" @confirm="onWalletYearConfirm" @cancel="walletYearPickerVisible = false" />
         <button type="button" class="wallet-picker-confirm" @click="onWalletYearConfirm({ selectedValues: walletYearPickerValue } as PickerConfirmEventParams)">完成</button>
       </section>
-    </van-popup>
-    <van-popup v-model:show="walletMonthPickerVisible" position="bottom" round closeable teleport="body" class="wallet-picker-popup">
+    </AppBottomSheet>
+    <AppBottomSheet v-model:show="walletMonthPickerVisible" position="bottom" round closeable teleport="body" class="wallet-picker-popup">
       <section class="wallet-picker-sheet">
         <div class="wallet-picker-heading">
           <span><small>钱包筛选</small><strong>选择月份</strong></span>
@@ -377,7 +377,7 @@ onMounted(load)
         <van-picker v-model="walletMonthPickerValue" :columns="walletMonthColumns" :show-toolbar="false" @confirm="onWalletMonthConfirm" @cancel="walletMonthPickerVisible = false" />
         <button type="button" class="wallet-picker-confirm" @click="onWalletMonthConfirm({ selectedValues: walletMonthPickerValue } as PickerConfirmEventParams)">完成</button>
       </section>
-    </van-popup>
+    </AppBottomSheet>
     <PaymentPasswordDialog
       v-model="passwordVisible"
       :has-password="wallet.hasPaymentPassword"
@@ -412,7 +412,7 @@ onMounted(load)
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 18px;
+  font-size: var(--pulse-font-title);
   margin: 0;
   color: var(--pulse-text);
   pointer-events: none;
@@ -433,7 +433,7 @@ onMounted(load)
 }
 
 .setting {
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
   color: #07c160;
 }
 
@@ -518,7 +518,7 @@ main {
 
 .filter-label {
   flex-shrink: 0;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   color: var(--pulse-text-secondary);
 }
 
@@ -531,7 +531,7 @@ main {
   border-radius: 7px;
   padding: 8px 10px;
   min-height: 42px;
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   line-height: 24px;
   color-scheme: light dark;
 }
@@ -572,7 +572,7 @@ main {
 
 .wallet-type-chevron {
   color: var(--pulse-text-secondary);
-  font-size: 19px;
+  font-size: var(--pulse-font-title);
 }
 
 .wallet-type-copy,
@@ -587,13 +587,13 @@ main {
 .wallet-type-copy small,
 .wallet-type-heading small {
   color: var(--pulse-text-secondary);
-  font-size: 10px;
+  font-size: var(--pulse-font-caption);
 }
 
 .wallet-type-copy strong {
   overflow: hidden;
-  font-size: 13px;
-  font-weight: 650;
+  font-size: var(--pulse-font-small);
+  font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -629,7 +629,7 @@ main {
   border-radius: 8px;
   background: var(--pulse-input-bg, #252528);
   color: var(--pulse-text-secondary, #858a98);
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
 }
 
 .date-modes button.active {
@@ -639,7 +639,7 @@ main {
   font-weight: 600;
 }
 
-.wallet-date-button{display:flex;min-width:0;flex:1;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--pulse-border,#36363a);border-radius:11px;background:var(--pulse-input-bg,#252528);color:var(--pulse-text);text-align:left}.wallet-date-button>.material-symbols-outlined{flex:none;color:var(--pulse-primary);font-size:19px}.wallet-date-button>span:nth-child(2){display:flex;min-width:0;flex:1;flex-direction:column;gap:2px}.wallet-date-button small{color:var(--pulse-text-secondary);font-size:10px}.wallet-date-button strong{overflow:hidden;font-size:12px;font-weight:650;text-overflow:ellipsis;white-space:nowrap}.single-date .wallet-date-button{width:100%}
+.wallet-date-button{display:flex;min-width:0;flex:1;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--pulse-border,#36363a);border-radius:11px;background:var(--pulse-input-bg,#252528);color:var(--pulse-text);text-align:left}.wallet-date-button>.material-symbols-outlined{flex:none;color:var(--pulse-primary);font-size:19px}.wallet-date-button>span:nth-child(2){display:flex;min-width:0;flex:1;flex-direction:column;gap:2px}.wallet-date-button small{color:var(--pulse-text-secondary);font-size:var(--pulse-font-caption)}.wallet-date-button strong{overflow:hidden;font-size:var(--pulse-font-caption);font-weight: 600;text-overflow:ellipsis;white-space:nowrap}.single-date .wallet-date-button{width:100%}
 
 .wallet-picker-popup {
   overflow: hidden;
@@ -666,12 +666,12 @@ main {
 
 .wallet-picker-heading small {
   color: var(--pulse-text-secondary);
-  font-size: 11px;
+  font-size: var(--pulse-font-caption);
 }
 
 .wallet-picker-heading strong {
-  font-size: 19px;
-  font-weight: 750;
+  font-size: var(--pulse-font-title);
+  font-weight: 700;
 }
 
 .wallet-picker-heading > .material-symbols-outlined {
@@ -705,7 +705,7 @@ main {
   border-radius: 13px;
   background: var(--pulse-primary);
   color: var(--pulse-on-primary, #fff);
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
   font-weight: 700;
 }
 
@@ -732,7 +732,7 @@ main {
 }
 
 .wallet-type-heading strong {
-  font-size: 18px;
+  font-size: var(--pulse-font-title);
   font-weight: 700;
 }
 
@@ -786,14 +786,14 @@ main {
 }
 
 .wallet-type-option-copy strong {
-  font-size: 14px;
-  font-weight: 650;
+  font-size: var(--pulse-font-body);
+  font-weight: 600;
 }
 
 .wallet-type-option-copy small {
   overflow: hidden;
   color: var(--pulse-text-secondary);
-  font-size: 11px;
+  font-size: var(--pulse-font-caption);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -801,7 +801,7 @@ main {
 .wallet-type-check {
   flex: none;
   color: var(--pulse-primary);
-  font-size: 21px;
+  font-size: var(--pulse-font-heading);
 }
 
 .list {
@@ -816,7 +816,7 @@ main {
 }
 
 .list h2 {
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   padding: 15px 0;
   margin: 0;
   color: var(--pulse-text);
@@ -862,7 +862,7 @@ main {
   top: 50%;
   right: -5px;
   color: var(--pulse-outline);
-  font-size: 20px;
+  font-size: var(--pulse-font-heading);
   transform: translateY(-50%);
 }
 
@@ -898,7 +898,7 @@ main {
 }
 
 .row-main b {
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
   color: var(--pulse-text);
 }
@@ -910,7 +910,7 @@ main {
 }
 
 .row-main .row-time {
-  font-size: 11px;
+  font-size: var(--pulse-font-caption);
 }
 
 .list article > div {
@@ -921,7 +921,7 @@ main {
 
 .list small {
   color: var(--pulse-text-secondary, #777);
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
 }
 
 .money {
@@ -949,7 +949,7 @@ main {
   border-radius: 7px;
   background: transparent;
   color: var(--pulse-primary);
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
 }
 
 .reset-filter:active {

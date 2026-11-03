@@ -44,7 +44,7 @@ function openPasswordSettings() {
 </script>
 
 <template>
-  <van-popup
+  <AppBottomSheet
     v-model:show="visible"
     round
     position="bottom"
@@ -72,14 +72,14 @@ function openPasswordSettings() {
           ⌫
         </button>
       </div>
-      <button class="confirm-pay" :disabled="submitting || password.length !== 6" @click="confirm">
+      <AppButton variant="primary" class="confirm-pay" :disabled="submitting || password.length !== 6" @click="confirm">
         {{ submitting ? '处理中…' : '确认支付' }}
-      </button>
+      </AppButton>
       <button class="forgot-pay" type="button" @click="openPasswordSettings">
         忘记支付密码？
       </button>
     </div>
-  </van-popup>
+  </AppBottomSheet>
 </template>
 
 <style scoped>
@@ -102,7 +102,7 @@ function openPasswordSettings() {
   border: 0;
   background: none;
   color: var(--pulse-text-secondary);
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
 }
 
 .payment-confirm-head span { width: 32px; }
@@ -140,7 +140,7 @@ function openPasswordSettings() {
   justify-content: center;
   border-right: 1px solid var(--pulse-border, #38383c);
   color: var(--pulse-text);
-  font-size: 16px;
+  font-size: var(--pulse-font-body);
   font-style: normal;
 }
 
@@ -175,7 +175,7 @@ function openPasswordSettings() {
   border-radius: 9px;
   background: #07c160;
   color: #fff;
-  font-size: 16px;
+  font-size: var(--pulse-font-body);
 }
 
 .confirm-pay:disabled { opacity: 0.4; }

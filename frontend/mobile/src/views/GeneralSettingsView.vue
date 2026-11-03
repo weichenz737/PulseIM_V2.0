@@ -32,8 +32,8 @@ function goFriendPermissions() {
 <template>
   <div class="general-page">
     <header class="page-header">
-      <button type="button" class="back-btn" @click="goBack">
-        <span class="material-symbols-outlined">arrow_back_ios</span>
+      <button type="button" class="back-btn" @click="goBack" aria-label="返回">
+        <IconBack />
       </button>
       <h1 class="page-title">通用</h1>
       <span class="spacer" />
@@ -132,7 +132,7 @@ function goFriendPermissions() {
   flex: 1;
   margin: 0;
   text-align: center;
-  font-size: 18px;
+  font-size: var(--pulse-font-title);
   font-weight: 600;
   color: var(--pulse-primary);
 }
@@ -182,7 +182,7 @@ function goFriendPermissions() {
 }
 
 .menu-ico {
-  font-size: 22px;
+  font-size: var(--pulse-font-heading);
   color: var(--pulse-primary);
 }
 
@@ -191,14 +191,14 @@ function goFriendPermissions() {
 }
 
 .menu-title {
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   font-weight: 500;
   color: var(--pulse-text);
 }
 
 .menu-desc {
   margin-top: 2px;
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   color: var(--pulse-text-secondary);
 }
 
@@ -210,12 +210,12 @@ function goFriendPermissions() {
 }
 
 .menu-extra {
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   color: var(--pulse-text-secondary);
 }
 
 .chevron {
-  font-size: 20px;
+  font-size: var(--pulse-font-heading);
   color: var(--pulse-outline);
 }
 </style>

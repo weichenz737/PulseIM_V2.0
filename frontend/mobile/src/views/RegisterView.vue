@@ -108,9 +108,9 @@ function accountFlowQuery(): Record<string, string> {
           </div>
         </div>
 
-        <button type="button" class="primary-btn" :disabled="sending" @click="handleContinue">
+        <AppButton variant="primary" type="button" class="primary-btn" :disabled="sending" @click="handleContinue">
           继续
-        </button>
+        </AppButton>
       </div>
 
       <footer class="login-hint">
@@ -159,7 +159,7 @@ function accountFlowQuery(): Record<string, string> {
 
 .step-text {
   margin: 0 0 24px;
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   color: var(--pulse-text-secondary);
 }
 
@@ -208,7 +208,7 @@ function accountFlowQuery(): Record<string, string> {
 
 .upload-text {
   margin-top: 12px;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   font-weight: 500;
   color: var(--pulse-primary);
 }
@@ -226,7 +226,7 @@ function accountFlowQuery(): Record<string, string> {
 }
 
 .field-label {
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   font-weight: 500;
   color: var(--pulse-text-secondary);
   padding-left: 4px;
@@ -260,7 +260,7 @@ function accountFlowQuery(): Record<string, string> {
   border: none;
   border-radius: 8px;
   color: var(--pulse-text);
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   outline: none;
   transition: box-shadow 0.2s;
 }
@@ -280,7 +280,7 @@ function accountFlowQuery(): Record<string, string> {
   border-radius: 8px;
   background: var(--pulse-primary-container);
   color: var(--pulse-on-primary-container);
-  font-size: 20px;
+  font-size: var(--pulse-font-heading);
   font-weight: 700;
   cursor: pointer;
   box-shadow: 0 8px 24px rgba(75, 142, 255, 0.2);
@@ -298,7 +298,7 @@ function accountFlowQuery(): Record<string, string> {
 .login-hint {
   margin-top: 32px;
   text-align: center;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   font-weight: 500;
   color: var(--pulse-text-secondary);
 }

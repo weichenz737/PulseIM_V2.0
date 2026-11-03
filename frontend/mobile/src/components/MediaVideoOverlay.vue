@@ -205,7 +205,7 @@ function onClose(e?: Event) {
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.16);
   color: #fff;
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
@@ -230,7 +230,7 @@ function onClose(e?: Event) {
 
 .mvp-loading {
   color: #fff;
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
 }
 
 .mvp-video {
@@ -257,7 +257,7 @@ function onClose(e?: Event) {
   border-radius: 999px;
   background: rgba(0, 0, 0, 0.55);
   color: rgba(255, 255, 255, 0.75);
-  font-size: 11px;
+  font-size: var(--pulse-font-caption);
   pointer-events: none;
   z-index: 2;
 }

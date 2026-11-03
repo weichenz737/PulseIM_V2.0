@@ -503,16 +503,16 @@ router.afterEach(() => {
           <div v-if="updateDownloadProgress?.totalBytes" class="forced-update-progress">
             <span :style="{ width: `${updateDownloadProgress.percent}%` }" />
           </div>
-          <button type="button" class="forced-update-primary" :disabled="updateInProgress" @click="installUpdate">
+          <AppButton variant="primary" type="button" class="forced-update-primary" :disabled="updateInProgress" @click="installUpdate">
             {{ updateInProgress ? '正在更新…' : '立即更新' }}
-          </button>
-          <button
+          </AppButton>
+          <AppButton variant="secondary"
             v-if="!availableVersion.forceUpdate && updateInProgress"
             type="button"
             class="forced-update-cancel"
             :disabled="updateCanceling"
             @click="cancelUpdate"
-          >{{ updateCanceling ? '正在取消…' : '取消更新' }}</button>
+          >{{ updateCanceling ? '正在取消…' : '取消更新' }}</AppButton>
           <button
             v-if="!availableVersion.forceUpdate && !updateInProgress"
             type="button"
@@ -586,7 +586,7 @@ router.afterEach(() => {
   border-radius: 14px;
   background: var(--pulse-surface-container);
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16);
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
 }
 
 .route-loading-spinner {
@@ -605,14 +605,14 @@ router.afterEach(() => {
 .forced-update-mask{position:fixed;inset:0;z-index:10000;display:grid;place-items:center;padding:24px;background:rgba(5,9,18,.76);backdrop-filter:blur(8px)}
 .forced-update-card{position:relative;width:min(368px,100%);padding:28px 24px 20px;border:1px solid color-mix(in srgb,var(--pulse-primary) 24%,transparent);border-radius:24px;background:linear-gradient(155deg,var(--pulse-surface-container-high),var(--pulse-surface-container));color:var(--pulse-text);box-shadow:0 24px 70px rgba(0,0,0,.42);text-align:center}
 .forced-update-icon{display:grid;place-items:center;width:58px;height:58px;margin:0 auto 12px;border-radius:18px;background:linear-gradient(145deg,#35b8ff,#087ed7);color:#fff;font-size:32px;font-weight:300;box-shadow:0 10px 24px rgba(8,126,215,.32)}
-.forced-update-badge{display:inline-block;margin-bottom:8px;color:var(--pulse-primary);font-size:12px;font-weight:700;letter-spacing:.08em}
-.forced-update-card h2{margin:0 0 10px;font-size:22px}.forced-update-card p{white-space:pre-wrap;line-height:1.6;color:var(--pulse-text-secondary)}
+.forced-update-badge{display:inline-block;margin-bottom:8px;color:var(--pulse-primary);font-size:var(--pulse-font-caption);font-weight:700;letter-spacing:.08em}
+.forced-update-card h2{margin:0 0 10px;font-size:var(--pulse-font-heading)}.forced-update-card p{white-space:pre-wrap;line-height:1.6;color:var(--pulse-text-secondary)}
 .forced-update-card .forced-update-intro{margin:0 0 10px;color:var(--pulse-text)}
-.forced-update-notes{max-height:120px;margin:0;padding:12px;border-radius:12px;background:color-mix(in srgb,var(--pulse-text) 5%,transparent);overflow:auto;text-align:left;font-size:14px}
-.forced-update-card .forced-update-status{margin:14px 0 0;padding:10px 12px;border-radius:10px;background:var(--pulse-surface-container-high,rgba(127,127,127,.12));color:var(--pulse-primary);font-size:13px}
+.forced-update-notes{max-height:120px;margin:0;padding:12px;border-radius:12px;background:color-mix(in srgb,var(--pulse-text) 5%,transparent);overflow:auto;text-align:left;font-size:var(--pulse-font-body)}
+.forced-update-card .forced-update-status{margin:14px 0 0;padding:10px 12px;border-radius:10px;background:var(--pulse-surface-container-high,rgba(127,127,127,.12));color:var(--pulse-primary);font-size:var(--pulse-font-small)}
 .forced-update-progress{height:6px;margin-top:10px;overflow:hidden;border-radius:999px;background:var(--pulse-surface-container-high,rgba(127,127,127,.18))}
 .forced-update-progress span{display:block;height:100%;border-radius:inherit;background:var(--pulse-primary);transition:width .25s ease}
-.forced-update-primary{width:100%;height:48px;margin-top:16px;border:0;border-radius:14px;background:linear-gradient(135deg,#159cff,#087ed7);color:#fff;font-size:16px;font-weight:700;box-shadow:0 8px 20px rgba(8,126,215,.24)}
+.forced-update-primary{width:100%;height:48px;margin-top:16px;border:0;border-radius:14px;background:linear-gradient(135deg,#159cff,#087ed7);color:#fff;font-size:var(--pulse-font-body);font-weight:700;box-shadow:0 8px 20px rgba(8,126,215,.24)}
 .forced-update-primary:disabled{opacity:.72}
 .forced-update-cancel{width:100%;height:38px;margin-top:4px;border:0;background:transparent;color:var(--pulse-text-secondary);font-weight:600}
 .forced-update-cancel:disabled{opacity:.55}

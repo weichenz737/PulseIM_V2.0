@@ -777,8 +777,8 @@ async function onUnblockUser() {
         <div class="hero-gradient" />
 
         <header class="hero-header">
-          <button type="button" class="hero-btn" @click="goBack">
-            <span class="material-symbols-outlined">arrow_back</span>
+          <button type="button" class="hero-btn" @click="goBack" aria-label="返回">
+            <IconBack />
           </button>
           <div class="hero-header-actions">
           <button type="button" class="hero-btn" aria-label="分享名片" @click="shareVisible = true">
@@ -1044,15 +1044,15 @@ async function onUnblockUser() {
           placeholder="备注名（可选）"
         />
         <div class="dialog-actions">
-          <button type="button" class="dialog-btn ghost" @click="closeAddDialog">取消</button>
-          <button type="button" class="dialog-btn primary" :disabled="submitting" @click="onAddFriend">
+          <AppButton variant="secondary" type="button" class="dialog-btn ghost" @click="closeAddDialog">取消</AppButton>
+          <AppButton variant="primary" type="button" class="dialog-btn primary" :disabled="submitting" @click="onAddFriend">
             {{ submitting ? '发送中...' : '发送申请' }}
-          </button>
+          </AppButton>
         </div>
       </div>
     </div>
 
-    <van-popup
+    <AppBottomSheet
       v-model:show="moreVisible"
       position="bottom"
       round
@@ -1105,7 +1105,7 @@ async function onUnblockUser() {
         </div>
         <button type="button" class="more-cancel" @click="closeMore">关闭</button>
       </div>
-    </van-popup>
+    </AppBottomSheet>
     <ShareContactCard
       v-if="profile"
       v-model:show="shareVisible"
@@ -1123,10 +1123,10 @@ async function onUnblockUser() {
           placeholder="输入备注名（可留空）"
         />
         <div class="dialog-actions">
-          <button type="button" class="dialog-btn ghost" @click="closeRemarkEdit">取消</button>
-          <button type="button" class="dialog-btn primary" :disabled="remarkSaving" @click="saveRemark">
+          <AppButton variant="secondary" type="button" class="dialog-btn ghost" @click="closeRemarkEdit">取消</AppButton>
+          <AppButton variant="primary" type="button" class="dialog-btn primary" :disabled="remarkSaving" @click="saveRemark">
             {{ remarkSaving ? '保存中...' : '保存' }}
-          </button>
+          </AppButton>
         </div>
       </div>
     </div>
@@ -1247,7 +1247,7 @@ async function onUnblockUser() {
   flex: none;
   padding: 2px 8px;
   border-radius: 999px;
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   font-weight: 600;
   line-height: 18px;
 }
@@ -1257,7 +1257,7 @@ async function onUnblockUser() {
   flex-wrap: wrap;
   align-items: center;
   gap: 12px;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   font-weight: 500;
   color: var(--pulse-text);
   opacity: 0.8;
@@ -1265,13 +1265,13 @@ async function onUnblockUser() {
 
 .profile-nickname {
   margin-top: 6px;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   color: rgba(227, 226, 231, 0.72);
 }
 
 .profile-region {
   margin-top: 8px;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   color: var(--pulse-text);
   opacity: 0.75;
 }
@@ -1281,14 +1281,14 @@ async function onUnblockUser() {
   flex-wrap: wrap;
   gap: 12px;
   margin-top: 6px;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   color: var(--pulse-text);
   opacity: 0.75;
 }
 
 .profile-signature {
   margin-top: 4px;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   line-height: 1.4;
   color: var(--pulse-text);
   opacity: 0.65;
@@ -1366,7 +1366,7 @@ async function onUnblockUser() {
 }
 
 .action-label {
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   font-weight: 500;
 }
 
@@ -1479,14 +1479,14 @@ async function onUnblockUser() {
 
 .info-title {
   margin: 0;
-  font-size: 17px;
+  font-size: var(--pulse-font-title);
   line-height: 24px;
   color: var(--pulse-text);
 }
 
 .info-sub {
   margin: 2px 0 0;
-  font-size: 11px;
+  font-size: var(--pulse-font-caption);
   font-weight: 600;
   color: var(--pulse-text-secondary);
 }
@@ -1501,13 +1501,13 @@ async function onUnblockUser() {
 
 .source-text {
   font-weight: 500;
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   line-height: 1.45;
   white-space: normal;
 }
 
 .info-arrow {
-  font-size: 22px;
+  font-size: var(--pulse-font-heading);
   color: var(--pulse-outline-variant);
   transition: color 0.2s;
 }
@@ -1530,7 +1530,7 @@ async function onUnblockUser() {
   border-radius: 12px;
   background: transparent;
   color: var(--pulse-text);
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   cursor: pointer;
   transition: background 0.2s;
 }
@@ -1588,7 +1588,7 @@ async function onUnblockUser() {
 
 .dialog-title {
   margin: 0 0 16px;
-  font-size: 17px;
+  font-size: var(--pulse-font-title);
   font-weight: 600;
   color: var(--pulse-text);
 }
@@ -1596,7 +1596,7 @@ async function onUnblockUser() {
 .dialog-label {
   display: block;
   margin: 0 0 8px;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   color: var(--pulse-text-secondary);
 }
 
@@ -1610,7 +1610,7 @@ async function onUnblockUser() {
   border-radius: 10px;
   background: var(--pulse-surface-high);
   color: var(--pulse-text);
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   outline: none;
   resize: none;
 }
@@ -1626,7 +1626,7 @@ async function onUnblockUser() {
   border: none;
   border-radius: 10px;
   padding: 12px;
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
   cursor: pointer;
 }
@@ -1653,7 +1653,7 @@ async function onUnblockUser() {
 
 .more-title {
   text-align: center;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   color: var(--pulse-text-secondary);
   padding: 10px 0 6px;
 }
@@ -1686,13 +1686,13 @@ async function onUnblockUser() {
 }
 
 .more-label {
-  font-size: 16px;
+  font-size: var(--pulse-font-body);
   font-weight: 500;
   color: var(--pulse-text);
 }
 
 .more-sub {
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   color: var(--pulse-text-secondary);
   line-height: 1.35;
   overflow: hidden;
@@ -1701,7 +1701,7 @@ async function onUnblockUser() {
 }
 
 .more-chevron {
-  font-size: 22px;
+  font-size: var(--pulse-font-heading);
   color: var(--pulse-outline);
 }
 
@@ -1713,7 +1713,7 @@ async function onUnblockUser() {
   border-radius: 12px;
   background: var(--pulse-surface-high);
   color: var(--pulse-text-secondary);
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
   cursor: pointer;
 }

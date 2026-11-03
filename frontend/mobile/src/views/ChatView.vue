@@ -8766,7 +8766,7 @@ function onDeleteModeSelect(action: { name?: string }) {
       </Transition>
     </footer>
 
-    <van-popup
+    <AppBottomSheet
       v-model:show="showMentionPopup"
       position="bottom"
       round
@@ -8809,7 +8809,7 @@ function onDeleteModeSelect(action: { name?: string }) {
           <p v-if="!mentionCandidates.length" class="mention-empty">暂无其他成员</p>
         </div>
       </div>
-    </van-popup>
+    </AppBottomSheet>
 
     <div v-if="recording" class="voice-record-mask" :class="{ cancel: recordCancel }">
       <div class="voice-record-card">
@@ -8987,8 +8987,8 @@ function onDeleteModeSelect(action: { name?: string }) {
               class="image-editor-page-btn"
               :disabled="imageEditorLoading"
               @click="switchPendingSendImage(-1)"
-            >
-              <span class="material-symbols-outlined">chevron_left</span>
+             aria-label="返回">
+              <IconBack />
             </button>
             <span class="image-editor-page-label">{{ pendingSendIndex + 1 }}/{{ pendingSendFiles.length }}</span>
             <button
@@ -9189,7 +9189,7 @@ function onDeleteModeSelect(action: { name?: string }) {
       close-on-click-action
       @select="onDeleteModeSelect"
     />
-    <van-popup
+    <AppBottomSheet
       v-model:show="showGroupReadSheet"
       position="bottom"
       round
@@ -9232,8 +9232,8 @@ function onDeleteModeSelect(action: { name?: string }) {
           </div>
         </div>
       </div>
-    </van-popup>
-    <van-popup
+    </AppBottomSheet>
+    <AppBottomSheet
       v-model:show="showForwardSheet"
       position="bottom"
       round
@@ -9294,20 +9294,20 @@ function onDeleteModeSelect(action: { name?: string }) {
           </button>
         </div>
         <div class="forward-actions">
-          <button type="button" class="forward-cancel" @click="showForwardSheet = false">取消</button>
-          <button
+          <AppButton variant="secondary" type="button" class="forward-cancel" @click="showForwardSheet = false">取消</AppButton>
+          <AppButton variant="primary"
             type="button"
             class="forward-submit"
             :disabled="!forwardSelectedCount || forwarding"
             @click="submitForward"
           >
             {{ forwarding ? '转发中...' : `确认转发${forwardSelectedCount ? ` (${forwardSelectedCount})` : ''}` }}
-          </button>
+          </AppButton>
         </div>
       </div>
-    </van-popup>
+    </AppBottomSheet>
   </div>
-    <van-popup
+    <AppBottomSheet
       v-model:show="showGroupCallPicker"
       position="bottom"
       round
@@ -9342,7 +9342,7 @@ function onDeleteModeSelect(action: { name?: string }) {
           </span>
         </button>
       </div>
-    </van-popup>
+    </AppBottomSheet>
     <MediaSendPicker
       ref="mediaSendPickerRef"
       :show="showMediaPicker"
@@ -9362,12 +9362,12 @@ function onDeleteModeSelect(action: { name?: string }) {
 <style scoped>
 .message-menu-overlay { background: transparent; }
 .message-float-menu { position: fixed; display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); padding: 8px; box-sizing: border-box; border-radius: 5px; background: #4b4b4b; color: #fff; box-shadow: 0 4px 16px rgb(0 0 0 / 12%); }
-.message-menu-action { min-width: 0; height: 72px; padding: 8px 1px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 4px; background: transparent; color: #fff; font: inherit; font-size: 12px; line-height: 16px; cursor: pointer; }
+.message-menu-action { min-width: 0; height: 72px; padding: 8px 1px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 4px; background: transparent; color: #fff; font: inherit; font-size: var(--pulse-font-caption); line-height: 16px; cursor: pointer; }
 .message-menu-action .van-icon { font-size: 22px; color: #fff; }
 .message-menu-action:active, .message-menu-action:focus-visible { background: rgb(255 255 255 / 14%); }
 .message-menu-arrow { position: absolute; bottom: -5px; width: 10px; height: 10px; background: #4b4b4b; transform: translateX(-50%) rotate(45deg); pointer-events: none; }
 .message-float-menu.below .message-menu-arrow { bottom: auto; top: -5px; }
-.group-call-picker{height:min(72vh,620px);overflow:hidden}.group-call-picker-head{display:flex;align-items:center;justify-content:space-between;padding:18px 16px 12px}.group-call-picker-head button{min-width:64px;border:0;background:none;color:#2477f3;font-size:15px}.group-call-picker-head button:first-child{text-align:left;color:#666}.group-call-picker-head button:last-child{text-align:right}.group-call-picker-head button:disabled{color:#aaa}.group-call-picker-tip{margin:0;padding:0 18px 12px;color:#888;font-size:13px}.group-call-member-list{height:calc(100% - 88px);overflow:auto}.group-call-member{width:100%;display:flex;align-items:center;gap:12px;padding:10px 18px;border:0;background:#fff}.group-call-member img,.group-call-member .initials{width:46px;height:46px;border-radius:50%;object-fit:cover}.group-call-member .initials{display:grid;place-items:center;background:#e7ebf2}.group-call-member .name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.group-call-member .check{margin-left:auto;color:#2477f3}
+.group-call-picker{height:min(72vh,620px);overflow:hidden}.group-call-picker-head{display:flex;align-items:center;justify-content:space-between;padding:18px 16px 12px}.group-call-picker-head button{min-width:64px;border:0;background:none;color:#2477f3;font-size:var(--pulse-font-body)}.group-call-picker-head button:first-child{text-align:left;color:#666}.group-call-picker-head button:last-child{text-align:right}.group-call-picker-head button:disabled{color:#aaa}.group-call-picker-tip{margin:0;padding:0 18px 12px;color:#888;font-size:var(--pulse-font-small)}.group-call-member-list{height:calc(100% - 88px);overflow:auto}.group-call-member{width:100%;display:flex;align-items:center;gap:12px;padding:10px 18px;border:0;background:#fff}.group-call-member img,.group-call-member .initials{width:46px;height:46px;border-radius:50%;object-fit:cover}.group-call-member .initials{display:grid;place-items:center;background:#e7ebf2}.group-call-member .name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.group-call-member .check{margin-left:auto;color:#2477f3}
 .group-call-picker{color:var(--pulse-text);background:var(--pulse-surface-container)}.group-call-picker-head{border-bottom:1px solid rgba(255,255,255,.08);background:var(--pulse-surface-high)}.group-call-picker-head strong{color:#fff}.group-call-picker-head button{color:#69a7ff}.group-call-picker-head button:first-child{color:var(--pulse-text-secondary)}.group-call-picker-head button:disabled{color:#626d7c}.group-call-picker-tip{padding-top:12px;color:#aab4c2;background:var(--pulse-surface-container)}.group-call-member-list{background:var(--pulse-surface-container)}.group-call-member{padding:11px 18px;border-bottom:1px solid rgba(255,255,255,.055);color:var(--pulse-text);background:var(--pulse-surface-container);text-align:left}.group-call-member:active{background:#2a3443}.group-call-member img,.group-call-member .initials{flex:0 0 46px;border:1px solid rgba(255,255,255,.16)}.group-call-member .initials{color:#fff;background:linear-gradient(145deg,#5478d8,#7656c7);font-size:18px;font-weight:600}.group-call-member .name{color:var(--pulse-text)}.group-call-member .check{color:#69a7ff}
 .chat-page {
   position: fixed;
@@ -9493,7 +9493,7 @@ function onDeleteModeSelect(action: { name?: string }) {
   border-radius: 999px;
   background: color-mix(in srgb, var(--pulse-primary) 12%, transparent);
   color: var(--pulse-primary);
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   line-height: 1;
   text-align: center;
   white-space: nowrap;
@@ -9592,7 +9592,7 @@ function onDeleteModeSelect(action: { name?: string }) {
 
 .peer-name {
   flex: none;
-  font-size: 16px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
   line-height: 22px;
   color: var(--pulse-text);
@@ -9609,7 +9609,7 @@ function onDeleteModeSelect(action: { name?: string }) {
   flex: none;
   padding: 1px 7px;
   border-radius: 999px;
-  font-size: 11px;
+  font-size: var(--pulse-font-caption);
   font-weight: 600;
   line-height: 16px;
   white-space: nowrap;
@@ -9633,7 +9633,7 @@ function onDeleteModeSelect(action: { name?: string }) {
 }
 
 .peer-status {
-  font-size: 11px;
+  font-size: var(--pulse-font-caption);
   font-weight: 600;
   line-height: 13px;
   color: var(--pulse-text-secondary);
@@ -9650,7 +9650,7 @@ function onDeleteModeSelect(action: { name?: string }) {
 .peer-typing-status {
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 11px;
+  font-size: var(--pulse-font-caption);
   font-weight: 600;
   line-height: 13px;
   color: var(--pulse-primary);
@@ -9677,10 +9677,10 @@ function onDeleteModeSelect(action: { name?: string }) {
   color: var(--pulse-text-secondary);
   line-height: 1.45;
 }
-.auto-delete-notice > span { flex: 0 0 auto; color: var(--pulse-primary); font-size: 20px; }
-.auto-delete-notice p { margin: 0; font-size: 13px; }
+.auto-delete-notice > span { flex: 0 0 auto; color: var(--pulse-primary); font-size: var(--pulse-font-heading); }
+.auto-delete-notice p { margin: 0; font-size: var(--pulse-font-small); }
 .auto-delete-notice p + p { margin-top: 3px; }
-.auto-delete-notice small { display: block; margin-top: 5px; font-size: 11px; opacity: .78; }
+.auto-delete-notice small { display: block; margin-top: 5px; font-size: var(--pulse-font-caption); opacity: .78; }
 
 .message-list {
   flex: 1;
@@ -9708,7 +9708,7 @@ function onDeleteModeSelect(action: { name?: string }) {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
 }
 
 .history-spinner {
@@ -9724,7 +9724,7 @@ function onDeleteModeSelect(action: { name?: string }) {
   padding: 8px 0 14px;
   text-align: center;
   color: var(--pulse-text-tertiary, #aaa);
-  font-size: 11px;
+  font-size: var(--pulse-font-caption);
 }
 
 @keyframes history-spin {
@@ -9774,7 +9774,7 @@ function onDeleteModeSelect(action: { name?: string }) {
   color: #2468d6;
   background: rgba(255, 255, 255, 0.96);
   box-shadow: 0 3px 14px rgba(0, 0, 0, 0.13);
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
   font-weight: 500;
   cursor: pointer;
 }
@@ -9787,7 +9787,7 @@ function onDeleteModeSelect(action: { name?: string }) {
   place-items: center;
   color: #fff;
   background: #3b7be0;
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   font-weight: 700;
 }
 
@@ -9871,7 +9871,7 @@ function onDeleteModeSelect(action: { name?: string }) {
   border: none;
   background: transparent;
   color: var(--pulse-text);
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   cursor: pointer;
   min-width: 64px;
   padding: 8px;
@@ -9908,13 +9908,13 @@ function onDeleteModeSelect(action: { name?: string }) {
 }
 
 .forward-title {
-  font-size: 16px;
+  font-size: var(--pulse-font-body);
   font-weight: 700;
 }
 
 .forward-hint {
   margin-top: 4px;
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   color: var(--pulse-outline);
 }
 
@@ -9958,13 +9958,13 @@ function onDeleteModeSelect(action: { name?: string }) {
 
 .forward-mode strong {
   color: var(--pulse-text);
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   font-weight: 600;
 }
 
 .forward-mode small {
   overflow: hidden;
-  font-size: 10px;
+  font-size: var(--pulse-font-caption);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -9979,7 +9979,7 @@ function onDeleteModeSelect(action: { name?: string }) {
   padding: 40px 16px;
   text-align: center;
   color: var(--pulse-outline);
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
 }
 
 .forward-item {
@@ -10004,7 +10004,7 @@ function onDeleteModeSelect(action: { name?: string }) {
 }
 
 .forward-check {
-  font-size: 22px;
+  font-size: var(--pulse-font-heading);
   color: var(--pulse-outline);
   flex-shrink: 0;
 }
@@ -10034,7 +10034,7 @@ function onDeleteModeSelect(action: { name?: string }) {
 }
 
 .forward-name {
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -10043,7 +10043,7 @@ function onDeleteModeSelect(action: { name?: string }) {
 
 .forward-sub {
   margin-top: 2px;
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   color: var(--pulse-outline);
 }
 
@@ -10061,7 +10061,7 @@ function onDeleteModeSelect(action: { name?: string }) {
   height: 44px;
   border: none;
   border-radius: 10px;
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
   cursor: pointer;
 }
@@ -10191,7 +10191,7 @@ function onDeleteModeSelect(action: { name?: string }) {
   box-sizing: border-box;
   padding: 1px 6px;
   border-radius: 999px;
-  font-size: 10px;
+  font-size: var(--pulse-font-caption);
   font-weight: 600;
   line-height: 16px;
   white-space: normal;
@@ -10311,7 +10311,7 @@ function onDeleteModeSelect(action: { name?: string }) {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   opacity: 0.75;
 }
 
@@ -10367,7 +10367,7 @@ function onDeleteModeSelect(action: { name?: string }) {
 
 .file-send-confirm h3 {
   margin: 0;
-  font-size: 18px;
+  font-size: var(--pulse-font-title);
 }
 
 .file-send-confirm-name {
@@ -10375,14 +10375,14 @@ function onDeleteModeSelect(action: { name?: string }) {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
 }
 
 .file-send-confirm-meta {
   margin: 0;
   color: var(--pulse-text-secondary, #aeb4c5);
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
 }
 
 .file-send-confirm-actions {
@@ -10398,7 +10398,7 @@ function onDeleteModeSelect(action: { name?: string }) {
   border-radius: 21px;
   background: rgba(255, 255, 255, 0.08);
   color: inherit;
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
 }
 
@@ -10424,7 +10424,7 @@ function onDeleteModeSelect(action: { name?: string }) {
 }
 
 .file-card-name {
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -10433,7 +10433,7 @@ function onDeleteModeSelect(action: { name?: string }) {
 
 .file-card-sub {
   margin-top: 2px;
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   opacity: 0.75;
 }
 
@@ -10478,7 +10478,7 @@ function onDeleteModeSelect(action: { name?: string }) {
 }
 
 .contact-card-name {
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   font-weight: 700;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -10487,7 +10487,7 @@ function onDeleteModeSelect(action: { name?: string }) {
 
 .contact-card-sub {
   margin-top: 2px;
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   opacity: 0.75;
 }
 
@@ -10498,7 +10498,7 @@ function onDeleteModeSelect(action: { name?: string }) {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   opacity: 0.75;
 }
 
@@ -10571,7 +10571,7 @@ function onDeleteModeSelect(action: { name?: string }) {
   border-radius: 10px;
   color: rgba(255, 255, 255, 0.82);
   background: linear-gradient(145deg, #28313d, #111820);
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   pointer-events: none;
 }
 
@@ -10588,7 +10588,7 @@ function onDeleteModeSelect(action: { name?: string }) {
   border-radius: 4px;
   background: rgba(0, 0, 0, 0.55);
   color: #fff;
-  font-size: 10px;
+  font-size: var(--pulse-font-caption);
   line-height: 1.3;
   pointer-events: auto;
   cursor: pointer;
@@ -10615,7 +10615,7 @@ function onDeleteModeSelect(action: { name?: string }) {
   gap: 6px;
   color: rgba(255, 255, 255, 0.82);
   background: linear-gradient(145deg, #28313d, #111820);
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   pointer-events: none;
 }
 
@@ -10657,7 +10657,7 @@ function onDeleteModeSelect(action: { name?: string }) {
 }
 
 .video-play-text {
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   font-weight: 600;
   opacity: 0.95;
 }
@@ -10694,7 +10694,7 @@ function onDeleteModeSelect(action: { name?: string }) {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -10723,7 +10723,7 @@ function onDeleteModeSelect(action: { name?: string }) {
   height: 44px;
   background: rgba(255, 255, 255, 0.16);
   color: #fff;
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
@@ -10744,7 +10744,7 @@ function onDeleteModeSelect(action: { name?: string }) {
   position: absolute;
   z-index: 2;
   color: rgba(255, 255, 255, 0.85);
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
 }
 
@@ -10759,8 +10759,8 @@ function onDeleteModeSelect(action: { name?: string }) {
   color: #fff;
   background: rgba(0, 0, 0, .58);
   font: inherit;
-  font-size: 13px;
-  font-weight: 650;
+  font-size: var(--pulse-font-small);
+  font-weight: 600;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -10797,7 +10797,7 @@ function onDeleteModeSelect(action: { name?: string }) {
   color: #fff;
   border-radius: 16px;
   padding: 14px 22px;
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   font-weight: 700;
   -webkit-tap-highlight-color: transparent;
 }
@@ -10815,7 +10815,7 @@ function onDeleteModeSelect(action: { name?: string }) {
   height: 44px;
   background: rgba(255, 255, 255, 0.14);
   color: #fff;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   font-weight: 600;
   cursor: pointer;
 }
@@ -10829,7 +10829,7 @@ function onDeleteModeSelect(action: { name?: string }) {
   height: 44px;
   background: rgba(75, 142, 255, 0.95);
   color: #fff;
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
   cursor: pointer;
 }
@@ -10880,7 +10880,7 @@ function onDeleteModeSelect(action: { name?: string }) {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
 }
 
@@ -10962,7 +10962,7 @@ function onDeleteModeSelect(action: { name?: string }) {
   height: 44px;
   background: rgba(255, 255, 255, 0.14);
   color: #fff;
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
 }
 
@@ -11021,7 +11021,7 @@ function onDeleteModeSelect(action: { name?: string }) {
 }
 
 .video-capture-title {
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   font-weight: 700;
   display: flex;
   flex-direction: column;
@@ -11030,7 +11030,7 @@ function onDeleteModeSelect(action: { name?: string }) {
 }
 
 .video-capture-title small {
-  font-size: 11px;
+  font-size: var(--pulse-font-caption);
   font-weight: 600;
   opacity: 0.85;
 }
@@ -11064,7 +11064,7 @@ function onDeleteModeSelect(action: { name?: string }) {
 
 .video-capture-hint {
   margin: 0;
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   opacity: 0.9;
   text-align: center;
 }
@@ -11085,7 +11085,7 @@ function onDeleteModeSelect(action: { name?: string }) {
   padding: 0 14px;
   background: rgba(255, 255, 255, 0.2);
   color: #fff;
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
   -webkit-tap-highlight-color: transparent;
 }
@@ -11105,7 +11105,7 @@ function onDeleteModeSelect(action: { name?: string }) {
   padding: 0 20px;
   background: #2196f3;
   color: #fff;
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   font-weight: 700;
   -webkit-tap-highlight-color: transparent;
 }
@@ -11174,7 +11174,7 @@ function onDeleteModeSelect(action: { name?: string }) {
 .plus-label {
   max-width: 100%;
   color: var(--pulse-text-secondary);
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   line-height: 16px;
   white-space: nowrap;
 }
@@ -11225,7 +11225,7 @@ function onDeleteModeSelect(action: { name?: string }) {
 
 .mention-title {
   margin: 0;
-  font-size: 16px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
 }
 
@@ -11233,7 +11233,7 @@ function onDeleteModeSelect(action: { name?: string }) {
   border: none;
   background: transparent;
   color: var(--pulse-text-secondary, #a0a1a6);
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
 }
 
 .mention-spacer {
@@ -11293,12 +11293,12 @@ function onDeleteModeSelect(action: { name?: string }) {
 }
 
 .mention-name {
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
 }
 
 .mention-sub {
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   color: var(--pulse-text-secondary, #8a8b90);
 }
 
@@ -11306,7 +11306,7 @@ function onDeleteModeSelect(action: { name?: string }) {
   padding: 32px 16px;
   text-align: center;
   color: var(--pulse-text-secondary, #8a8b90);
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
 }
 
 .quote-block {
@@ -11488,7 +11488,7 @@ function onDeleteModeSelect(action: { name?: string }) {
   background: transparent;
   padding: 0;
   color: var(--pulse-text-secondary);
-  font-size: 11px;
+  font-size: var(--pulse-font-caption);
 }
 
 .delivery-state.failed {
@@ -11533,7 +11533,7 @@ function onDeleteModeSelect(action: { name?: string }) {
 }
 
 .group-read-title {
-  font-size: 16px;
+  font-size: var(--pulse-font-body);
   font-weight: 700;
   color: var(--pulse-text);
   text-align: center;
@@ -11551,8 +11551,8 @@ function onDeleteModeSelect(action: { name?: string }) {
   border: 0;
   border-radius: 10px;
   padding: 8px 10px;
-  font-size: 13px;
-  font-weight: 650;
+  font-size: var(--pulse-font-small);
+  font-weight: 600;
   color: var(--pulse-outline);
   background: rgba(255, 255, 255, 0.06);
   cursor: pointer;
@@ -11573,7 +11573,7 @@ function onDeleteModeSelect(action: { name?: string }) {
 .group-read-empty {
   padding: 40px 12px;
   text-align: center;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   color: var(--pulse-outline);
 }
 
@@ -11604,7 +11604,7 @@ function onDeleteModeSelect(action: { name?: string }) {
 .group-read-name {
   flex: 1;
   min-width: 0;
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
   color: var(--pulse-text);
   overflow: hidden;
@@ -11629,7 +11629,7 @@ function onDeleteModeSelect(action: { name?: string }) {
 .friend-block-tip {
   padding: 12px 8px;
   text-align: center;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   font-weight: 500;
   color: var(--pulse-text-secondary);
 }
@@ -11641,7 +11641,7 @@ function onDeleteModeSelect(action: { name?: string }) {
   gap: 8px;
   padding: 14px 12px;
   text-align: center;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   font-weight: 600;
   color: var(--pulse-text-secondary);
   border-radius: 12px;
@@ -11665,7 +11665,7 @@ function onDeleteModeSelect(action: { name?: string }) {
   margin-bottom: 8px;
   padding: 8px 10px;
   border-radius: 10px;
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   font-weight: 600;
   color: #ffb74d;
   background: rgba(255, 183, 77, 0.12);
@@ -11696,7 +11696,7 @@ function onDeleteModeSelect(action: { name?: string }) {
   padding: 6px 12px;
   border-radius: 999px;
   text-align: center;
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   font-weight: 500;
   line-height: 1.4;
   color: var(--pulse-text-secondary);
@@ -11709,7 +11709,7 @@ function onDeleteModeSelect(action: { name?: string }) {
   background: color-mix(in srgb, var(--pulse-primary) 13%, var(--pulse-surface-container));
   box-shadow: 0 4px 14px color-mix(in srgb, var(--pulse-primary) 16%, transparent);
   cursor: pointer;
-  font-weight: 650;
+  font-weight: 600;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -11730,7 +11730,7 @@ function onDeleteModeSelect(action: { name?: string }) {
   gap: 3px;
   margin-top: 4px;
   color: #d94b32;
-  font-size: 11px;
+  font-size: var(--pulse-font-caption);
   line-height: 16px;
 }
 
@@ -11781,7 +11781,7 @@ function onDeleteModeSelect(action: { name?: string }) {
 
 .burn-media-locked small {
   color: rgba(255, 255, 255, 0.76);
-  font-size: 11px;
+  font-size: var(--pulse-font-caption);
 }
 
 .system-tip.call-record {
@@ -11824,7 +11824,7 @@ function onDeleteModeSelect(action: { name?: string }) {
 }
 
 .reply-bar-label {
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   font-weight: 700;
   color: var(--pulse-primary);
 }
@@ -11880,7 +11880,7 @@ function onDeleteModeSelect(action: { name?: string }) {
 }
 
 .reply-bar-text {
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   color: var(--pulse-text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -11978,7 +11978,7 @@ function onDeleteModeSelect(action: { name?: string }) {
 }
 
 .msg-input.is-mute-placeholder::placeholder {
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
 }
 
 .msg-input:focus {
@@ -12044,7 +12044,7 @@ function onDeleteModeSelect(action: { name?: string }) {
   border-radius: 999px;
   background: var(--pulse-surface-high);
   color: var(--pulse-text);
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   font-weight: 500;
   cursor: pointer;
   user-select: none;
@@ -12182,7 +12182,7 @@ function onDeleteModeSelect(action: { name?: string }) {
 }
 
 .voice-duration {
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   font-weight: 500;
   opacity: 0.9;
   min-width: 1.2em;
@@ -12224,13 +12224,13 @@ function onDeleteModeSelect(action: { name?: string }) {
 
 .voice-record-tip {
   margin: 12px 0 4px;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   color: rgba(255, 255, 255, 0.75);
 }
 
 .voice-record-sec {
   margin: 0;
-  font-size: 20px;
+  font-size: var(--pulse-font-heading);
   font-weight: 600;
 }
 
@@ -12242,7 +12242,7 @@ function onDeleteModeSelect(action: { name?: string }) {
   border-radius: 999px;
   background: var(--pulse-primary-container);
   color: var(--pulse-on-primary-container);
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
   font-weight: 700;
   cursor: pointer;
   flex-shrink: 0;
@@ -12294,9 +12294,9 @@ function onDeleteModeSelect(action: { name?: string }) {
 .live-location-card-body { min-height: 58px; padding: 10px 12px; display: flex; align-items: center; gap: 8px; }
 .live-location-card-copy { min-width: 0; flex: 1; }
 .live-location-card-copy strong,.live-location-card-copy small { display: block; }
-.live-location-card-copy strong { overflow: hidden; font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
-.live-location-card-copy small { margin-top: 3px; color: #839087; font-size: 11px; }
-.live-location-card-arrow { flex: 0 0 auto; color: #a4aea8; font-size: 19px; }
+.live-location-card-copy strong { overflow: hidden; font-size: var(--pulse-font-body); text-overflow: ellipsis; white-space: nowrap; }
+.live-location-card-copy small { margin-top: 3px; color: #839087; font-size: var(--pulse-font-caption); }
+.live-location-card-arrow { flex: 0 0 auto; color: #a4aea8; font-size: var(--pulse-font-title); }
 :global(:root[data-theme='dark'] .live-location-card) { border-color: rgba(255,255,255,.08); background: #252b27; color: #f1f4f2; box-shadow: 0 7px 20px rgba(0,0,0,.25); }
 :global(:root[data-theme='dark'] .live-location-card-map) { background: #263b30; }
 :global(:root[data-theme='dark'] .live-location-card-map::before) { opacity: .32; }
@@ -12350,13 +12350,13 @@ function onDeleteModeSelect(action: { name?: string }) {
 }
 
 .location-card-meta strong {
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
 }
 
 .location-card-meta span {
   margin-top: 5px;
   color: #858b92;
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
 }
 </style>
 
@@ -12373,7 +12373,7 @@ function onDeleteModeSelect(action: { name?: string }) {
   border-radius: 4px;
   color: #ffab40;
   background: rgba(255, 171, 64, 0.14);
-  font-size: 10px;
+  font-size: var(--pulse-font-caption);
   line-height: 16px;
 }
 .van-popup.group-call-picker .group-call-picker-head {
@@ -12501,13 +12501,13 @@ function onDeleteModeSelect(action: { name?: string }) {
 
 .receive-success-card b {
   margin-top: 5px;
-  font-size: 22px;
+  font-size: var(--pulse-font-heading);
 }
 
 .receive-success-card small {
   margin-top: 8px;
   color: rgba(255, 255, 255, 0.84);
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
 }
 
 .receive-success-rays {
@@ -12654,7 +12654,7 @@ function onDeleteModeSelect(action: { name?: string }) {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 16px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
 }
 
@@ -12668,7 +12668,7 @@ function onDeleteModeSelect(action: { name?: string }) {
   background: rgba(255, 255, 255, 0.25);
   display: grid;
   place-items: center;
-  font-size: 18px;
+  font-size: var(--pulse-font-title);
 }
 
 .cover-sender-name {
@@ -12680,7 +12680,7 @@ function onDeleteModeSelect(action: { name?: string }) {
 
 .cover-greeting {
   margin-top: 22px;
-  font-size: 17px;
+  font-size: var(--pulse-font-title);
   font-weight: 500;
   color: rgba(255, 255, 255, 0.96);
 }
@@ -12711,7 +12711,7 @@ function onDeleteModeSelect(action: { name?: string }) {
 
 .cover-remark {
   margin-top: 12px;
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
   color: rgba(255, 255, 255, 0.88);
 }
 
@@ -12720,7 +12720,7 @@ function onDeleteModeSelect(action: { name?: string }) {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
   color: rgba(255, 255, 255, 0.92);
 }
 
@@ -12736,7 +12736,7 @@ function onDeleteModeSelect(action: { name?: string }) {
   border-radius: 999px;
   background: #fff;
   color: #e63b2c;
-  font-size: 17px;
+  font-size: var(--pulse-font-title);
   font-weight: 700;
   cursor: pointer;
   transition: transform 0.15s, opacity 0.15s;
@@ -12760,7 +12760,7 @@ function onDeleteModeSelect(action: { name?: string }) {
   border: 0;
   background: transparent;
   color: rgba(255, 255, 255, 0.85);
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   cursor: pointer;
 }
 
@@ -12778,7 +12778,7 @@ function onDeleteModeSelect(action: { name?: string }) {
   justify-content: space-between;
   gap: 12px;
   padding: 8px 4px;
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
 }
 
 .cover-receive-nick {
@@ -12796,7 +12796,7 @@ function onDeleteModeSelect(action: { name?: string }) {
 .cover-receives-empty {
   padding: 10px;
   color: rgba(255, 255, 255, 0.72);
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
 }
 
 .cover-fade-enter-active,
@@ -12873,7 +12873,7 @@ function onDeleteModeSelect(action: { name?: string }) {
 }
 
 .call-bubble-body b {
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -12881,7 +12881,7 @@ function onDeleteModeSelect(action: { name?: string }) {
 }
 
 .call-bubble-body small {
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   color: var(--pulse-text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -12893,7 +12893,7 @@ function onDeleteModeSelect(action: { name?: string }) {
 }
 
 .call-bubble-arrow {
-  font-size: 18px;
+  font-size: var(--pulse-font-title);
   color: var(--pulse-text-secondary);
   flex: none;
 }
@@ -12945,7 +12945,7 @@ function onDeleteModeSelect(action: { name?: string }) {
   border: 0;
   background: transparent;
   color: #fff;
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
 }
 
 .image-editor-header button:last-child {
@@ -13016,7 +13016,7 @@ function onDeleteModeSelect(action: { name?: string }) {
     .image-editor-page-label {
     min-width: 34px;
     text-align: center;
-    font-size: 13px;
+    font-size: var(--pulse-font-small);
     color: rgba(255, 255, 255, 0.8);
     }
 
@@ -13044,7 +13044,7 @@ function onDeleteModeSelect(action: { name?: string }) {
 
 .image-editor-loading {
   color: rgba(255, 255, 255, 0.72);
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
 }
 
 .image-editor-toolbar {
@@ -13066,7 +13066,7 @@ function onDeleteModeSelect(action: { name?: string }) {
   border: 0;
   background: transparent;
   color: rgba(255, 255, 255, 0.72);
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
 }
 
 .image-editor-toolbar button.active,
@@ -13105,13 +13105,13 @@ function onDeleteModeSelect(action: { name?: string }) {
 
 .image-editor-exit-dialog strong {
   display: block;
-  font-size: 18px;
+  font-size: var(--pulse-font-title);
 }
 
 .image-editor-exit-dialog p {
   margin: 10px 0 18px;
   color: rgba(255, 255, 255, 0.68);
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
 }
 
 .image-editor-exit-actions {
@@ -13129,7 +13129,7 @@ function onDeleteModeSelect(action: { name?: string }) {
   background: rgba(255, 255, 255, 0.1);
   color: #fff;
   font: inherit;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
 }
 
 .image-editor-exit-actions button.danger {
@@ -13149,7 +13149,7 @@ function onDeleteModeSelect(action: { name?: string }) {
   border-radius: 8px !important;
   background: #16c66b !important;
   color: #fff !important;
-  font-size: 15px !important;
+  font-size: var(--pulse-font-body) !important;
   font-weight: 600;
 }
 

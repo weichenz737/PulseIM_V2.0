@@ -197,7 +197,7 @@ async function submit() {
 </script>
 
 <template>
-  <van-popup
+  <AppBottomSheet
     :show="show"
     position="bottom"
     round
@@ -303,7 +303,7 @@ async function submit() {
         <span v-else>提交举报</span>
       </button>
     </footer>
-  </van-popup>
+  </AppBottomSheet>
 </template>
 
 <style scoped>
@@ -328,8 +328,8 @@ async function submit() {
   margin: 0;
 }
 
-.report-header h2 { font-size: 19px; line-height: 1.35; }
-.report-header p { margin-top: 4px; color: var(--pulse-text-secondary); font-size: 12px; line-height: 1.5; }
+.report-header h2 { font-size: var(--pulse-font-title); line-height: 1.35; }
+.report-header p { margin-top: 4px; color: var(--pulse-text-secondary); font-size: var(--pulse-font-caption); line-height: 1.5; }
 
 .report-body {
   min-height: 0;
@@ -340,10 +340,10 @@ async function submit() {
 }
 
 .report-section { padding-top: 18px; }
-.report-section h3 { font-size: 15px; font-style: normal; }
-.report-section h3 em { margin-left: 5px; color: var(--pulse-text-secondary); font-size: 11px; font-style: normal; font-weight: 400; }
+.report-section h3 { font-size: var(--pulse-font-body); font-style: normal; }
+.report-section h3 em { margin-left: 5px; color: var(--pulse-text-secondary); font-size: var(--pulse-font-caption); font-style: normal; font-weight: 400; }
 .section-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.section-heading > span { color: var(--pulse-text-secondary); font-size: 11px; }
+.section-heading > span { color: var(--pulse-text-secondary); font-size: var(--pulse-font-caption); }
 
 .reason-state {
   min-height: 88px;
@@ -353,7 +353,7 @@ async function submit() {
   border-radius: 14px;
   background: var(--pulse-surface-high);
   color: var(--pulse-text-secondary);
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
 }
 
 .reason-error { gap: 8px; padding: 16px; text-align: center; }
@@ -388,13 +388,13 @@ textarea {
   background: var(--pulse-surface-high);
   color: var(--pulse-text);
   font: inherit;
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
   line-height: 1.55;
   box-sizing: border-box;
 }
 textarea:focus { border-color: color-mix(in srgb, var(--pulse-primary) 65%, transparent); }
 textarea::placeholder { color: var(--pulse-text-secondary); }
-.evidence-tip { margin-top: 5px; color: var(--pulse-text-secondary); font-size: 11px; }
+.evidence-tip { margin-top: 5px; color: var(--pulse-text-secondary); font-size: var(--pulse-font-caption); }
 .evidence-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 9px; margin-top: 10px; }
 .evidence-item { position: relative; aspect-ratio: 1; }
 .evidence-preview,
@@ -406,7 +406,7 @@ textarea::placeholder { color: var(--pulse-text-secondary); }
 .remove-evidence .material-symbols-outlined { font-size: 15px; }
 .add-evidence { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: var(--pulse-text-secondary); }
 .add-evidence .material-symbols-outlined { font-size: 25px; color: var(--pulse-primary); }
-.add-evidence small { font-size: 10px; }
+.add-evidence small { font-size: var(--pulse-font-caption); }
 .hidden-input { display: none; }
 
 .report-footer {

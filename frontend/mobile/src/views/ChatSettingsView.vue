@@ -330,8 +330,8 @@ async function onDeleteScopeSelect(action: { name?: string }) {
 <template>
   <div class="settings-page">
     <header class="page-header">
-      <button type="button" class="icon-btn" @click="goBack">
-        <span class="material-symbols-outlined">arrow_back_ios</span>
+      <button type="button" class="icon-btn" @click="goBack" aria-label="返回">
+        <IconBack />
       </button>
       <h1 class="page-title">聊天设置</h1>
       <span class="spacer" />
@@ -505,7 +505,7 @@ async function onDeleteScopeSelect(action: { name?: string }) {
   flex: 1;
   margin: 0;
   text-align: center;
-  font-size: 18px;
+  font-size: var(--pulse-font-title);
   font-weight: 600;
   color: var(--pulse-primary);
 }
@@ -562,7 +562,7 @@ async function onDeleteScopeSelect(action: { name?: string }) {
 }
 
 .hero-name {
-  font-size: 18px;
+  font-size: var(--pulse-font-title);
   font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -571,13 +571,13 @@ async function onDeleteScopeSelect(action: { name?: string }) {
 
 .hero-sub {
   margin-top: 4px;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   color: var(--pulse-text-secondary);
 }
 
 .hero-chevron {
   color: var(--pulse-outline);
-  font-size: 22px;
+  font-size: var(--pulse-font-heading);
   flex-shrink: 0;
 }
 
@@ -605,7 +605,7 @@ async function onDeleteScopeSelect(action: { name?: string }) {
 }
 
 .menu-label {
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
 }
 
 .burn-heading {
@@ -616,19 +616,19 @@ async function onDeleteScopeSelect(action: { name?: string }) {
 
 .burn-current {
   color: var(--pulse-text-secondary);
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
 }
 
 .burn-legacy {
   display: block;
   padding: 0 16px 12px;
   color: var(--pulse-text-secondary);
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
 }
 
 .chevron {
   color: var(--pulse-outline);
-  font-size: 20px;
+  font-size: var(--pulse-font-heading);
 }
 
 .switch {

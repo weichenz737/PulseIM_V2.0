@@ -103,8 +103,8 @@ async function onRemove(item: ContactItem) {
 <template>
   <div class="perm-list-page">
     <header class="page-header">
-      <button type="button" class="icon-btn" @click="goBack">
-        <span class="material-symbols-outlined">arrow_back_ios</span>
+      <button type="button" class="icon-btn" @click="goBack" aria-label="返回">
+        <IconBack />
       </button>
       <h1 class="page-title">{{ pageTitle }}</h1>
       <div class="header-spacer" />
@@ -164,7 +164,7 @@ async function onRemove(item: ContactItem) {
 
 .page-title {
   margin: 0;
-  font-size: 17px;
+  font-size: var(--pulse-font-title);
   font-weight: 600;
 }
 
@@ -174,7 +174,7 @@ async function onRemove(item: ContactItem) {
 
 .page-tip {
   margin: 0 16px 16px;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   line-height: 1.5;
   color: var(--pulse-text-secondary);
 }
@@ -183,7 +183,7 @@ async function onRemove(item: ContactItem) {
   padding: 48px 16px;
   text-align: center;
   color: var(--pulse-text-secondary);
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
 }
 
 .user-list {
@@ -242,7 +242,7 @@ async function onRemove(item: ContactItem) {
 }
 
 .name {
-  font-size: 16px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -251,7 +251,7 @@ async function onRemove(item: ContactItem) {
 
 .meta-line {
   margin-top: 2px;
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   color: var(--pulse-text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -265,7 +265,7 @@ async function onRemove(item: ContactItem) {
   padding: 8px 12px;
   background: rgba(255, 255, 255, 0.08);
   color: var(--pulse-primary);
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   cursor: pointer;
 }
 

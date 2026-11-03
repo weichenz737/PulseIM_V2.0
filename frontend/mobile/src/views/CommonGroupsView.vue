@@ -58,8 +58,8 @@ function openGroup(item: CommonGroupItem) {
 <template>
   <div class="common-groups-page">
     <header class="page-header">
-      <button type="button" class="icon-btn" @click="goBack">
-        <span class="material-symbols-outlined">arrow_back_ios</span>
+      <button type="button" class="icon-btn" @click="goBack" aria-label="返回">
+        <IconBack />
       </button>
       <h1 class="page-title">共同群聊</h1>
       <div class="header-spacer" />
@@ -131,7 +131,7 @@ function openGroup(item: CommonGroupItem) {
 
 .page-title {
   margin: 0;
-  font-size: 17px;
+  font-size: var(--pulse-font-title);
   font-weight: 600;
 }
 
@@ -141,7 +141,7 @@ function openGroup(item: CommonGroupItem) {
 
 .page-sub {
   margin: 0 16px 12px;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   color: var(--pulse-text-secondary);
 }
 
@@ -153,7 +153,7 @@ function openGroup(item: CommonGroupItem) {
   padding: 48px 16px;
   text-align: center;
   color: var(--pulse-text-secondary);
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
 }
 
 .group-list {
@@ -202,7 +202,7 @@ function openGroup(item: CommonGroupItem) {
 }
 
 .group-title {
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
@@ -211,12 +211,12 @@ function openGroup(item: CommonGroupItem) {
 
 .group-sub {
   margin-top: 2px;
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   color: var(--pulse-text-secondary);
 }
 
 .chevron {
   color: var(--pulse-text-secondary);
-  font-size: 20px;
+  font-size: var(--pulse-font-heading);
 }
 </style>

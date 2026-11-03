@@ -15,8 +15,8 @@ function goBack() {
 <template>
   <div class="notify-page">
     <header class="page-header">
-      <button type="button" class="back-btn" @click="goBack">
-        <span class="material-symbols-outlined">arrow_back_ios</span>
+      <button type="button" class="back-btn" @click="goBack" aria-label="返回">
+        <IconBack />
       </button>
       <h1 class="page-title">消息通知</h1>
       <span class="spacer" />
@@ -169,7 +169,7 @@ function goBack() {
   flex: 1;
   margin: 0;
   text-align: center;
-  font-size: 18px;
+  font-size: var(--pulse-font-title);
   font-weight: 600;
   color: var(--pulse-primary);
 }
@@ -184,7 +184,7 @@ function goBack() {
 
 .group-title {
   margin: 16px 4px 8px;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   color: var(--pulse-text-secondary);
 }
 
@@ -219,7 +219,7 @@ function goBack() {
 
 .item-label {
   display: block;
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   font-weight: 500;
   color: var(--pulse-text);
 }
@@ -227,7 +227,7 @@ function goBack() {
 .item-sub {
   display: block;
   margin-top: 3px;
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   line-height: 1.4;
   color: var(--pulse-text-secondary);
 }

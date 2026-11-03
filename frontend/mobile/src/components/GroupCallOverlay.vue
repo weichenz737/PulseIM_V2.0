@@ -378,7 +378,7 @@ function bindRemoteAudio(el: unknown, stream?: MediaStream) {
       </div>
     </div>
 
-    <van-popup
+    <AppBottomSheet
       v-model:show="showInvite"
       position="bottom"
       round
@@ -402,7 +402,7 @@ function bindRemoteAudio(el: unknown, stream?: MediaStream) {
         <span>{{ m.nickname }}</span>
         <span class="check" :class="{ checked: selected.includes(m.userId) }">✓</span>
       </button>
-    </van-popup>
+    </AppBottomSheet>
   </Teleport>
 </template>
 
@@ -465,7 +465,7 @@ function bindRemoteAudio(el: unknown, stream?: MediaStream) {
 }
 
 .top strong {
-  font-size: 17px;
+  font-size: var(--pulse-font-title);
   line-height: 1.2;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -474,7 +474,7 @@ function bindRemoteAudio(el: unknown, stream?: MediaStream) {
 
 .top small {
   color: #aeb7c4;
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
 }
 
 .members {
@@ -606,12 +606,12 @@ function bindRemoteAudio(el: unknown, stream?: MediaStream) {
 }
 
 .tile-meta small {
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   font-weight: 600;
 }
 
 .tile-meta em {
-  font-size: 11px;
+  font-size: var(--pulse-font-caption);
   font-style: normal;
   color: #aeb7c4;
 }
@@ -661,7 +661,7 @@ function bindRemoteAudio(el: unknown, stream?: MediaStream) {
 }
 
 .round small {
-  font-size: 11px;
+  font-size: var(--pulse-font-caption);
   color: rgba(255, 255, 255, 0.86);
 }
 
@@ -758,12 +758,12 @@ function bindRemoteAudio(el: unknown, stream?: MediaStream) {
 }
 
 .float-audio-meta strong {
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
 }
 
 .float-audio-meta small {
   color: rgba(255, 255, 255, 0.72);
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
 }
 
 .float-time {
@@ -772,7 +772,7 @@ function bindRemoteAudio(el: unknown, stream?: MediaStream) {
   right: 0;
   bottom: 0;
   padding: 6px 8px 8px;
-  font-size: 11px;
+  font-size: var(--pulse-font-caption);
   font-variant-numeric: tabular-nums;
   text-align: center;
   background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.55));
@@ -785,7 +785,7 @@ function bindRemoteAudio(el: unknown, stream?: MediaStream) {
   bottom: 6px;
   padding: 4px;
   border-radius: 50%;
-  font-size: 17px;
+  font-size: var(--pulse-font-title);
   background: rgba(0, 0, 0, 0.55);
   pointer-events: none;
 }
@@ -870,7 +870,7 @@ function bindRemoteAudio(el: unknown, stream?: MediaStream) {
   place-items: center;
   color: #fff;
   background: linear-gradient(145deg, #5478d8, #7656c7);
-  font-size: 17px;
+  font-size: var(--pulse-font-title);
   font-weight: 600;
 }
 

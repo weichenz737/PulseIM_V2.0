@@ -124,8 +124,8 @@ async function doJoin(message?: string) {
 <template>
   <div class="group-profile-page">
     <header class="page-header">
-      <button type="button" class="icon-btn" @click="goBack">
-        <span class="material-symbols-outlined">arrow_back</span>
+      <button type="button" class="icon-btn" @click="goBack" aria-label="返回">
+        <IconBack />
       </button>
       <h1 class="page-title">群简介</h1>
       <span class="spacer" />
@@ -156,15 +156,15 @@ async function doJoin(message?: string) {
       </section>
 
       <div class="actions">
-        <button
+        <AppButton variant="primary"
           v-if="preview.joined"
           type="button"
           class="primary-btn"
           @click="enterChat"
         >
           进入群聊
-        </button>
-        <button
+        </AppButton>
+        <AppButton variant="primary"
           v-else
           type="button"
           class="primary-btn"
@@ -172,15 +172,15 @@ async function doJoin(message?: string) {
           @click="onJoin"
         >
           {{ preview.joinPending ? '等待审核中' : preview.joinVerifyRequired ? '申请加群' : '加入群聊' }}
-        </button>
-        <button
+        </AppButton>
+        <AppButton variant="secondary"
           v-if="preview.joined"
           type="button"
           class="ghost-btn"
           @click="openGroupManage"
         >
           群聊设置
-        </button>
+        </AppButton>
       </div>
     </main>
 
@@ -195,7 +195,7 @@ async function doJoin(message?: string) {
           placeholder="验证信息（可选）"
         />
         <div class="dialog-actions">
-          <button type="button" class="dialog-cancel" @click="showVerifyDialog = false">取消</button>
+          <AppButton variant="secondary" type="button" class="dialog-cancel" @click="showVerifyDialog = false">取消</AppButton>
           <button type="button" class="dialog-ok" @click="confirmVerifyJoin">提交申请</button>
         </div>
       </div>
@@ -238,7 +238,7 @@ async function doJoin(message?: string) {
   flex: 1;
   margin: 0;
   text-align: center;
-  font-size: 17px;
+  font-size: var(--pulse-font-title);
   font-weight: 700;
 }
 
@@ -284,14 +284,14 @@ async function doJoin(message?: string) {
 
 .title {
   margin: 14px 0 6px;
-  font-size: 22px;
+  font-size: var(--pulse-font-heading);
   font-weight: 700;
 }
 
 .meta {
   margin: 0;
   color: var(--pulse-outline);
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
 }
 
 .dot {
@@ -300,7 +300,7 @@ async function doJoin(message?: string) {
 
 .verify-tip {
   margin: 10px 0 0;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   color: #f0b429;
 }
 
@@ -312,14 +312,14 @@ async function doJoin(message?: string) {
 }
 
 .card-label {
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   color: var(--pulse-outline);
   margin-bottom: 8px;
 }
 
 .card-text {
   margin: 0;
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
   line-height: 1.5;
   color: var(--pulse-text);
   white-space: pre-wrap;
@@ -336,7 +336,7 @@ async function doJoin(message?: string) {
   height: 44px;
   border-radius: 12px;
   border: none;
-  font-size: 16px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
   cursor: pointer;
 }
@@ -376,13 +376,13 @@ async function doJoin(message?: string) {
 
 .dialog h3 {
   margin: 0 0 8px;
-  font-size: 17px;
+  font-size: var(--pulse-font-title);
   text-align: center;
 }
 
 .dialog-tip {
   margin: 0 0 12px;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   color: var(--pulse-outline);
   text-align: center;
 }
@@ -396,7 +396,7 @@ async function doJoin(message?: string) {
   color: var(--pulse-text);
   padding: 10px 12px;
   resize: none;
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
   outline: none;
 }
 
@@ -412,7 +412,7 @@ async function doJoin(message?: string) {
   height: 40px;
   border: none;
   border-radius: 10px;
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
   cursor: pointer;
 }

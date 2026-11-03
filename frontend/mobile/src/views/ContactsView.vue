@@ -455,7 +455,7 @@ function scrollToLetter(letter: string) {
 .empty-friends {
   padding: 28px 16px;
   text-align: center;
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
   color: var(--pulse-text-secondary);
 }
 
@@ -466,7 +466,7 @@ function scrollToLetter(letter: string) {
   border-radius: 999px;
   background: #ff6b6b;
   color: #fff;
-  font-size: 11px;
+  font-size: var(--pulse-font-caption);
   font-weight: 700;
   line-height: 18px;
   text-align: center;
@@ -488,7 +488,7 @@ function scrollToLetter(letter: string) {
 
 .letter-label {
   padding: 8px 16px 8px 18px;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   font-weight: 500;
   color: var(--pulse-primary);
   background: var(--pulse-page-bg, var(--pulse-bg));
@@ -559,7 +559,7 @@ function scrollToLetter(letter: string) {
   box-sizing: border-box;
   padding: 1px 7px;
   border-radius: 999px;
-  font-size: 11px;
+  font-size: var(--pulse-font-caption);
   font-weight: 600;
   line-height: 16px;
   white-space: normal;
@@ -567,7 +567,7 @@ function scrollToLetter(letter: string) {
 }
 
 .contact-sub {
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   color: var(--pulse-text-secondary);
   white-space: nowrap;
   overflow: hidden;
@@ -596,7 +596,7 @@ function scrollToLetter(letter: string) {
 .index-letter {
   border: none;
   background: transparent;
-  font-size: 10px;
+  font-size: var(--pulse-font-caption);
   font-weight: 500;
   color: var(--pulse-outline);
   padding: 2px 4px;

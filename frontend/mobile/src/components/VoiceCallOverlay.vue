@@ -471,12 +471,12 @@ onBeforeUnmount(() => {
 }
 
 .float-audio-meta strong {
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
 }
 
 .float-audio-meta small {
   color: rgba(255, 255, 255, 0.72);
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
 }
 
 .float-time {
@@ -485,7 +485,7 @@ onBeforeUnmount(() => {
   right: 0;
   bottom: 0;
   padding: 6px 8px 8px;
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   font-variant-numeric: tabular-nums;
   text-align: center;
   background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.55));
@@ -516,7 +516,7 @@ onBeforeUnmount(() => {
   bottom: 6px;
   padding: 4px;
   border-radius: 50%;
-  font-size: 17px;
+  font-size: var(--pulse-font-title);
   background: rgba(0, 0, 0, 0.55);
   pointer-events: none;
 }
@@ -656,17 +656,17 @@ onBeforeUnmount(() => {
 
 .peer-block.compact .peer-name {
   margin: 0 0 4px;
-  font-size: 18px;
+  font-size: var(--pulse-font-title);
 }
 
 .call-status {
   margin: 0;
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   color: rgba(255, 255, 255, 0.7);
 }
 
 .peer-block.compact .call-status {
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   color: rgba(255, 255, 255, 0.85);
 }
 
@@ -730,7 +730,7 @@ onBeforeUnmount(() => {
 }
 
 .act-label {
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   color: rgba(255, 255, 255, 0.75);
 }
 

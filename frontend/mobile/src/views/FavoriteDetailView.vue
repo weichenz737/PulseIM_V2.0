@@ -481,8 +481,8 @@ async function onRemove() {
 <template>
   <div class="fav-detail-page">
     <header class="page-header">
-      <button type="button" class="icon-btn" @click="goBack">
-        <span class="material-symbols-outlined">arrow_back_ios</span>
+      <button type="button" class="icon-btn" @click="goBack" aria-label="返回">
+        <IconBack />
       </button>
       <h1 class="page-title">收藏详情</h1>
       <div class="header-actions">
@@ -655,7 +655,7 @@ async function onRemove() {
       @select="onSaveAction"
     />
 
-    <van-popup
+    <AppBottomSheet
       v-model:show="showForwardSheet"
       position="bottom"
       round
@@ -689,18 +689,18 @@ async function onRemove() {
           </button>
         </div>
         <div class="forward-actions">
-          <button type="button" class="forward-cancel" @click="showForwardSheet = false">取消</button>
-          <button
+          <AppButton variant="secondary" type="button" class="forward-cancel" @click="showForwardSheet = false">取消</AppButton>
+          <AppButton variant="primary"
             type="button"
             class="forward-submit"
             :disabled="!forwardSelectedCount || forwarding"
             @click="submitForward"
           >
             {{ forwarding ? '转发中...' : `确认转发${forwardSelectedCount ? ` (${forwardSelectedCount})` : ''}` }}
-          </button>
+          </AppButton>
         </div>
       </div>
-    </van-popup>
+    </AppBottomSheet>
   </div>
 </template>
 
@@ -794,7 +794,7 @@ async function onRemove() {
   margin: 0;
   flex: 1;
   text-align: center;
-  font-size: 17px;
+  font-size: var(--pulse-font-title);
   font-weight: 700;
 }
 
@@ -827,7 +827,7 @@ async function onRemove() {
   text-align: center;
   padding: 48px 24px;
   color: var(--pulse-outline);
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
 }
 
 .meta-card {
@@ -841,7 +841,7 @@ async function onRemove() {
   display: flex;
   gap: 12px;
   padding: 4px 0;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
 }
 
 .meta-label {
@@ -892,14 +892,14 @@ async function onRemove() {
   padding: 10px 12px;
   background: rgba(173, 198, 255, 0.16);
   color: var(--pulse-primary);
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   font-weight: 600;
   cursor: pointer;
 }
 
 .save-hint {
   margin: 8px 0 0;
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   color: var(--pulse-outline);
   text-align: center;
 }
@@ -929,14 +929,14 @@ async function onRemove() {
 }
 
 .file-name {
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
   word-break: break-all;
 }
 
 .file-sub {
   margin-top: 2px;
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   color: var(--pulse-outline);
 }
 
@@ -944,7 +944,7 @@ async function onRemove() {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
 }
 
 .link-btn {
@@ -952,19 +952,19 @@ async function onRemove() {
   border: none;
   background: transparent;
   color: var(--pulse-primary);
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   font-weight: 600;
   cursor: pointer;
 }
 
 .forward-card .fwd-title {
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   font-weight: 700;
 }
 
 .fwd-sub {
   margin-top: 4px;
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   color: var(--pulse-outline);
 }
 
@@ -989,12 +989,12 @@ async function onRemove() {
 }
 
 .contact-name {
-  font-size: 16px;
+  font-size: var(--pulse-font-body);
   font-weight: 700;
 }
 
 .contact-sub {
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   color: var(--pulse-outline);
 }
 
@@ -1011,7 +1011,7 @@ async function onRemove() {
   background: color-mix(in srgb, var(--pulse-primary) 10%, transparent);
   color: var(--pulse-primary);
   font: inherit;
-  font-weight: 650;
+  font-weight: 600;
   cursor: pointer;
 }
 
@@ -1038,14 +1038,14 @@ async function onRemove() {
 }
 
 .location-name {
-  font-size: 16px;
+  font-size: var(--pulse-font-body);
   font-weight: 700;
   word-break: break-word;
 }
 
 .location-address {
   margin-top: 4px;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   line-height: 1.4;
   color: var(--pulse-outline);
   word-break: break-word;
@@ -1053,7 +1053,7 @@ async function onRemove() {
 
 .text-body {
   margin: 0;
-  font-size: 16px;
+  font-size: var(--pulse-font-body);
   line-height: 1.55;
   white-space: pre-wrap;
   word-break: break-word;
@@ -1076,13 +1076,13 @@ async function onRemove() {
 }
 
 .forward-title {
-  font-size: 17px;
+  font-size: var(--pulse-font-title);
   font-weight: 700;
 }
 
 .forward-hint {
   margin-top: 4px;
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   color: var(--pulse-outline);
 }
 
@@ -1096,7 +1096,7 @@ async function onRemove() {
   padding: 40px 12px;
   text-align: center;
   color: var(--pulse-outline);
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
 }
 
 .forward-item {
@@ -1118,7 +1118,7 @@ async function onRemove() {
 }
 
 .forward-check {
-  font-size: 22px;
+  font-size: var(--pulse-font-heading);
   color: #6b7185;
 }
 
@@ -1148,7 +1148,7 @@ async function onRemove() {
 }
 
 .forward-name {
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1157,7 +1157,7 @@ async function onRemove() {
 
 .forward-sub {
   margin-top: 2px;
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   color: var(--pulse-outline);
 }
 
@@ -1174,7 +1174,7 @@ async function onRemove() {
   height: 44px;
   border: none;
   border-radius: 12px;
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
   cursor: pointer;
 }

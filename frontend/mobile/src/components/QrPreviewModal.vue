@@ -63,9 +63,9 @@ onMounted(() => {
       <p class="hint">{{ hint || '扫一扫上面的二维码，加我为好友' }}</p>
       <div class="actions">
         <button type="button" class="btn ghost" @click="emit('close')">关闭</button>
-        <button type="button" class="btn primary" :disabled="saving" @click="onSave">
+        <AppButton variant="primary" type="button" class="btn primary" :disabled="saving" @click="onSave">
           {{ saving ? '保存中...' : '保存到手机' }}
-        </button>
+        </AppButton>
       </div>
     </div>
   </div>
@@ -94,7 +94,7 @@ onMounted(() => {
 
 .title {
   margin: 0 0 16px;
-  font-size: 17px;
+  font-size: var(--pulse-font-title);
   font-weight: 600;
   color: var(--pulse-text);
 }
@@ -114,7 +114,7 @@ onMounted(() => {
 
 .hint {
   margin: 14px 0 0;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   color: var(--pulse-text-secondary);
 }
 
@@ -129,7 +129,7 @@ onMounted(() => {
   border: none;
   border-radius: 10px;
   padding: 12px;
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
   cursor: pointer;
 }

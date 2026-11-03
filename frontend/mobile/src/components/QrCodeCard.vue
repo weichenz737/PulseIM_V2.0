@@ -65,9 +65,9 @@ watch(() => props.payload, () => {
       <div v-if="title" class="qr-title">{{ title }}</div>
       <div v-if="subtitle" class="qr-sub">{{ subtitle }}</div>
     </div>
-    <button type="button" class="save-btn" :disabled="saving || !dataUrl" @click="onSave">
+    <AppButton variant="primary" type="button" class="save-btn" :disabled="saving || !dataUrl" @click="onSave">
       {{ saving ? '保存中...' : '保存到手机' }}
-    </button>
+    </AppButton>
   </div>
 </template>
 
@@ -100,7 +100,7 @@ watch(() => props.payload, () => {
   align-items: center;
   justify-content: center;
   color: #666;
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
 }
 
 .qr-meta {
@@ -108,14 +108,14 @@ watch(() => props.payload, () => {
 }
 
 .qr-title {
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
   color: var(--pulse-text);
 }
 
 .qr-sub {
   margin-top: 4px;
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   color: var(--pulse-text-secondary);
 }
 
@@ -125,7 +125,7 @@ watch(() => props.payload, () => {
   padding: 10px 18px;
   background: rgba(75, 142, 255, 0.2);
   color: var(--pulse-primary);
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
   cursor: pointer;
 }

@@ -1,0 +1,217 @@
+/* Shared visual contract. Business layouts and dedicated chat/call controls
+   keep their own geometry; only explicitly migrated buttons use pulse-button. */
+:root {
+  --pulse-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --pulse-font-caption: 12px;
+  --pulse-font-small: 13px;
+  --pulse-font-body: 15px;
+  --pulse-font-title: 18px;
+  --pulse-font-heading: 22px;
+  --pulse-line-caption: 18px;
+  --pulse-line-body: 22px;
+  --pulse-line-title: 26px;
+  --pulse-weight-regular: 400;
+  --pulse-weight-medium: 500;
+  --pulse-weight-semibold: 600;
+  --pulse-weight-bold: 700;
+  --pulse-space-1: 4px;
+  --pulse-space-2: 8px;
+  --pulse-space-3: 12px;
+  --pulse-space-4: 16px;
+  --pulse-space-6: 24px;
+  --pulse-radius: 12px;
+  --pulse-radius-lg: 16px;
+  --pulse-control-radius: 12px;
+  --pulse-control-height: 44px;
+  --pulse-dialog-radius: 16px;
+  --pulse-sheet-radius: 20px;
+  --pulse-sheet-header-height: 56px;
+  --pulse-motion-fast: 160ms;
+  --pulse-motion-normal: 220ms;
+  --pulse-button-background: #4b8eff;
+  --pulse-button-text: #ffffff;
+  --pulse-overlay-background: rgba(0, 0, 0, .46);
+  --van-base-font: var(--pulse-font-family);
+  --van-primary-color: var(--pulse-primary);
+  --van-danger-color: var(--pulse-danger);
+  --van-text-color: var(--pulse-text);
+  --van-text-color-2: var(--pulse-text-secondary);
+  --van-border-color: var(--pulse-divider);
+  --van-active-color: var(--pulse-pressed);
+  --van-disabled-opacity: .45;
+  --van-duration-base: var(--pulse-motion-normal);
+  --van-duration-fast: var(--pulse-motion-fast);
+  --van-overlay-background: var(--pulse-overlay-background);
+  --van-dialog-width: min(340px, calc(100vw - 48px));
+  --van-dialog-radius: var(--pulse-dialog-radius);
+  --van-dialog-font-size: var(--pulse-font-body);
+  --van-dialog-header-font-weight: var(--pulse-weight-semibold);
+  --van-dialog-background: var(--pulse-surface-container);
+  --van-dialog-message-text-color: var(--pulse-text-secondary);
+  --van-dialog-confirm-button-text-color: var(--pulse-primary);
+  --van-action-sheet-background: var(--pulse-surface-container);
+  --van-action-sheet-item-background: var(--pulse-surface-container);
+  --van-action-sheet-item-text-color: var(--pulse-text);
+  --van-popup-background: var(--pulse-surface-container);
+  --van-picker-background: var(--pulse-surface-container);
+  --van-picker-option-text-color: var(--pulse-text);
+  --van-picker-confirm-action-color: var(--pulse-primary);
+  --van-picker-cancel-action-color: var(--pulse-text-secondary);
+  --van-picker-mask-color: linear-gradient(180deg, var(--pulse-surface-container), transparent), linear-gradient(0deg, var(--pulse-surface-container), transparent);
+  --van-picker-loading-mask-color: var(--pulse-surface-container);
+  --van-calendar-background: var(--pulse-surface-container);
+  --van-dialog-message-line-height: var(--pulse-line-body);
+  --van-popup-round-radius: var(--pulse-sheet-radius);
+  --van-popup-close-icon-size: 22px;
+  --van-popup-close-icon-margin: 16px;
+  --van-popup-close-icon-color: var(--pulse-text-secondary);
+  --van-action-sheet-item-font-size: var(--pulse-font-body);
+  --van-action-sheet-item-line-height: var(--pulse-line-body);
+  --van-action-sheet-header-height: var(--pulse-sheet-header-height);
+  --van-action-sheet-header-font-size: var(--pulse-font-title);
+  --van-action-sheet-cancel-text-color: var(--pulse-text-secondary);
+  --van-picker-toolbar-height: var(--pulse-sheet-header-height);
+  --van-picker-title-font-size: var(--pulse-font-title);
+  --van-picker-action-font-size: var(--pulse-font-body);
+  --van-toast-font-size: var(--pulse-font-small);
+  --van-toast-line-height: 20px;
+  --van-toast-radius: var(--pulse-control-radius);
+}
+
+:root[data-theme='light'] { --pulse-button-background: #087ed7; }
+
+html, body { font-family: var(--pulse-font-family); font-size: var(--pulse-font-body); }
+input, textarea, select, button { font-family: inherit; }
+.pulse-back-icon { flex: none; vertical-align: middle; }
+:is(.page-header, .header, .chat-header, .top-bar) :is(.icon-btn, .back-btn) {
+  min-width: 40px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+:is(.page-header, .header, .chat-header, .top-bar) :is(h1, h2, .header-title) {
+  font-size: var(--pulse-font-title) !important;
+  font-weight: var(--pulse-weight-semibold) !important;
+  line-height: var(--pulse-line-title);
+}
+:is(.field-input, .form-input) {
+  font-size: var(--pulse-font-body);
+  line-height: var(--pulse-line-body);
+}
+
+/* Higher specificity deliberately overrides the legacy per-page button rules. */
+button.pulse-button {
+  min-height: var(--pulse-control-height) !important;
+  height: auto !important;
+  padding: 10px 16px !important;
+  border: 1px solid transparent !important;
+  border-radius: var(--pulse-control-radius) !important;
+  background: var(--pulse-button-background) !important;
+  color: var(--pulse-button-text) !important;
+  font-size: var(--pulse-font-body) !important;
+  font-weight: var(--pulse-weight-semibold) !important;
+  line-height: var(--pulse-line-body) !important;
+  box-shadow: none !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  overflow-wrap: anywhere;
+  transition: opacity var(--pulse-motion-fast), background-color var(--pulse-motion-fast);
+  cursor: pointer;
+}
+button.pulse-button--secondary {
+  border-color: var(--pulse-outline-variant) !important;
+  background: var(--pulse-surface-high) !important;
+  color: var(--pulse-text) !important;
+}
+button.pulse-button--danger { background: var(--pulse-danger) !important; color: #fff !important; }
+button.pulse-button--text { background: transparent !important; color: var(--pulse-primary) !important; }
+button.pulse-button:active:not(:disabled) { opacity: .8; transform: none !important; }
+button.pulse-button:disabled { opacity: .45 !important; cursor: default; }
+button.pulse-button:focus-visible { outline: 2px solid var(--pulse-primary); outline-offset: 3px; }
+.pulse-button-spinner { width: 16px; height: 16px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: pulse-button-spin .8s linear infinite; }
+@keyframes pulse-button-spin { to { transform: rotate(360deg); } }
+
+/* Both themes read the same semantic tokens; no separate white/black overrides. */
+:root :is(.van-dialog, .van-popup, .van-action-sheet, .van-picker, .van-calendar) {
+  color: var(--pulse-text) !important;
+  background: var(--pulse-surface-container) !important;
+  font-family: var(--pulse-font-family);
+}
+:root :is(.van-dialog__header, .van-action-sheet__name, .van-picker__title, .van-calendar__header-title) {
+  color: var(--pulse-text) !important;
+  font-size: var(--pulse-font-title);
+  font-weight: var(--pulse-weight-semibold);
+}
+:root :is(.van-dialog__message, .van-action-sheet__description) { color: var(--pulse-text-secondary) !important; line-height: var(--pulse-line-body); }
+:root :is(.van-dialog__footer, .van-dialog__cancel, .van-dialog__confirm, .van-action-sheet__cancel, .van-picker__toolbar, .van-calendar__header) {
+  background: var(--pulse-surface-container) !important;
+  border-color: var(--pulse-divider) !important;
+}
+:root :is(.van-dialog__cancel, .van-picker__cancel, .van-action-sheet__cancel) { color: var(--pulse-text-secondary) !important; font-size: var(--pulse-font-body); }
+:root :is(.van-dialog__confirm, .van-picker__confirm) { color: var(--pulse-primary) !important; font-size: var(--pulse-font-body); font-weight: var(--pulse-weight-semibold); }
+.van-dialog__header { padding: 24px 24px 0; }
+.van-dialog__message { font-size: var(--pulse-font-body); padding: 20px 24px 24px; overflow-wrap: anywhere; }
+.van-dialog__footer button { min-height: 48px; }
+.van-action-sheet__item { min-height: 52px; padding: 14px 16px; }
+.van-action-sheet__cancel { min-height: 52px; }
+.van-action-sheet__gap { background: var(--pulse-page-bg) !important; }
+.van-popup--bottom.van-popup--round { border-radius: var(--pulse-sheet-radius) var(--pulse-sheet-radius) 0 0; }
+.van-popup--bottom { max-height: calc(100% - var(--pulse-safe-top) - 12px); overscroll-behavior: contain; }
+.van-popup__close-icon { display: grid; place-items: center; width: 40px; height: 40px; top: 8px; right: 8px; }
+
+.van-popup--bottom :is(.mention-header, .forward-header, .media-forward-head, .group-call-picker-head, .payment-confirm-head, .popup-head, .legal-header) {
+  min-height: var(--pulse-sheet-header-height);
+  padding-left: var(--pulse-space-4);
+  padding-right: var(--pulse-space-4);
+  border-color: var(--pulse-divider);
+}
+.van-popup--bottom :is(.mention-title, .forward-title, .media-forward-title, .group-call-picker-head strong, .payment-confirm-head strong, .popup-head h2, .legal-header h2) {
+  margin-top: 0;
+  margin-bottom: 0;
+  color: var(--pulse-text);
+  font-size: var(--pulse-font-title) !important;
+  font-weight: var(--pulse-weight-semibold) !important;
+  line-height: var(--pulse-line-title);
+}
+.van-popup--bottom :is(.mention-cancel, .media-forward-cancel, .media-forward-done, .group-call-picker-head > button, .payment-confirm-head > button, .popup-head > button) {
+  min-height: 44px;
+  font-size: var(--pulse-font-body);
+  color: var(--pulse-primary);
+}
+
+/* Existing custom edit dialogs share the same surface and typography as Vant. */
+.dialog-mask { background: var(--pulse-overlay-background) !important; }
+.dialog-mask > .dialog {
+  width: min(340px, calc(100vw - 32px)) !important;
+  max-height: calc(100% - 48px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 24px !important;
+  border: 1px solid var(--pulse-border) !important;
+  border-radius: var(--pulse-dialog-radius) !important;
+  background: var(--pulse-surface-container) !important;
+  color: var(--pulse-text) !important;
+}
+.dialog-mask :is(.dialog-title, .dialog > h3) { font-size: var(--pulse-font-title) !important; font-weight: var(--pulse-weight-semibold); line-height: var(--pulse-line-title); }
+.dialog-mask :is(.dialog-input, .dialog-textarea) {
+  border: 1px solid var(--pulse-outline-variant);
+  border-radius: var(--pulse-control-radius);
+  background: var(--pulse-input-bg);
+  color: var(--pulse-text);
+  font-size: var(--pulse-font-body);
+  line-height: var(--pulse-line-body);
+}
+.dialog-mask .dialog-actions { display: flex; gap: 12px; margin-top: 24px; }
+.dialog-mask .dialog-actions > .pulse-button { flex: 1; }
+
+/* Only the existing safe-area helper is affected. Custom business padding is
+   retained to avoid double-insetting sheets that already own their safe area. */
+.van-safe-area-bottom { padding-bottom: var(--pulse-safe-bottom, env(safe-area-inset-bottom, 0px)); }
+
+@media (prefers-reduced-motion: reduce) {
+  button.pulse-button { transition: none; }
+  .van-popup, .van-overlay { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}

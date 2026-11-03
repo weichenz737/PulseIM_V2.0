@@ -30,7 +30,7 @@ async function load() {
   <div class="page">
     <header class="header">
       <button type="button" class="icon-btn" aria-label="返回" @click="smartBack(router)">
-        <span class="material-symbols-outlined">arrow_back_ios</span>
+        <IconBack />
       </button>
       <h1>问题详情</h1>
       <span class="header-space" />
@@ -53,14 +53,14 @@ async function load() {
 <style scoped>
 .page { min-height: 100%; background: var(--pulse-page-bg, var(--pulse-bg)); color: var(--pulse-text); }
 .header { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; height: 56px; padding: var(--pulse-header-pad-top) 12px 0; background: rgba(18, 19, 23, .94); backdrop-filter: blur(16px); }
-.header h1 { flex: 1; margin: 0; color: var(--pulse-primary); text-align: center; font-size: 18px; font-weight: 600; }
+.header h1 { flex: 1; margin: 0; color: var(--pulse-primary); text-align: center; font-size: var(--pulse-font-title); font-weight: 600; }
 .icon-btn, .header-space { width: 40px; height: 40px; }
 .icon-btn { display: grid; place-items: center; padding: 0; border: 0; background: transparent; color: var(--pulse-primary); }
 .content { padding: 16px; }
 .article { padding: 20px 18px; border-radius: 8px; background: var(--pulse-surface-container); }
-.category { display: inline-block; padding: 3px 7px; border-radius: 4px; background: rgba(173,198,255,.12); color: var(--pulse-primary); font-size: 12px; }
-h2 { margin: 10px 0 18px; color: var(--pulse-text); font-size: 19px; line-height: 1.5; }
-.answer { color: var(--pulse-text-secondary); font-size: 15px; line-height: 1.8; white-space: pre-wrap; overflow-wrap: anywhere; }
+.category { display: inline-block; padding: 3px 7px; border-radius: 4px; background: rgba(173,198,255,.12); color: var(--pulse-primary); font-size: var(--pulse-font-caption); }
+h2 { margin: 10px 0 18px; color: var(--pulse-text); font-size: var(--pulse-font-title); line-height: 1.5; }
+.answer { color: var(--pulse-text-secondary); font-size: var(--pulse-font-body); line-height: 1.8; white-space: pre-wrap; overflow-wrap: anywhere; }
 .state { display: flex; min-height: 260px; flex-direction: column; align-items: center; justify-content: center; gap: 14px; color: var(--pulse-text-secondary); }
 .state button { height: 36px; padding: 0 18px; border: 1px solid var(--pulse-primary); border-radius: 6px; background: transparent; color: var(--pulse-primary); }
 </style>

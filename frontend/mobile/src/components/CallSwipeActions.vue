@@ -222,7 +222,7 @@ onBeforeUnmount(() => {
 }
 
 .chev {
-  font-size: 22px;
+  font-size: var(--pulse-font-heading);
   line-height: 12px;
   color: var(--accent);
   animation: chevRise 1.35s ease-in-out infinite;
@@ -332,7 +332,7 @@ onBeforeUnmount(() => {
 
 .hint {
   margin-top: 12px;
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   letter-spacing: 0.04em;
   color: rgba(255, 255, 255, 0.72);
   text-shadow: 0 1px 8px rgba(0, 0, 0, 0.35);

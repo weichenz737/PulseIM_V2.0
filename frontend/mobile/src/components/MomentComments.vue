@@ -574,7 +574,7 @@ async function submit() {
   border: 0;
   background: transparent;
   color: var(--pulse-text-secondary);
-  font-size: 11px;
+  font-size: var(--pulse-font-caption);
   line-height: 1.45;
 }
 
@@ -635,7 +635,7 @@ async function submit() {
   border-radius: 6px;
   background: var(--pulse-surface-high);
   color: var(--pulse-text-secondary);
-  font-size: 11px;
+  font-size: var(--pulse-font-caption);
   line-height: 56px;
   text-align: center;
   white-space: nowrap;
@@ -656,7 +656,7 @@ async function submit() {
   padding: 6px 10px;
   border-radius: 8px;
   background: rgba(75, 142, 255, 0.12);
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   color: var(--pulse-primary);
 }
 
@@ -768,7 +768,7 @@ async function submit() {
   background: var(--pulse-surface-high);
   color: var(--pulse-text);
   outline: none;
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
 }
 
 .comment-send {
@@ -780,7 +780,7 @@ async function submit() {
   min-width: 52px;
   background: var(--pulse-primary);
   color: #fff;
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
   cursor: pointer;
   white-space: nowrap;
   transition: box-shadow 0.2s ease, transform 0.2s ease;

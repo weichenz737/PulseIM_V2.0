@@ -526,7 +526,7 @@ onBeforeUnmount(() => {
   text-align: center;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 17px;
+  font-size: var(--pulse-font-title);
   font-weight: 600;
 }
 .icon-btn, .send-btn, .search-row button, .locate-btn { border: 0; background: transparent; }
@@ -537,7 +537,7 @@ onBeforeUnmount(() => {
   border-radius: 9px;
   background: #07c160;
   color: #fff;
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
 }
 .send-btn:disabled {
@@ -583,7 +583,7 @@ onBeforeUnmount(() => {
   border: 0;
   outline: 0;
   background: transparent;
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   color: inherit;
 }
 .search-row input::-webkit-search-cancel-button { display: none; }
@@ -593,7 +593,7 @@ onBeforeUnmount(() => {
   flex: 0 0 48px;
   padding: 0;
   color: #087f5b;
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
 }
 .map-wrap { position: relative; height: min(54vh, 520px); background: #e5e8eb; }
 .map { width: 100%; height: 100%; }
@@ -649,7 +649,7 @@ onBeforeUnmount(() => {
   margin: 0;
   padding: 13px 16px 8px;
   color: #858b92;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   font-weight: 500;
 }
 .nearby button {
@@ -674,13 +674,13 @@ onBeforeUnmount(() => {
 .nearby button > span:last-child { min-width: 0; flex: 1; }
 .nearby strong,
 .nearby small { display: block; }
-.nearby strong { overflow: hidden; font-size: 15px; text-overflow: ellipsis; white-space: nowrap; }
-.nearby small { margin-top: 5px; overflow: hidden; color: #858b92; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+.nearby strong { overflow: hidden; font-size: var(--pulse-font-body); text-overflow: ellipsis; white-space: nowrap; }
+.nearby small { margin-top: 5px; overflow: hidden; color: #858b92; font-size: var(--pulse-font-small); text-overflow: ellipsis; white-space: nowrap; }
 .selected-placeholder { min-height: 82px; padding: 16px; display: flex; gap: 12px; }
 .selected-placeholder > .material-symbols-outlined { color: #e64a3c; }
 .selected-placeholder div { min-width: 0; flex: 1; }
-.selected-placeholder strong { display: block; font-size: 16px; }
-.selected-placeholder p { margin: 6px 0 0; color: #858b92; font-size: 13px; line-height: 1.45; }
+.selected-placeholder strong { display: block; font-size: var(--pulse-font-body); }
+.selected-placeholder p { margin: 6px 0 0; color: #858b92; font-size: var(--pulse-font-small); line-height: 1.45; }
 
 @media (max-width: 360px) {
   .topbar {
@@ -761,7 +761,7 @@ onBeforeUnmount(() => {
   padding: 0;
   background: transparent;
   color: #fff;
-  font-size: 17px;
+  font-size: var(--pulse-font-title);
   text-shadow: 0 1px 3px rgb(0 0 0 / 35%);
 }
 .send-btn {
@@ -771,7 +771,7 @@ onBeforeUnmount(() => {
   border-radius: 10px;
   background: #07c160 !important;
   color: #fff !important;
-  font-size: 16px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
   box-shadow: 0 3px 12px rgb(0 0 0 / 18%);
 }
@@ -900,7 +900,7 @@ onBeforeUnmount(() => {
 }
 .search-row input {
   color: var(--pulse-text, #e3e2e7) !important;
-  font-size: 16px;
+  font-size: var(--pulse-font-body);
   -webkit-text-fill-color: var(--pulse-text, #e3e2e7);
 }
 .search-row input::placeholder {
@@ -915,7 +915,7 @@ onBeforeUnmount(() => {
   padding: 0;
   background: transparent;
   color: #526a96;
-  font-size: 17px;
+  font-size: var(--pulse-font-title);
 }
 .results,
 .nearby {
@@ -962,7 +962,7 @@ onBeforeUnmount(() => {
 .nearby strong {
   overflow: hidden;
   color: var(--pulse-text, #e3e2e7);
-  font-size: 17px;
+  font-size: var(--pulse-font-title);
   font-weight: 500;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -973,14 +973,14 @@ onBeforeUnmount(() => {
   margin-top: 5px;
   overflow: hidden;
   color: var(--pulse-text-secondary, #c1c6d7);
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .search-empty {
   padding: 28px 16px;
   color: var(--pulse-text-secondary, #c1c6d7);
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
   text-align: center;
 }
 .nearby h2 { display: none; }
@@ -998,11 +998,11 @@ onBeforeUnmount(() => {
 }
 .selected-placeholder > .material-symbols-outlined { color: #07c160; }
 .selected-placeholder div { min-width: 0; flex: 1; }
-.selected-placeholder strong { display: block; font-size: 17px; }
+.selected-placeholder strong { display: block; font-size: var(--pulse-font-title); }
 .selected-placeholder p {
   margin: 6px 0 0;
   color: var(--pulse-text-secondary, #c1c6d7);
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
   line-height: 1.45;
 }
 

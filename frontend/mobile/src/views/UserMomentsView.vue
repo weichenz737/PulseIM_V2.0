@@ -328,8 +328,8 @@ function suppressMomentClick(event: MouseEvent) {
 <template>
   <div class="user-moments-page">
     <header class="page-header">
-      <button type="button" class="icon-btn" @click="goBack">
-        <span class="material-symbols-outlined">arrow_back_ios</span>
+      <button type="button" class="icon-btn" @click="goBack" aria-label="返回">
+        <IconBack />
       </button>
       <h1 class="page-title">{{ title }}</h1>
       <div class="header-spacer" />
@@ -493,7 +493,7 @@ function suppressMomentClick(event: MouseEvent) {
 
 .page-title {
   margin: 0;
-  font-size: 16px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
 }
 
@@ -537,14 +537,14 @@ function suppressMomentClick(event: MouseEvent) {
 
 .cover-name {
   margin: 0;
-  font-size: 17px;
+  font-size: var(--pulse-font-title);
   font-weight: 700;
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
 }
 
 .cover-sig {
   margin: 4px 0 0;
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   color: rgba(255, 255, 255, 0.8);
   max-width: 180px;
 }
@@ -566,7 +566,7 @@ function suppressMomentClick(event: MouseEvent) {
   padding: 48px 16px;
   text-align: center;
   color: var(--pulse-text-secondary);
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
 }
 
 .feed-list {
@@ -588,7 +588,7 @@ function suppressMomentClick(event: MouseEvent) {
 }
 
 .day {
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   font-weight: 600;
   color: var(--pulse-text-secondary);
   line-height: 1.3;
@@ -601,7 +601,7 @@ function suppressMomentClick(event: MouseEvent) {
 
 .feed-content {
   margin: 0 0 8px;
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   line-height: 1.5;
   white-space: pre-wrap;
   word-break: break-word;
@@ -613,7 +613,7 @@ function suppressMomentClick(event: MouseEvent) {
   gap: 3px;
   margin: 0 0 8px;
   color: var(--pulse-primary);
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
 }
 
 .feed-location .material-symbols-outlined {
@@ -689,7 +689,7 @@ function suppressMomentClick(event: MouseEvent) {
   border: none;
   background: transparent;
   color: var(--pulse-text-secondary);
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   padding: 4px 0;
   cursor: pointer;
 }
@@ -707,7 +707,7 @@ function suppressMomentClick(event: MouseEvent) {
   padding: 8px 10px;
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.04);
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   color: var(--pulse-text-secondary);
 }
 

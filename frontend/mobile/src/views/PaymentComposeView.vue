@@ -152,7 +152,7 @@ function openPasswordSettings() {
 <template>
   <div class="pay-page">
     <header class="pay-header">
-      <button type="button" class="back-btn" aria-label="返回" @click="router.back()">‹</button>
+      <button type="button" class="back-btn" aria-label="返回" @click="router.back()"><IconBack /></button>
       <h1 class="page-title">{{ mode === 'red-packet' ? '发红包' : '转账' }}</h1>
       <span class="header-space" />
     </header>
@@ -219,7 +219,7 @@ function openPasswordSettings() {
         class="field"
         :placeholder="mode === 'red-packet' ? '恭喜发财，大吉大利' : '添加转账说明'"
       />
-      <button
+      <AppButton variant="primary"
         class="pay-submit"
         :disabled="submitting || !amountIsValid || cents <= 0 || amountTooHigh || (!targetUserId && mode === 'transfer')"
         @click="submit"
@@ -231,9 +231,9 @@ function openPasswordSettings() {
               ? `塞钱进红包 ${yuan(cents)}`
               : `转账 ${yuan(cents)}`
         }}
-      </button>
+      </AppButton>
     </main>
-    <van-popup
+    <AppBottomSheet
       v-model:show="packetTypePickerVisible"
       position="bottom"
       round
@@ -268,8 +268,8 @@ function openPasswordSettings() {
           </span>
         </button>
       </div>
-    </van-popup>
-    <van-popup
+    </AppBottomSheet>
+    <AppBottomSheet
       v-model:show="memberPickerVisible"
       position="bottom"
       round
@@ -300,7 +300,7 @@ function openPasswordSettings() {
         </button>
       </div>
       <div v-else class="payment-picker-empty">暂无可指定的群成员</div>
-    </van-popup>
+    </AppBottomSheet>
     <PaymentConfirmDialog
       v-model="payPasswordVisible"
       :amount="cents"
@@ -355,7 +355,7 @@ function openPasswordSettings() {
   left: 50%;
   transform: translateX(-50%);
   margin: 0;
-  font-size: 18px;
+  font-size: var(--pulse-font-title);
   font-weight: 600;
   color: var(--pulse-text);
   pointer-events: none;
@@ -386,7 +386,7 @@ main {
   align-items: center;
   gap: 10px;
   color: var(--pulse-text);
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
 }
 
 .field-button {
@@ -407,14 +407,14 @@ main {
 }
 
 .field-row-copy strong {
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   font-weight: 500;
 }
 
 .field-row-copy small {
   overflow: hidden;
   color: var(--pulse-text-secondary, #777);
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -423,7 +423,7 @@ main {
   max-width: 42%;
   overflow: hidden;
   color: var(--pulse-primary);
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -437,7 +437,7 @@ main {
 .field-row-arrow {
   flex: 0 0 auto;
   color: var(--pulse-text-secondary, #777);
-  font-size: 20px;
+  font-size: var(--pulse-font-heading);
 }
 
 .field-row input {
@@ -446,7 +446,7 @@ main {
   background: transparent;
   color: var(--pulse-text);
   text-align: right;
-  font-size: 16px;
+  font-size: var(--pulse-font-body);
   line-height: 24px;
   min-height: 32px;
   color-scheme: light dark;
@@ -469,12 +469,12 @@ main {
 }
 
 .payment-picker-head strong {
-  font-size: 19px;
+  font-size: var(--pulse-font-title);
 }
 
 .payment-picker-head small {
   color: var(--pulse-text-secondary, #777);
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
 }
 
 .payment-choice-list,
@@ -537,19 +537,19 @@ main {
 
 .payment-choice-copy strong,
 .payment-member-name {
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
 }
 
 .payment-choice-copy small {
   color: var(--pulse-text-secondary, #777);
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
 }
 
 .payment-choice-check {
   flex: 0 0 auto;
   color: var(--pulse-primary);
-  font-size: 22px;
+  font-size: var(--pulse-font-heading);
 }
 
 .payment-member-avatar {
@@ -573,7 +573,7 @@ main {
   padding: 36px 12px;
   color: var(--pulse-text-secondary, #777);
   text-align: center;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
 }
 
 .amount {
@@ -638,7 +638,7 @@ main {
 
 .field {
   color: var(--pulse-text);
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   outline: 0;
 }
 
@@ -655,7 +655,7 @@ main {
   border: 0;
   border-radius: 8px;
   padding: 14px;
-  font-size: 17px;
+  font-size: var(--pulse-font-title);
   font-weight: 600;
   cursor: pointer;
 }

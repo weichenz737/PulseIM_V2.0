@@ -302,7 +302,7 @@ async function continueAccountDeletion() {
   <div class="page account-security-page">
     <header class="header">
       <button type="button" class="icon-btn" aria-label="返回" @click="smartBack(router)">
-        <span class="material-symbols-outlined">arrow_back_ios</span>
+        <IconBack />
       </button>
       <h1>账号与安全</h1>
       <button type="button" class="icon-btn" aria-label="刷新" :disabled="loading || devicesLoading" @click="refreshSecurity">
@@ -402,7 +402,7 @@ async function continueAccountDeletion() {
         </button>
       </section>
     </main>
-    <van-popup v-model:show="deletionVisible" position="bottom" round closeable teleport="body" class="account-deletion-popup">
+    <AppBottomSheet v-model:show="deletionVisible" position="bottom" round closeable teleport="body" class="account-deletion-popup">
       <header class="deletion-popup-header"><h2>{{ deletionAgreement.title }}</h2></header>
       <div class="deletion-popup-content">
         <div class="deletion-agreement-body">{{ deletionAgreement.content }}</div>
@@ -416,14 +416,14 @@ async function continueAccountDeletion() {
         </label>
         <button type="button" class="deletion-continue" @click="continueAccountDeletion">同意并继续</button>
       </div>
-    </van-popup>
+    </AppBottomSheet>
   </div>
 </template>
 
 <style scoped>
 .page { min-height: 100%; background: var(--pulse-page-bg, var(--pulse-bg)); color: var(--pulse-text); }
 .header { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; height: 56px; padding: var(--pulse-header-pad-top) 12px 0; background: var(--pulse-page-bg, var(--pulse-bg)); backdrop-filter: blur(16px); }
-.header h1 { flex: 1; margin: 0; color: var(--pulse-primary); text-align: center; font-size: 18px; font-weight: 600; }
+.header h1 { flex: 1; margin: 0; color: var(--pulse-primary); text-align: center; font-size: var(--pulse-font-title); font-weight: 600; }
 .icon-btn { display: grid; place-items: center; width: 40px; height: 40px; border: 0; background: transparent; color: var(--pulse-primary); }
 .icon-btn:disabled { opacity: .5; }
 .spinning { animation: spin .8s linear infinite; }
@@ -431,27 +431,27 @@ async function continueAccountDeletion() {
 .security-hero { display: flex; align-items: center; gap: 12px; padding: 16px; border: 1px solid color-mix(in srgb, var(--pulse-primary) 22%, var(--pulse-border)); border-radius: 14px; background: linear-gradient(135deg, color-mix(in srgb, var(--pulse-primary) 15%, var(--pulse-surface-container)), var(--pulse-surface-container)); }
 .hero-icon { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 12px; background: color-mix(in srgb, var(--pulse-primary) 18%, transparent); color: var(--pulse-primary); font-size: 25px; }
 .hero-copy { min-width: 0; flex: 1; }
-.hero-copy strong { font-size: 16px; }
-.hero-copy p { margin: 5px 0 0; color: var(--pulse-outline); font-size: 12px; line-height: 1.45; }
-.security-badge { flex: 0 0 auto; padding: 5px 8px; border-radius: 999px; background: rgba(238, 10, 36, .1); color: #ee0a24; font-size: 11px; font-weight: 600; }
+.hero-copy strong { font-size: var(--pulse-font-body); }
+.hero-copy p { margin: 5px 0 0; color: var(--pulse-outline); font-size: var(--pulse-font-caption); line-height: 1.45; }
+.security-badge { flex: 0 0 auto; padding: 5px 8px; border-radius: 999px; background: rgba(238, 10, 36, .1); color: #ee0a24; font-size: var(--pulse-font-caption); font-weight: 600; }
 .security-badge.enabled { background: rgba(34, 160, 107, .12); color: #22a06b; }
 .phone-card { display: flex; align-items: center; gap: 14px; margin-top: 12px; padding: 18px 16px; border-radius: 8px; background: var(--pulse-surface-container); }
 .phone-card > .material-symbols-outlined { color: var(--pulse-primary); font-size: 28px; }
-.label { color: var(--pulse-outline); font-size: 13px; }
-.phone { margin-top: 4px; font-size: 18px; }
-.inline-error { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 10px; padding: 10px 12px; border-radius: 8px; background: rgba(238, 10, 36, .08); color: #ee0a24; font-size: 12px; }
+.label { color: var(--pulse-outline); font-size: var(--pulse-font-small); }
+.phone { margin-top: 4px; font-size: var(--pulse-font-title); }
+.inline-error { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 10px; padding: 10px 12px; border-radius: 8px; background: rgba(238, 10, 36, .08); color: #ee0a24; font-size: var(--pulse-font-caption); }
 .inline-error button, .device-error button { padding: 0; border: 0; background: transparent; color: inherit; font-weight: 600; }
 .menu { margin-top: 16px; overflow: hidden; border-radius: 8px; background: var(--pulse-surface-container); }
-.menu button { display: grid; grid-template-columns: 28px 1fr 24px; align-items: center; width: 100%; height: 58px; padding: 0 14px; border: 0; border-bottom: 1px solid var(--pulse-divider); background: transparent; color: var(--pulse-text); text-align: left; font-size: 15px; }
+.menu button { display: grid; grid-template-columns: 28px 1fr 24px; align-items: center; width: 100%; height: 58px; padding: 0 14px; border: 0; border-bottom: 1px solid var(--pulse-divider); background: transparent; color: var(--pulse-text); text-align: left; font-size: var(--pulse-font-body); }
 .menu button:last-child { border-bottom: 0; }
 .menu button > .material-symbols-outlined:first-child { color: var(--pulse-primary); }
 .arrow { color: #777b87; }
 .devices-card { margin-top: 16px; overflow: hidden; border-radius: 8px; background: transparent; }
 .devices-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 18px 16px 10px; }
-.devices-heading strong { font-size: 16px; }
-.heading-count { display: inline-grid; min-width: 20px; height: 20px; place-items: center; margin-left: 3px; padding: 0 5px; border-radius: 10px; background: color-mix(in srgb, var(--pulse-primary) 14%, transparent); color: var(--pulse-primary); font-size: 11px; font-weight: 600; vertical-align: 2px; }
-.devices-heading p { margin: 7px 0 0; color: var(--pulse-outline); font-size: 13px; }
-.refresh-devices { display: inline-flex; align-items: center; gap: 3px; padding: 0; border: 0; background: transparent; color: var(--pulse-primary); font-size: 13px; }
+.devices-heading strong { font-size: var(--pulse-font-body); }
+.heading-count { display: inline-grid; min-width: 20px; height: 20px; place-items: center; margin-left: 3px; padding: 0 5px; border-radius: 10px; background: color-mix(in srgb, var(--pulse-primary) 14%, transparent); color: var(--pulse-primary); font-size: var(--pulse-font-caption); font-weight: 600; vertical-align: 2px; }
+.devices-heading p { margin: 7px 0 0; color: var(--pulse-outline); font-size: var(--pulse-font-small); }
+.refresh-devices { display: inline-flex; align-items: center; gap: 3px; padding: 0; border: 0; background: transparent; color: var(--pulse-primary); font-size: var(--pulse-font-small); }
 .refresh-devices .material-symbols-outlined { font-size: 16px; }
 .refresh-devices:disabled { opacity: .5; }
 .device-list { padding: 0 16px; }
@@ -459,47 +459,47 @@ async function continueAccountDeletion() {
 .device-info { display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1; padding: 10px 12px; border-radius: 10px; }
 .device-icon { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 10px; background: transparent; color: var(--pulse-primary); font-size: 20px; }
 .device-copy { display: grid; min-width: 0; gap: 4px; }
-.device-copy strong { overflow: hidden; font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
-.device-copy strong em { margin-left: 6px; padding: 3px 6px; border-radius: 5px; background: #e6f8ef; color: #22a06b; font-size: 11px; font-style: normal; font-weight: 500; }
-.device-copy small { color: var(--pulse-outline); font-size: 12px; }
+.device-copy strong { overflow: hidden; font-size: var(--pulse-font-body); text-overflow: ellipsis; white-space: nowrap; }
+.device-copy strong em { margin-left: 6px; padding: 3px 6px; border-radius: 5px; background: #e6f8ef; color: #22a06b; font-size: var(--pulse-font-caption); font-style: normal; font-weight: 500; }
+.device-copy small { color: var(--pulse-outline); font-size: var(--pulse-font-caption); }
 .device-more { display: grid; place-items: center; width: 34px; height: 34px; border: 0; background: transparent; color: var(--pulse-outline); }
 .device-more .material-symbols-outlined { font-size: 20px; }
-.devices-empty { padding: 18px 16px; color: var(--pulse-outline); font-size: 13px; text-align: center; }
+.devices-empty { padding: 18px 16px; color: var(--pulse-outline); font-size: var(--pulse-font-small); text-align: center; }
 .device-error { display: flex; align-items: center; justify-content: center; gap: 8px; color: #ee0a24; }
-.logout-other-devices { width: calc(100% - 32px); margin: 4px 16px 16px; padding: 10px; border: 1px solid color-mix(in srgb, #ee0a24 28%, var(--pulse-divider)); border-radius: 7px; background: transparent; color: #ee0a24; font-size: 13px; }
+.logout-other-devices { width: calc(100% - 32px); margin: 4px 16px 16px; padding: 10px; border: 1px solid color-mix(in srgb, #ee0a24 28%, var(--pulse-divider)); border-radius: 7px; background: transparent; color: #ee0a24; font-size: var(--pulse-font-small); }
 .security-code-card { margin-top: 16px; padding: 18px 16px; border-radius: 8px; background: var(--pulse-surface-container); }
 .security-code-head { display: flex; gap: 16px; justify-content: space-between; }
-.security-code-head strong { font-size: 16px; }
-.security-code-head p { margin: 8px 0 0; color: var(--pulse-outline); font-size: 13px; line-height: 1.6; }
+.security-code-head strong { font-size: var(--pulse-font-body); }
+.security-code-head p { margin: 8px 0 0; color: var(--pulse-outline); font-size: var(--pulse-font-small); line-height: 1.6; }
 .switch input { display: none; }
 .switch span { display: block; width: 46px; height: 26px; border-radius: 13px; background: var(--pulse-outline-variant, #c8d5e3); position: relative; }
 .switch span::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: white; transition: .2s; }
 .switch input:checked + span { background: #5b8def; }
 .switch input:checked + span::after { transform: translateX(20px); }
-.security-code-off, .security-code-tip { margin: 14px 0 0; color: var(--pulse-outline); font-size: 12px; line-height: 1.5; }
+.security-code-off, .security-code-tip { margin: 14px 0 0; color: var(--pulse-outline); font-size: var(--pulse-font-caption); line-height: 1.5; }
 .security-code-toolbar { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 18px; }
 .security-code-value { color: var(--pulse-primary); font-size: 30px; font-weight: 700; letter-spacing: 8px; }
 .code-visibility { display: grid; width: 32px; height: 32px; place-items: center; padding: 0; border: 0; border-radius: 50%; background: color-mix(in srgb, var(--pulse-primary) 10%, transparent); color: var(--pulse-primary); }
 .code-visibility .material-symbols-outlined { font-size: 18px; }
 .security-code-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
-.security-code-actions button { min-height: 38px; border: 1px solid color-mix(in srgb, var(--pulse-primary) 50%, var(--pulse-divider)); border-radius: 7px; background: transparent; color: var(--pulse-primary); font-size: 13px; }
+.security-code-actions button { min-height: 38px; border: 1px solid color-mix(in srgb, var(--pulse-primary) 50%, var(--pulse-divider)); border-radius: 7px; background: transparent; color: var(--pulse-primary); font-size: var(--pulse-font-small); }
 .security-code-actions button:disabled { opacity: .5; }
 .account-deletion-card { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 16px; padding: 18px 16px; border: 1px solid rgba(238, 10, 36, .18); border-radius: 8px; background: color-mix(in srgb, #ee0a24 5%, var(--pulse-surface-container)); }
 .account-deletion-card > div { min-width: 0; flex: 1 1 auto; }
-.account-deletion-card strong { color: #ee0a24; font-size: 16px; }
-.account-deletion-card p { margin: 7px 0 0; color: var(--pulse-outline); font-size: 12px; line-height: 1.55; }
-.account-deletion-card button { flex: 0 0 78px; width: 78px; min-width: 78px; box-sizing: border-box; padding: 8px 4px; border: 1px solid rgba(238, 10, 36, .38); border-radius: 7px; background: transparent; color: #ee0a24; font-size: 13px; white-space: nowrap; text-align: center; }
+.account-deletion-card strong { color: #ee0a24; font-size: var(--pulse-font-body); }
+.account-deletion-card p { margin: 7px 0 0; color: var(--pulse-outline); font-size: var(--pulse-font-caption); line-height: 1.55; }
+.account-deletion-card button { flex: 0 0 78px; width: 78px; min-width: 78px; box-sizing: border-box; padding: 8px 4px; border: 1px solid rgba(238, 10, 36, .38); border-radius: 7px; background: transparent; color: #ee0a24; font-size: var(--pulse-font-small); white-space: nowrap; text-align: center; }
 .account-deletion-card button:disabled { opacity: .5; }
 .account-deletion-popup { height: min(80vh, 720px); background: var(--pulse-surface-low, #1c1c1e); color: var(--pulse-text); }
 .deletion-popup-header { display: flex; align-items: center; justify-content: center; height: 56px; padding: 0 52px; border-bottom: 1px solid var(--pulse-divider); }
-.deletion-popup-header h2 { margin: 0; font-size: 17px; }
+.deletion-popup-header h2 { margin: 0; font-size: var(--pulse-font-title); }
 .deletion-popup-content { height: calc(100% - 56px); padding: 18px 20px calc(20px + var(--pulse-safe-bottom, 0px)); overflow-y: auto; }
-.deletion-agreement-body { min-height: 180px; padding: 14px; border-radius: 8px; background: var(--pulse-surface-container); white-space: pre-wrap; overflow-wrap: anywhere; color: var(--pulse-text-secondary, var(--pulse-outline)); font-size: 14px; line-height: 1.75; }
+.deletion-agreement-body { min-height: 180px; padding: 14px; border-radius: 8px; background: var(--pulse-surface-container); white-space: pre-wrap; overflow-wrap: anywhere; color: var(--pulse-text-secondary, var(--pulse-outline)); font-size: var(--pulse-font-body); line-height: 1.75; }
 .deletion-balance-warning { margin-top: 14px; padding: 11px 12px; border-radius: 8px; background: rgba(238, 10, 36, .1); color: #ee0a24; font-size: 13px; line-height: 1.55; }
-.deletion-agree { display: flex; align-items: flex-start; gap: 8px; margin-top: 16px; color: var(--pulse-text); font-size: 13px; line-height: 1.5; }
+.deletion-agree { display: flex; align-items: flex-start; gap: 8px; margin-top: 16px; color: var(--pulse-text); font-size: var(--pulse-font-small); line-height: 1.5; }
 .deletion-agree input { margin-top: 2px; accent-color: var(--pulse-primary); }
 .deletion-agree.disabled { opacity: .5; }
-.deletion-continue { width: 100%; min-height: 44px; margin-top: 18px; border: 0; border-radius: 8px; background: #ee0a24; color: white; font-size: 15px; font-weight: 600; }
+.deletion-continue { width: 100%; min-height: 44px; margin-top: 18px; border: 0; border-radius: 8px; background: #ee0a24; color: white; font-size: var(--pulse-font-body); font-weight: 600; }
 .deletion-continue:disabled { opacity: .5; }
 @keyframes spin { to { transform: rotate(360deg); } }
 </style>

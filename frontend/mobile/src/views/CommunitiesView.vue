@@ -126,7 +126,7 @@ function reviewStatusTitle(status: string): string {
   <div class="page communities-page">
     <header class="page-header">
       <div class="header-side header-left">
-        <button type="button" class="icon-btn" aria-label="返回" @click="router.back()"><span class="material-symbols-outlined">arrow_back_ios</span></button>
+        <button type="button" class="icon-btn" aria-label="返回" @click="router.back()"><IconBack /></button>
       </div>
       <h1 class="page-title">圈子</h1>
       <div class="header-side header-actions">
@@ -165,7 +165,7 @@ function reviewStatusTitle(status: string): string {
         <div v-if="loading || !items.length" class="empty">{{ loading ? '加载中…' : emptyText() }}</div>
       </main>
     </van-pull-refresh>
-    <van-popup :show="!!reviewCommunity" position="bottom" round closeable @update:show="reviewCommunity = undefined">
+    <AppBottomSheet :show="!!reviewCommunity" position="bottom" round closeable @update:show="reviewCommunity = undefined">
       <section v-if="reviewCommunity" class="review-popup">
         <span class="review-icon material-symbols-outlined">
           {{ reviewCommunity.status === 'PENDING' ? 'hourglass_top' : reviewCommunity.status === 'REJECTED' ? 'error' : 'lock' }}
@@ -176,7 +176,7 @@ function reviewStatusTitle(status: string): string {
         <p v-else>该圈子当前未开启，暂时无法进入圈子详情。</p>
         <button type="button" class="review-close" @click="reviewCommunity = undefined">我知道了</button>
       </section>
-    </van-popup>
+    </AppBottomSheet>
   </div>
 </template>
 
@@ -186,11 +186,11 @@ button{border:0;background:none;color:inherit;font:inherit}
 .page-header{position:sticky;top:0;z-index:20;display:grid;grid-template-columns:80px minmax(0,1fr) 80px;align-items:center;height:56px;padding:0 8px;padding-top:var(--pulse-header-pad-top);background:var(--pulse-page-bg,var(--pulse-bg))}
 .header-side{display:flex;width:80px;align-items:center}.header-left{grid-column:1;justify-content:flex-start}.header-actions{grid-column:3;justify-content:flex-end}
 .icon-btn,.header-spacer{width:40px;height:40px;flex:none}.icon-btn{display:grid;place-items:center;border-radius:50%;color:var(--pulse-primary)}.icon-btn .material-symbols-outlined{font-size:22px}
-.page-title{grid-column:2;min-width:0;margin:0;text-align:center;font-size:18px;font-weight:600;color:var(--pulse-primary)}
-.notification-btn{position:relative}.notification-badge{position:absolute;top:1px;right:0;min-width:17px;height:17px;padding:0 4px;border:2px solid var(--pulse-page-bg,var(--pulse-bg));border-radius:999px;background:var(--pulse-danger,#ff5447);color:#fff;font-size:9px;font-weight:750;line-height:13px;text-align:center;box-sizing:border-box}
-.community-tabs{display:flex;height:48px;background:var(--pulse-page-bg,var(--pulse-bg));border-bottom:1px solid var(--pulse-outline-variant)}.community-tabs button{position:relative;flex:1;padding:0;font-size:14px;color:var(--pulse-text-secondary)}.community-tabs button.on{color:var(--pulse-primary);font-weight:600}.community-tabs button.on::after{content:"";position:absolute;left:25%;right:25%;bottom:0;height:2px;border-radius:2px;background:var(--pulse-primary)}
+.page-title{grid-column:2;min-width:0;margin:0;text-align:center;font-size:var(--pulse-font-title);font-weight:600;color:var(--pulse-primary)}
+.notification-btn{position:relative}.notification-badge{position:absolute;top:1px;right:0;min-width:17px;height:17px;padding:0 4px;border:2px solid var(--pulse-page-bg,var(--pulse-bg));border-radius:999px;background:var(--pulse-danger,#ff5447);color:#fff;font-size:var(--pulse-font-caption);font-weight: 700;line-height:13px;text-align:center;box-sizing:border-box}
+.community-tabs{display:flex;height:48px;background:var(--pulse-page-bg,var(--pulse-bg));border-bottom:1px solid var(--pulse-outline-variant)}.community-tabs button{position:relative;flex:1;padding:0;font-size:var(--pulse-font-body);color:var(--pulse-text-secondary)}.community-tabs button.on{color:var(--pulse-primary);font-weight:600}.community-tabs button.on::after{content:"";position:absolute;left:25%;right:25%;bottom:0;height:2px;border-radius:2px;background:var(--pulse-primary)}
 .community-pull{min-height:calc(100dvh - 56px - var(--pulse-header-pad-top))}
 .search{display:flex;gap:8px;padding:12px 16px}.search input{flex:1;border:0;border-radius:12px;padding:11px;background:var(--pulse-surface-high);color:var(--pulse-text)}.search button{color:var(--pulse-primary)}.chips{display:flex;gap:8px;overflow:auto;padding:0 16px 12px}.chips button{white-space:nowrap;padding:6px 12px;border-radius:16px;background:var(--pulse-surface-high)}.chips .on{background:var(--pulse-primary);color:var(--pulse-on-primary)}
-main{padding:12px 16px 0}.card{width:100%;display:flex;align-items:flex-start;gap:12px;min-width:0;text-align:left;padding:14px;margin-bottom:10px;border-radius:16px;background:var(--pulse-surface-container)}.avatar{width:52px;height:52px;flex:none;border-radius:14px;overflow:hidden;display:grid;place-items:center;background:var(--pulse-surface-high);color:var(--pulse-primary);font-size:20px}.avatar img{width:100%;height:100%;object-fit:cover}.info{flex:1;min-width:0}.info b,.info small,.info p{display:block;min-width:0}.info b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.info small,.info p{color:var(--pulse-text-secondary);font-size:12px;margin:4px 0}.info p{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.info em,.card>strong{color:var(--pulse-primary);font-size:12px;font-style:normal}.card>strong{flex:none;max-width:31%;margin-left:auto;padding-top:2px;overflow:hidden;text-align:right;text-overflow:ellipsis;white-space:nowrap}.empty{text-align:center;padding:48px;color:var(--pulse-text-secondary)}
-.review-popup{padding:36px 24px calc(24px + var(--pulse-safe-bottom));text-align:center}.review-icon{display:grid;width:58px;height:58px;margin:0 auto 14px;place-items:center;border-radius:18px;background:color-mix(in srgb,var(--pulse-primary) 13%,var(--pulse-surface-high));color:var(--pulse-primary);font-size:30px}.review-popup h2{margin:0;font-size:19px}.review-popup p{margin:10px 0 22px;color:var(--pulse-text-secondary);font-size:13px;line-height:1.7}.review-close{width:100%;height:44px;border-radius:14px;background:var(--pulse-primary);color:var(--pulse-on-primary);font-weight:650}
+main{padding:12px 16px 0}.card{width:100%;display:flex;align-items:flex-start;gap:12px;min-width:0;text-align:left;padding:14px;margin-bottom:10px;border-radius:16px;background:var(--pulse-surface-container)}.avatar{width:52px;height:52px;flex:none;border-radius:14px;overflow:hidden;display:grid;place-items:center;background:var(--pulse-surface-high);color:var(--pulse-primary);font-size:20px}.avatar img{width:100%;height:100%;object-fit:cover}.info{flex:1;min-width:0}.info b,.info small,.info p{display:block;min-width:0}.info b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.info small,.info p{color:var(--pulse-text-secondary);font-size:var(--pulse-font-caption);margin:4px 0}.info p{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.info em,.card>strong{color:var(--pulse-primary);font-size:var(--pulse-font-caption);font-style:normal}.card>strong{flex:none;max-width:31%;margin-left:auto;padding-top:2px;overflow:hidden;text-align:right;text-overflow:ellipsis;white-space:nowrap}.empty{text-align:center;padding:48px;color:var(--pulse-text-secondary)}
+.review-popup{padding:36px 24px calc(24px + var(--pulse-safe-bottom));text-align:center}.review-icon{display:grid;width:58px;height:58px;margin:0 auto 14px;place-items:center;border-radius:18px;background:color-mix(in srgb,var(--pulse-primary) 13%,var(--pulse-surface-high));color:var(--pulse-primary);font-size:30px}.review-popup h2{margin:0;font-size:var(--pulse-font-title)}.review-popup p{margin:10px 0 22px;color:var(--pulse-text-secondary);font-size:var(--pulse-font-small);line-height:1.7}.review-close{width:100%;height:44px;border-radius:14px;background:var(--pulse-primary);color:var(--pulse-on-primary);font-weight: 600}
 </style>

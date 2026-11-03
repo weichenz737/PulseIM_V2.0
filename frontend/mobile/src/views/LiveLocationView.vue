@@ -299,7 +299,7 @@ onBeforeUnmount(() => {
 
     <header class="live-header">
       <button type="button" class="round-btn" aria-label="返回" @click="goBack">
-        <span class="material-symbols-outlined">arrow_back</span>
+        <IconBack />
       </button>
       <div class="header-copy">
         <strong>实时位置</strong>
@@ -329,9 +329,9 @@ onBeforeUnmount(() => {
         </button>
       </div>
 
-      <button v-if="!sharing" type="button" class="primary-action" :disabled="locating || !!mapError" @click="startSharing">
+      <AppButton variant="primary" v-if="!sharing" type="button" class="primary-action" :disabled="locating || !!mapError" @click="startSharing">
         <span class="material-symbols-outlined">share_location</span>{{ actionLabel }}
-      </button>
+      </AppButton>
       <template v-else>
         <button v-if="isInitiator" type="button" class="end-session-action" @click="stopSharing(true)">
           <span class="material-symbols-outlined">stop_circle</span>结束位置共享
@@ -364,15 +364,15 @@ onBeforeUnmount(() => {
 .round-btn { width: 44px; height: 44px; display: grid; place-items: center; border: 1px solid var(--live-border); border-radius: 50%; background: var(--live-surface); color: var(--live-text); box-shadow: 0 6px 20px rgba(0,0,0,.12); backdrop-filter: blur(18px); }
 .header-copy { min-width: 0; padding: 8px 16px; border: 1px solid var(--live-border); border-radius: 22px; background: var(--live-surface); text-align: center; box-shadow: 0 6px 20px rgba(0,0,0,.1); backdrop-filter: blur(18px); }
 .header-copy strong,.header-copy span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.header-copy strong { font-size: 16px; }
-.header-copy span { margin-top: 2px; color: var(--live-muted); font-size: 11px; }
+.header-copy strong { font-size: var(--pulse-font-body); }
+.header-copy span { margin-top: 2px; color: var(--live-muted); font-size: var(--pulse-font-caption); }
 .live-sheet { position: absolute; z-index: 10; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); left: 12px; padding: 8px 18px 18px; border: 1px solid var(--live-border); border-radius: 26px; background: var(--live-surface); box-shadow: var(--live-shadow); backdrop-filter: blur(24px); }
 .sheet-handle { width: 38px; height: 4px; margin: 0 auto 14px; border-radius: 9px; background: var(--live-border); }
 .status-row { display: flex; align-items: center; gap: 12px; }
 .status-row > div:last-child { min-width: 0; }
 .status-row strong,.status-row small { display: block; }
-.status-row strong { font-size: 16px; }
-.status-row small { margin-top: 4px; color: var(--live-muted); font-size: 12px; }
+.status-row strong { font-size: var(--pulse-font-body); }
+.status-row small { margin-top: 4px; color: var(--live-muted); font-size: var(--pulse-font-caption); }
 .pulse-dot { position: relative; width: 38px; height: 38px; flex: 0 0 38px; display: grid; place-items: center; border-radius: 50%; background: rgba(80, 91, 85, .12); }
 .pulse-dot i { width: 12px; height: 12px; border-radius: 50%; background: #8b9590; }
 .pulse-dot.active { background: rgba(22, 167, 101, .14); }
@@ -380,13 +380,13 @@ onBeforeUnmount(() => {
 .people-strip { display: flex; gap: 14px; margin: 16px -4px 14px; overflow-x: auto; scrollbar-width: none; }
 .people-strip button { min-width: 52px; padding: 0; border: 0; background: transparent; color: var(--live-text); }
 .people-strip img,.people-strip span { width: 46px; height: 46px; margin: auto; display: grid; place-items: center; border: 2px solid var(--live-solid); border-radius: 50%; background: #3478f6; color: white; object-fit: cover; box-shadow: 0 3px 10px rgba(0,0,0,.16); }
-.people-strip strong { display: block; max-width: 66px; margin-top: 5px; overflow: hidden; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
-.primary-action,.stop-action { width: 100%; height: 50px; display: flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 15px; color: #fff; font-size: 15px; font-weight: 700; }
+.people-strip strong { display: block; max-width: 66px; margin-top: 5px; overflow: hidden; font-size: var(--pulse-font-caption); text-overflow: ellipsis; white-space: nowrap; }
+.primary-action,.stop-action { width: 100%; height: 50px; display: flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 15px; color: #fff; font-size: var(--pulse-font-body); font-weight: 700; }
 .primary-action { background: linear-gradient(135deg, #21bd72, #079854); box-shadow: 0 8px 22px rgba(7,152,84,.25); }
 .primary-action:disabled { opacity: .5; }
 .stop-action { background: rgba(229, 72, 77, .12); color: #d83d43; }
-.end-session-action { width: 100%; height: 50px; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 15px; background: #e5484d; color: #fff; font-size: 15px; font-weight: 700; box-shadow: 0 8px 20px rgba(229,72,77,.2); }
-.sharing-tip { margin: 10px 0 -2px; color: var(--live-muted); font-size: 11px; text-align: center; }
+.end-session-action { width: 100%; height: 50px; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 15px; background: #e5484d; color: #fff; font-size: var(--pulse-font-body); font-weight: 700; box-shadow: 0 8px 20px rgba(229,72,77,.2); }
+.sharing-tip { margin: 10px 0 -2px; color: var(--live-muted); font-size: var(--pulse-font-caption); text-align: center; }
 @keyframes live-pulse { 70% { box-shadow: 0 0 0 9px rgba(22,167,101,0); } 100% { box-shadow: 0 0 0 0 rgba(22,167,101,0); } }
 :global(:root[data-theme='dark'] .live-page) { --live-surface: rgba(24, 28, 26, .94); --live-solid: #1a1e1c; --live-text: #f0f4f1; --live-muted: #a1aaa5; --live-border: rgba(255,255,255,.1); --live-shadow: 0 18px 52px rgba(0,0,0,.42); background: #171d19; }
 :global(:root[data-theme='dark'] .live-map) { filter: none; }

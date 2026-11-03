@@ -383,8 +383,8 @@ async function removeSelected() {
 <template>
   <div class="favorites-page">
     <header class="page-header">
-      <button type="button" class="icon-btn" @click="goBack">
-        <span class="material-symbols-outlined">arrow_back_ios</span>
+      <button type="button" class="icon-btn" @click="goBack" aria-label="返回">
+        <IconBack />
       </button>
       <h1 class="page-title">{{ sendTo ? '选择收藏' : '我的收藏' }}</h1>
       <button
@@ -553,7 +553,7 @@ async function removeSelected() {
   margin: 0;
   flex: 1;
   text-align: center;
-  font-size: 17px;
+  font-size: var(--pulse-font-title);
   font-weight: 700;
 }
 
@@ -570,7 +570,7 @@ async function removeSelected() {
   border: none;
   background: transparent;
   color: var(--pulse-primary);
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   cursor: pointer;
   pointer-events: auto;
   touch-action: manipulation;
@@ -650,7 +650,7 @@ async function removeSelected() {
   text-align: center;
   padding: 48px 24px;
   color: var(--pulse-outline);
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
 }
 
 .fav-item {
@@ -712,7 +712,7 @@ async function removeSelected() {
 }
 
 .fav-from {
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   font-weight: 600;
   color: var(--pulse-primary);
 }
@@ -724,13 +724,13 @@ async function removeSelected() {
   border-radius: 999px;
   background: rgba(173, 198, 255, 0.12);
   color: var(--pulse-primary);
-  font-size: 10px;
+  font-size: var(--pulse-font-caption);
   font-weight: 600;
   vertical-align: 1px;
 }
 
 .fav-time {
-  font-size: 11px;
+  font-size: var(--pulse-font-caption);
   color: var(--pulse-outline);
 }
 
@@ -787,7 +787,7 @@ async function removeSelected() {
   margin: 0;
   flex: 1;
   min-width: 0;
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   line-height: 1.45;
   color: var(--pulse-text);
   word-break: break-word;
@@ -799,7 +799,7 @@ async function removeSelected() {
 
 .fav-source {
   margin-top: 8px;
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   color: var(--pulse-outline);
 }
 
@@ -809,7 +809,7 @@ async function removeSelected() {
   border: none;
   background: #3b82f6;
   color: #fff;
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
   padding: 0 18px;
   cursor: pointer;
@@ -821,7 +821,7 @@ async function removeSelected() {
   border: none;
   background: #ee0a24;
   color: #fff;
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
   padding: 0 18px;
   cursor: pointer;
@@ -842,7 +842,7 @@ async function removeSelected() {
 
 .manage-count {
   color: var(--pulse-outline);
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
 }
 
 .manage-select-all {
@@ -852,7 +852,7 @@ async function removeSelected() {
   border: none;
   background: transparent;
   color: var(--pulse-primary);
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   cursor: pointer;
 }
 
@@ -869,7 +869,7 @@ async function removeSelected() {
   border-radius: 8px;
   background: var(--pulse-danger, #ee0a24);
   color: #fff;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   cursor: pointer;
 }
 

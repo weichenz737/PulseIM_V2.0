@@ -165,7 +165,7 @@ async function submitForward() {
     @select="onAction"
   />
 
-  <van-popup
+  <AppBottomSheet
     v-model:show="forwardVisible"
     position="bottom"
     round
@@ -206,7 +206,7 @@ async function submitForward() {
         </button>
       </div>
     </div>
-  </van-popup>
+  </AppBottomSheet>
 </template>
 
 <style scoped>
@@ -234,7 +234,7 @@ async function submitForward() {
   border: 0;
   background: none;
   color: #69a7ff;
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   padding: 4px 0;
 }
 
@@ -253,7 +253,7 @@ async function submitForward() {
 
 .media-forward-title {
   margin: 0;
-  font-size: 16px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
 }
 
@@ -261,7 +261,7 @@ async function submitForward() {
   margin: 0;
   padding: 10px 16px 6px;
   color: #aab4c2;
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
 }
 
 .media-forward-list {
@@ -276,7 +276,7 @@ async function submitForward() {
   padding: 40px 0;
   text-align: center;
   color: var(--pulse-text-secondary);
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
 }
 
 .media-forward-item {
@@ -317,7 +317,7 @@ async function submitForward() {
 .media-forward-check {
   flex: 0 0 auto;
   color: #69a7ff;
-  font-size: 22px;
+  font-size: var(--pulse-font-heading);
 }
 
 .media-forward-meta {
@@ -328,12 +328,12 @@ async function submitForward() {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
 }
 
 .media-forward-sub {
   margin-top: 2px;
   color: var(--pulse-text-secondary);
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
 }
 </style>

@@ -66,7 +66,7 @@ async function submit() {
 <template>
   <div class="page change-phone-page">
     <header class="header">
-      <button type="button" class="icon-btn" aria-label="返回" @click="smartBack(router)"><span class="material-symbols-outlined">arrow_back_ios</span></button>
+      <button type="button" class="icon-btn" aria-label="返回" @click="smartBack(router)"><IconBack /></button>
       <h1>修改手机号</h1><span class="header-space" />
     </header>
     <main class="content">
@@ -78,7 +78,7 @@ async function submit() {
 </template>
 
 <style scoped>
-.page{min-height:100%;background:var(--pulse-page-bg, var(--pulse-bg));color:var(--pulse-text)}.header{display:flex;align-items:center;height:56px;padding:var(--pulse-header-pad-top) 12px 0;background:var(--pulse-page-bg, var(--pulse-bg)) !important}.header h1{flex:1;margin:0;color:var(--pulse-primary);text-align:center;font-size:18px}.icon-btn,.header-space{width:40px;height:40px}.icon-btn{border:0;background:transparent;color:var(--pulse-primary)}.content{padding:20px 16px}.field{display:block;margin-bottom:18px;color:var(--pulse-text-secondary);font-size:13px}.field>span{display:block;margin-bottom:8px}input{box-sizing:border-box;width:100%;height:46px;padding:0 12px;border:1px solid var(--pulse-outline-variant);border-radius:6px;outline:0;background:var(--pulse-surface-high);color:var(--pulse-text);font-size:15px}input:focus{border-color:#7eafff}.code-row{display:grid;grid-template-columns:minmax(0,1fr) 108px;gap:8px}.code-row button{border:1px solid rgba(8,126,215,.35);border-radius:8px;background:rgba(8,126,215,.12);color:var(--pulse-primary);font-size:13px;font-weight:600}.code-row button:disabled,.primary:disabled{opacity:.55}.primary{width:100%;height:46px;border:0;border-radius:8px;background:var(--pulse-primary);color:#fff;font-size:15px;font-weight:600}
+.page{min-height:100%;background:var(--pulse-page-bg, var(--pulse-bg));color:var(--pulse-text)}.header{display:flex;align-items:center;height:56px;padding:var(--pulse-header-pad-top) 12px 0;background:var(--pulse-page-bg, var(--pulse-bg)) !important}.header h1{flex:1;margin:0;color:var(--pulse-primary);text-align:center;font-size:var(--pulse-font-title)}.icon-btn,.header-space{width:40px;height:40px}.icon-btn{border:0;background:transparent;color:var(--pulse-primary)}.content{padding:20px 16px}.field{display:block;margin-bottom:18px;color:var(--pulse-text-secondary);font-size:var(--pulse-font-small)}.field>span{display:block;margin-bottom:8px}input{box-sizing:border-box;width:100%;height:46px;padding:0 12px;border:1px solid var(--pulse-outline-variant);border-radius:6px;outline:0;background:var(--pulse-surface-high);color:var(--pulse-text);font-size:var(--pulse-font-body)}input:focus{border-color:#7eafff}.code-row{display:grid;grid-template-columns:minmax(0,1fr) 108px;gap:8px}.code-row button{border:1px solid rgba(8,126,215,.35);border-radius:8px;background:rgba(8,126,215,.12);color:var(--pulse-primary);font-size:var(--pulse-font-small);font-weight:600}.code-row button:disabled,.primary:disabled{opacity:.55}.primary{width:100%;height:46px;border:0;border-radius:8px;background:var(--pulse-primary);color:#fff;font-size:var(--pulse-font-body);font-weight:600}
 /* 浅色模式：页面与导航栏统一使用应用的蓝白渐变背景，保持与其他页面一致 */
 :global(:root[data-theme='light'] .change-phone-page) {
   background: var(--pulse-list-page-bg) !important;

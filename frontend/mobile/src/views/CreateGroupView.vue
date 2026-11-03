@@ -118,8 +118,8 @@ async function submit() {
 <template>
   <div class="create-group-page">
     <header class="page-header glass-header">
-      <button type="button" class="icon-btn" @click="goBack">
-        <span class="material-symbols-outlined">arrow_back</span>
+      <button type="button" class="icon-btn" @click="goBack" aria-label="返回">
+        <IconBack />
       </button>
       <h1 class="page-title">发起群聊</h1>
       <button
@@ -231,7 +231,7 @@ async function submit() {
 .page-title {
   flex: 1;
   margin: 0;
-  font-size: 18px;
+  font-size: var(--pulse-font-title);
   font-weight: 600;
 }
 
@@ -241,7 +241,7 @@ async function submit() {
   padding: 8px 14px;
   background: var(--pulse-primary-container);
   color: var(--pulse-on-primary-container);
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   font-weight: 600;
   cursor: pointer;
 }
@@ -263,7 +263,7 @@ async function submit() {
   background: var(--pulse-surface-high);
   color: var(--pulse-text);
   padding: 12px 14px;
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   outline: none;
 }
 
@@ -290,7 +290,7 @@ async function submit() {
   outline: none;
   background: transparent;
   color: var(--pulse-text);
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
 }
 
 .search-row input::placeholder {
@@ -299,7 +299,7 @@ async function submit() {
 
 .hint {
   margin: 0 16px 8px;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   color: var(--pulse-text-secondary);
 }
 
@@ -371,12 +371,12 @@ async function submit() {
 }
 
 .name {
-  font-size: 16px;
+  font-size: var(--pulse-font-body);
   font-weight: 500;
 }
 
 .sub {
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   color: var(--pulse-outline);
 }
 
@@ -385,6 +385,6 @@ async function submit() {
   text-align: center;
   padding: 48px 16px;
   color: var(--pulse-text-secondary);
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
 }
 </style>

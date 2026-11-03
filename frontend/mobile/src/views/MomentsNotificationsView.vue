@@ -91,8 +91,8 @@ async function openItem(item: MomentInteractionItem) {
 <template>
   <div class="notif-page">
     <header class="page-header glass-header">
-      <button type="button" class="icon-btn" @click="goBack">
-        <span class="material-symbols-outlined">arrow_back_ios</span>
+      <button type="button" class="icon-btn" @click="goBack" aria-label="返回">
+        <IconBack />
       </button>
       <h1 class="page-title">消息</h1>
       <span class="header-spacer" />
@@ -165,7 +165,7 @@ async function openItem(item: MomentInteractionItem) {
 
 .page-title {
   margin: 0;
-  font-size: 18px;
+  font-size: var(--pulse-font-title);
   font-weight: 600;
 }
 
@@ -198,7 +198,7 @@ async function openItem(item: MomentInteractionItem) {
   padding: 48px 16px;
   text-align: center;
   color: var(--pulse-text-secondary, #8a8b90);
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
 }
 
 .notif-list {
@@ -265,7 +265,7 @@ async function openItem(item: MomentInteractionItem) {
 }
 
 .name {
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -274,7 +274,7 @@ async function openItem(item: MomentInteractionItem) {
 
 .time {
   flex-shrink: 0;
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   color: var(--pulse-text-secondary, #8a8b90);
 }
 
@@ -283,13 +283,13 @@ async function openItem(item: MomentInteractionItem) {
   align-items: flex-start;
   gap: 4px;
   margin-top: 4px;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   color: var(--pulse-text-secondary, #a0a1a6);
   line-height: 1.4;
 }
 
 .type-ico {
-  font-size: 16px;
+  font-size: var(--pulse-font-body);
   line-height: 1.2;
   flex-shrink: 0;
 }
@@ -306,7 +306,7 @@ async function openItem(item: MomentInteractionItem) {
   padding: 6px 8px;
   border-radius: 4px;
   background: rgba(255, 255, 255, 0.05);
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   color: var(--pulse-text-secondary, #8a8b90);
   overflow: hidden;
   text-overflow: ellipsis;

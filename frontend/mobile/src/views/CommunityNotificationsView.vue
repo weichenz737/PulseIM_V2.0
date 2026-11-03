@@ -253,7 +253,7 @@ function goBack(): void {
   <div class="notifications-page">
     <header class="notifications-header">
       <button type="button" class="header-button" aria-label="返回圈子" @click="goBack">
-        <span class="material-symbols-outlined">arrow_back_ios</span>
+        <IconBack />
       </button>
       <h1>圈子消息</h1>
       <span class="header-button header-placeholder" />
@@ -413,8 +413,8 @@ function goBack(): void {
 .notifications-header h1 {
   margin: 0;
   text-align: center;
-  font-size: 18px;
-  font-weight: 650;
+  font-size: var(--pulse-font-title);
+  font-weight: 600;
   letter-spacing: 0.01em;
 }
 
@@ -487,13 +487,13 @@ function goBack(): void {
 }
 
 .overview-copy strong {
-  font-size: 16px;
+  font-size: var(--pulse-font-body);
   font-weight: 700;
 }
 
 .overview-copy span {
   color: var(--pulse-text-secondary);
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   line-height: 1.45;
 }
 
@@ -521,8 +521,8 @@ function goBack(): void {
   background: transparent;
   color: var(--pulse-text-secondary);
   font: inherit;
-  font-size: 13px;
-  font-weight: 550;
+  font-size: var(--pulse-font-small);
+  font-weight: 500;
   transition: background 160ms ease, color 160ms ease, box-shadow 160ms ease;
 }
 
@@ -539,7 +539,7 @@ function goBack(): void {
   border-radius: 999px;
   background: color-mix(in srgb, var(--pulse-primary) 14%, transparent);
   color: var(--pulse-primary);
-  font-size: 10px;
+  font-size: var(--pulse-font-caption);
   font-style: normal;
   line-height: 17px;
 }
@@ -578,7 +578,7 @@ function goBack(): void {
   background: var(--pulse-danger, #ef4444);
   color: #fff;
   font: inherit;
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
 }
 
 .notification-delete .material-symbols-outlined {
@@ -674,7 +674,7 @@ function goBack(): void {
 
 .notification-action {
   min-width: 0;
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
   line-height: 1.45;
 }
 
@@ -686,7 +686,7 @@ function goBack(): void {
 .notification-heading time {
   flex: none;
   color: var(--pulse-text-secondary);
-  font-size: 10px;
+  font-size: var(--pulse-font-caption);
   line-height: 20px;
   white-space: nowrap;
 }
@@ -696,7 +696,7 @@ function goBack(): void {
   overflow: hidden;
   margin-top: 6px;
   color: var(--pulse-text-secondary);
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   line-height: 1.5;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
@@ -713,7 +713,7 @@ function goBack(): void {
   border-radius: 4px 9px 9px 4px;
   background: color-mix(in srgb, var(--pulse-surface-high) 74%, transparent);
   color: var(--pulse-text-secondary);
-  font-size: 11px;
+  font-size: var(--pulse-font-caption);
   line-height: 1.45;
 }
 
@@ -744,7 +744,7 @@ function goBack(): void {
   min-width: 0;
   align-items: center;
   color: var(--pulse-text-secondary);
-  font-size: 11px;
+  font-size: var(--pulse-font-caption);
 }
 
 .notification-context {
@@ -760,8 +760,8 @@ function goBack(): void {
   border-radius: 999px;
   background: color-mix(in srgb, var(--pulse-primary) 12%, transparent);
   color: var(--pulse-primary);
-  font-size: 9px;
-  font-weight: 650;
+  font-size: var(--pulse-font-caption);
+  font-weight: 600;
   line-height: 15px;
 }
 
@@ -810,7 +810,7 @@ function goBack(): void {
 
 .page-state p {
   margin: 10px 0 0;
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   line-height: 1.6;
 }
 
@@ -823,7 +823,7 @@ function goBack(): void {
 
 .empty-state strong {
   color: var(--pulse-text);
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
 }
 
 .loading-orbit {

@@ -671,10 +671,10 @@ async function onLeave() {
         <h3>我在本群的昵称</h3>
         <input v-model="nicknameDraft" class="dialog-input" maxlength="64" placeholder="输入群昵称" />
         <div class="dialog-actions">
-          <button type="button" class="dialog-btn" @click="showNicknameDialog = false">取消</button>
-          <button type="button" class="dialog-btn primary" :disabled="saving" @click="savePersonalGroupSetting('nickname')">
+          <AppButton variant="secondary" type="button" class="dialog-btn" @click="showNicknameDialog = false">取消</AppButton>
+          <AppButton variant="primary" type="button" class="dialog-btn primary" :disabled="saving" @click="savePersonalGroupSetting('nickname')">
             保存
-          </button>
+          </AppButton>
         </div>
       </div>
     </div>
@@ -683,10 +683,10 @@ async function onLeave() {
         <h3>群备注</h3>
         <input v-model="remarkDraft" class="dialog-input" maxlength="64" placeholder="仅自己可见" />
         <div class="dialog-actions">
-          <button type="button" class="dialog-btn" @click="showRemarkDialog = false">取消</button>
-          <button type="button" class="dialog-btn primary" :disabled="saving" @click="savePersonalGroupSetting('remark')">
+          <AppButton variant="secondary" type="button" class="dialog-btn" @click="showRemarkDialog = false">取消</AppButton>
+          <AppButton variant="primary" type="button" class="dialog-btn primary" :disabled="saving" @click="savePersonalGroupSetting('remark')">
             保存
-          </button>
+          </AppButton>
         </div>
       </div>
     </div>
@@ -699,10 +699,10 @@ async function onLeave() {
         </div>
         <p class="avatar-confirm-tip">确认后将上传并替换当前群头像</p>
         <div class="dialog-actions">
-          <button type="button" class="dialog-btn" :disabled="saving" @click="closeAvatarConfirm">取消</button>
-          <button type="button" class="dialog-btn primary" :disabled="saving" @click="confirmAvatarUpload">
+          <AppButton variant="secondary" type="button" class="dialog-btn" :disabled="saving" @click="closeAvatarConfirm">取消</AppButton>
+          <AppButton variant="primary" type="button" class="dialog-btn primary" :disabled="saving" @click="confirmAvatarUpload">
             {{ saving ? '上传中...' : '确认使用' }}
-          </button>
+          </AppButton>
         </div>
       </div>
     </div>
@@ -712,10 +712,10 @@ async function onLeave() {
         <h3>修改群聊名称</h3>
         <input v-model="titleDraft" class="dialog-input" maxlength="32" placeholder="请输入群名称" />
         <div class="dialog-actions">
-          <button type="button" class="dialog-btn" @click="showTitleDialog = false">取消</button>
-          <button type="button" class="dialog-btn primary" :disabled="saving" @click="confirmTitle">
+          <AppButton variant="secondary" type="button" class="dialog-btn" @click="showTitleDialog = false">取消</AppButton>
+          <AppButton variant="primary" type="button" class="dialog-btn primary" :disabled="saving" @click="confirmTitle">
             确定
-          </button>
+          </AppButton>
         </div>
       </div>
     </div>
@@ -731,10 +731,10 @@ async function onLeave() {
           placeholder="请输入群公告"
         />
         <div class="dialog-actions">
-          <button type="button" class="dialog-btn" @click="showNoticeDialog = false">取消</button>
-          <button type="button" class="dialog-btn primary" :disabled="saving" @click="confirmNotice">
+          <AppButton variant="secondary" type="button" class="dialog-btn" @click="showNoticeDialog = false">取消</AppButton>
+          <AppButton variant="primary" type="button" class="dialog-btn primary" :disabled="saving" @click="confirmNotice">
             确定
-          </button>
+          </AppButton>
         </div>
       </div>
     </div>
@@ -791,13 +791,13 @@ async function onLeave() {
 
 .back-ico {
   color: var(--pulse-primary);
-  font-size: 22px;
+  font-size: var(--pulse-font-heading);
 }
 
 .page-title {
   margin: 0;
   min-width: 0;
-  font-size: 18px;
+  font-size: var(--pulse-font-title);
   font-weight: 600;
   line-height: 22px;
   color: var(--pulse-primary);
@@ -843,7 +843,7 @@ async function onLeave() {
 
 .qr-section-title {
   margin-bottom: 14px;
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
   color: var(--pulse-text);
   text-align: center;
@@ -906,7 +906,7 @@ async function onLeave() {
 .member-name {
   width: 100%;
   text-align: center;
-  font-size: 11px;
+  font-size: var(--pulse-font-caption);
   font-weight: 600;
   line-height: 13px;
   color: var(--pulse-text-secondary);
@@ -916,7 +916,7 @@ async function onLeave() {
 }
 
 .role-tag {
-  font-size: 10px;
+  font-size: var(--pulse-font-caption);
   line-height: 1;
   padding: 2px 5px;
   border-radius: 4px;
@@ -941,7 +941,7 @@ async function onLeave() {
   border: none;
   background: transparent;
   color: var(--pulse-primary);
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   font-weight: 500;
   line-height: 18px;
   cursor: pointer;
@@ -956,7 +956,7 @@ async function onLeave() {
   border-radius: 12px;
   background: rgba(255, 84, 71, 0.12);
   color: var(--pulse-error);
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   font-weight: 600;
   line-height: 1.4;
 }
@@ -991,7 +991,7 @@ async function onLeave() {
 }
 
 .menu-label {
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   line-height: 20px;
   color: var(--pulse-text);
 }
@@ -1009,12 +1009,12 @@ async function onLeave() {
   text-overflow: ellipsis;
   white-space: nowrap;
   color: var(--pulse-text-secondary);
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
 }
 
 .chevron {
   color: var(--pulse-outline);
-  font-size: 20px;
+  font-size: var(--pulse-font-heading);
 }
 
 .notice-row {
@@ -1031,7 +1031,7 @@ async function onLeave() {
 
 .notice-text {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   line-height: 18px;
   color: var(--pulse-text-secondary);
   display: -webkit-box;
@@ -1151,7 +1151,7 @@ async function onLeave() {
   border-radius: 12px;
   background: #93000a;
   color: #ffdad6;
-  font-size: 20px;
+  font-size: var(--pulse-font-heading);
   font-weight: 600;
   line-height: 25px;
   cursor: pointer;
@@ -1208,7 +1208,7 @@ async function onLeave() {
 
 .sheet-header h3 {
   margin: 0;
-  font-size: 16px;
+  font-size: var(--pulse-font-body);
   color: var(--pulse-text);
 }
 
@@ -1216,7 +1216,7 @@ async function onLeave() {
 .sheet-ok {
   border: none;
   background: transparent;
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   cursor: pointer;
 }
 
@@ -1243,7 +1243,7 @@ async function onLeave() {
   border: none;
   background: transparent;
   color: var(--pulse-text);
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   text-align: left;
   cursor: pointer;
 }
@@ -1283,7 +1283,7 @@ async function onLeave() {
 
 .dialog h3 {
   margin: 0 0 14px;
-  font-size: 17px;
+  font-size: var(--pulse-font-title);
   text-align: center;
   color: var(--pulse-text);
 }
@@ -1297,7 +1297,7 @@ async function onLeave() {
   background: var(--pulse-page-bg, var(--pulse-bg));
   color: var(--pulse-text);
   padding: 12px;
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   outline: none;
   resize: none;
 }
@@ -1315,7 +1315,7 @@ async function onLeave() {
   border-radius: 10px;
   background: var(--pulse-surface-highest);
   color: var(--pulse-text-secondary);
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   cursor: pointer;
 }
 

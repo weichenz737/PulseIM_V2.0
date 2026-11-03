@@ -111,8 +111,8 @@ onUnmounted(stopPreview)
 <template>
   <div class="ringtone-page">
     <header class="page-header">
-      <button type="button" class="back-btn" @click="goBack">
-        <span class="material-symbols-outlined">arrow_back_ios</span>
+      <button type="button" class="back-btn" @click="goBack" aria-label="返回">
+        <IconBack />
       </button>
       <h1 class="page-title">来电铃声</h1>
       <span class="spacer" />
@@ -201,7 +201,7 @@ onUnmounted(stopPreview)
   flex: 1;
   margin: 0;
   text-align: center;
-  font-size: 18px;
+  font-size: var(--pulse-font-title);
   font-weight: 600;
 }
 
@@ -216,7 +216,7 @@ onUnmounted(stopPreview)
 .tip {
   margin: 0 0 12px;
   color: var(--pulse-text-secondary, #9aa3af);
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   line-height: 1.5;
 }
 
@@ -331,12 +331,12 @@ onUnmounted(stopPreview)
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 16px;
+  font-size: var(--pulse-font-body);
 }
 
 .menu-title em {
   font-style: normal;
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   color: #f0b45a;
 }
 

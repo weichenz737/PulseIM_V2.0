@@ -153,8 +153,8 @@ function locationMapUrl(item: ForwardCardItem) {
 <template>
   <div class="forward-detail-page">
     <header class="page-header">
-      <button type="button" class="icon-btn" @click="goBack">
-        <span class="material-symbols-outlined">arrow_back_ios</span>
+      <button type="button" class="icon-btn" @click="goBack" aria-label="返回">
+        <IconBack />
       </button>
       <h1 class="page-title">{{ card?.title || '聊天记录' }}</h1>
       <span class="spacer" />
@@ -256,7 +256,7 @@ function locationMapUrl(item: ForwardCardItem) {
   margin: 0;
   flex: 1;
   text-align: center;
-  font-size: 16px;
+  font-size: var(--pulse-font-body);
   font-weight: 700;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -275,12 +275,12 @@ function locationMapUrl(item: ForwardCardItem) {
   text-align: center;
   padding: 48px 24px;
   color: var(--pulse-outline);
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
 }
 
 .meta {
   margin-bottom: 14px;
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   color: var(--pulse-outline);
 }
 
@@ -297,20 +297,20 @@ function locationMapUrl(item: ForwardCardItem) {
 }
 
 .name {
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   font-weight: 700;
   color: var(--pulse-primary);
 }
 
 .time {
-  font-size: 11px;
+  font-size: var(--pulse-font-caption);
   color: var(--pulse-outline);
   flex-shrink: 0;
 }
 
 .content {
   margin: 0;
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   line-height: 1.5;
   color: var(--pulse-text);
   word-break: break-word;
@@ -388,7 +388,7 @@ function locationMapUrl(item: ForwardCardItem) {
 .location-meta small,
 .nested-forward small {
   color: var(--pulse-outline);
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
 }
 
 .voice-card {
@@ -426,7 +426,7 @@ function locationMapUrl(item: ForwardCardItem) {
 
 .location-meta a {
   color: var(--pulse-primary);
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
 }
 
 .nested-forward {

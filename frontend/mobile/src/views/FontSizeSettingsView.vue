@@ -39,8 +39,8 @@ function resetDefault() {
 <template>
   <div class="font-size-page">
     <header class="page-header">
-      <button type="button" class="back-btn" @click="goBack">
-        <span class="material-symbols-outlined">arrow_back_ios</span>
+      <button type="button" class="back-btn" @click="goBack" aria-label="返回">
+        <IconBack />
       </button>
       <h1 class="page-title">字体大小</h1>
       <span class="spacer" />
@@ -131,7 +131,7 @@ function resetDefault() {
   flex: 1;
   margin: 0;
   text-align: center;
-  font-size: 18px;
+  font-size: var(--pulse-font-title);
   font-weight: 600;
   color: var(--pulse-primary);
 }
@@ -159,14 +159,14 @@ function resetDefault() {
 }
 
 .section-title {
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
   color: var(--pulse-text);
 }
 
 .section-desc {
   margin: -8px 0 16px;
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   line-height: 1.5;
   color: var(--pulse-outline);
 }
@@ -175,7 +175,7 @@ function resetDefault() {
   border: none;
   background: transparent;
   color: var(--pulse-primary);
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   cursor: pointer;
   padding: 4px 0;
 }
@@ -194,7 +194,7 @@ function resetDefault() {
 }
 
 .size-hint.small {
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
 }
 
 .size-hint.large {
@@ -205,7 +205,7 @@ function resetDefault() {
   display: flex;
   justify-content: space-between;
   padding: 8px 28px 0;
-  font-size: 11px;
+  font-size: var(--pulse-font-caption);
   color: #6b7180;
 }
 
@@ -245,7 +245,7 @@ function resetDefault() {
 .slider-meta {
   margin-top: 12px;
   text-align: center;
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   color: var(--pulse-outline);
 }
 

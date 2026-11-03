@@ -338,12 +338,12 @@ function safeLocalPath(value: unknown) {
           </div>
 
           <p v-if="loginError" class="login-error" role="alert">{{ loginError }}</p>
-          <button type="button" class="login-btn" :disabled="loading" @click="handleLogin">
+          <AppButton variant="primary" type="button" class="login-btn" :disabled="loading" @click="handleLogin">
             <span>登录</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
-          </button>
+          </AppButton>
         </div>
       </section>
 
@@ -375,9 +375,9 @@ function safeLocalPath(value: unknown) {
 </template>
 
 <style scoped>
-.login-error { color: #d84040; font-size: 13px; line-height: 1.6; }
-.server-settings-toggle { position: absolute; top: calc(8px + var(--pulse-safe-top)); right: 16px; border: 0; background: transparent; color: var(--pulse-primary); padding: 12px 8px; font-size: 14px; }
-.server-settings { display: grid; gap: 12px; padding: 20px 24px 24px; text-align: left; font-size: 13px; color: var(--pulse-text); }
+.login-error { color: #d84040; font-size: var(--pulse-font-small); line-height: 1.6; }
+.server-settings-toggle { position: absolute; top: calc(8px + var(--pulse-safe-top)); right: 16px; border: 0; background: transparent; color: var(--pulse-primary); padding: 12px 8px; font-size: var(--pulse-font-body); }
+.server-settings { display: grid; gap: 12px; padding: 20px 24px 24px; text-align: left; font-size: var(--pulse-font-small); color: var(--pulse-text); }
 .server-settings input { width: 100%; box-sizing: border-box; padding: 12px; border: 1px solid #ccd5df; border-radius: 10px; color: inherit; background: transparent; }
 .server-settings p { margin: 0; line-height: 1.6; }
 .server-settings button { padding: 10px; border: 0; border-radius: 10px; color: white; background: var(--primary-color, #0084ff); }
@@ -432,7 +432,7 @@ function safeLocalPath(value: unknown) {
 
 .subtitle {
   margin: 0;
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   line-height: 20px;
   color: var(--pulse-text-secondary);
 }
@@ -480,7 +480,7 @@ function safeLocalPath(value: unknown) {
   border: none;
   background: transparent;
   color: var(--pulse-text-secondary);
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   font-weight: 500;
   line-height: 18px;
   cursor: pointer;
@@ -513,7 +513,7 @@ function safeLocalPath(value: unknown) {
 }
 
 .field-label {
-  font-size: 11px;
+  font-size: var(--pulse-font-caption);
   font-weight: 600;
   line-height: 13px;
   color: var(--pulse-text-secondary);
@@ -559,7 +559,7 @@ function safeLocalPath(value: unknown) {
   border: none;
   border-radius: var(--pulse-radius-lg);
   color: var(--pulse-text);
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   outline: none;
 }
 
@@ -600,7 +600,7 @@ function safeLocalPath(value: unknown) {
 
 .forgot-link {
   flex-shrink: 0;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   font-weight: 600;
   color: var(--pulse-primary);
   text-decoration: none;
@@ -612,7 +612,7 @@ function safeLocalPath(value: unknown) {
   gap: 8px;
   margin: 0;
   padding: 0;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   color: var(--pulse-text-secondary);
   cursor: pointer;
   user-select: none;
@@ -633,7 +633,7 @@ function safeLocalPath(value: unknown) {
   border: none;
   background: rgba(173, 198, 255, 0.1);
   color: var(--pulse-primary);
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   font-weight: 500;
   padding: 6px 16px;
   border-radius: 8px;
@@ -658,7 +658,7 @@ function safeLocalPath(value: unknown) {
   border-radius: var(--pulse-radius-lg);
   background: var(--pulse-primary-container);
   color: #fff;
-  font-size: 20px;
+  font-size: var(--pulse-font-heading);
   font-weight: 600;
   line-height: 25px;
   cursor: pointer;
@@ -686,7 +686,7 @@ function safeLocalPath(value: unknown) {
 
 .register-hint {
   margin: 0;
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   color: var(--pulse-text-secondary);
 }
 
@@ -703,7 +703,7 @@ function safeLocalPath(value: unknown) {
 }
 
 .legal-links a {
-  font-size: 11px;
+  font-size: var(--pulse-font-caption);
   font-weight: 600;
   color: rgba(193, 198, 215, 0.6);
 }

@@ -104,8 +104,8 @@ async function selectRange(value: MomentsVisibleRange) {
 <template>
   <div class="friends-perm-page">
     <header class="page-header">
-      <button type="button" class="back-btn" @click="goBack">
-        <span class="material-symbols-outlined">arrow_back_ios</span>
+      <button type="button" class="back-btn" @click="goBack" aria-label="返回">
+        <IconBack />
       </button>
       <h1 class="page-title">朋友权限</h1>
       <span class="spacer" />
@@ -447,7 +447,7 @@ async function selectRange(value: MomentsVisibleRange) {
   flex: 1;
   margin: 0;
   text-align: center;
-  font-size: 18px;
+  font-size: var(--pulse-font-title);
   font-weight: 600;
   color: var(--pulse-primary);
 }
@@ -464,12 +464,12 @@ async function selectRange(value: MomentsVisibleRange) {
   padding: 48px 16px;
   text-align: center;
   color: var(--pulse-text-secondary);
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
 }
 
 .group-title {
   margin: 18px 4px 8px;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   color: var(--pulse-text-secondary);
 }
 
@@ -538,19 +538,19 @@ async function selectRange(value: MomentsVisibleRange) {
 }
 
 .item-label {
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   font-weight: 500;
 }
 
 .item-sub {
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   color: var(--pulse-text-secondary);
   line-height: 1.35;
 }
 
 .chevron {
   color: var(--pulse-text-secondary);
-  font-size: 20px;
+  font-size: var(--pulse-font-heading);
   flex-shrink: 0;
 }
 
@@ -610,7 +610,7 @@ async function selectRange(value: MomentsVisibleRange) {
 .sheet-title {
   padding: 14px 8px 10px;
   text-align: center;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   color: var(--pulse-text-secondary);
 }
 
@@ -625,7 +625,7 @@ async function selectRange(value: MomentsVisibleRange) {
   border-top: 1px solid rgba(255, 255, 255, 0.06);
   background: transparent;
   color: var(--pulse-text);
-  font-size: 16px;
+  font-size: var(--pulse-font-body);
   cursor: pointer;
 }
 
@@ -634,7 +634,7 @@ async function selectRange(value: MomentsVisibleRange) {
 }
 
 .sheet-option .check {
-  font-size: 20px;
+  font-size: var(--pulse-font-heading);
   color: var(--pulse-primary);
 }
 
@@ -646,7 +646,7 @@ async function selectRange(value: MomentsVisibleRange) {
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.06);
   color: var(--pulse-text);
-  font-size: 16px;
+  font-size: var(--pulse-font-body);
   cursor: pointer;
 }
 </style>

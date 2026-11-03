@@ -291,7 +291,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <van-popup
+  <AppBottomSheet
     v-model:show="visible"
     position="bottom"
     round
@@ -361,7 +361,7 @@ onUnmounted(() => {
         返回密码验证
       </button>
     </div>
-  </van-popup>
+  </AppBottomSheet>
 </template>
 
 <style scoped>
@@ -383,7 +383,7 @@ onUnmounted(() => {
 }
 
 .popup-head h2 {
-  font-size: 17px;
+  font-size: var(--pulse-font-title);
   margin: 0;
   color: var(--pulse-text);
 }
@@ -392,7 +392,7 @@ onUnmounted(() => {
   border: 0;
   background: none;
   color: var(--pulse-text-secondary, #aaa);
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
 }
 
 .popup-head span {
@@ -405,7 +405,7 @@ onUnmounted(() => {
 
 .tip {
   color: var(--pulse-text-secondary, #929298);
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   line-height: 1.5;
   margin: 0 0 14px;
   text-align: center;
@@ -415,7 +415,7 @@ onUnmounted(() => {
   display: block;
   text-align: center;
   color: var(--pulse-text-secondary, #aaa);
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   margin-bottom: 10px;
 }
 
@@ -439,7 +439,7 @@ onUnmounted(() => {
   justify-content: center;
   border-right: 1px solid var(--pulse-border, #424247);
   color: var(--pulse-text);
-  font-size: 16px;
+  font-size: var(--pulse-font-body);
   font-style: normal;
   font-weight: 600;
 }
@@ -449,7 +449,7 @@ onUnmounted(() => {
 }
 
 .password-grid.code i {
-  font-size: 18px;
+  font-size: var(--pulse-font-title);
   letter-spacing: 0;
 }
 
@@ -459,7 +459,7 @@ onUnmounted(() => {
   border: 0;
   background: none;
   color: #07c160;
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
 }
 
@@ -504,7 +504,7 @@ onUnmounted(() => {
   border-radius: 9px;
   background: #07c160;
   color: #fff;
-  font-size: 16px;
+  font-size: var(--pulse-font-body);
   padding: 12px;
   margin-top: 14px;
 }
@@ -519,6 +519,6 @@ onUnmounted(() => {
   border: 0;
   background: none;
   color: var(--pulse-primary, #8ca5d1);
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
 }
 </style>

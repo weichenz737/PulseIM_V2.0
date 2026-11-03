@@ -29,6 +29,10 @@ import { initializeImRuntime } from '@/im/runtime'
 import { initializeServerOrigin } from '@/config/endpoints'
 import 'vant/lib/index.css'
 import './styles/global.css'
+import './styles/design-system.css'
+import AppButton from './components/AppButton.vue'
+import IconBack from './components/IconBack.vue'
+import AppBottomSheet from './components/AppBottomSheet.vue'
 
 // Material Symbols uses English ligatures such as "home" and "search".
 // Reveal icon slots only after the bundled font can render those ligatures.
@@ -378,6 +382,9 @@ window.addEventListener('pulse:native-keyboard-settled', onNativeKeyboardViewpor
 syncKeyboardViewport()
 
 const app = createApp(App)
+app.component('AppButton', AppButton)
+app.component('IconBack', IconBack)
+app.component('AppBottomSheet', AppBottomSheet)
 const pinia = createPinia()
 
 function reportRuntimeError(source: string, reason: unknown) {

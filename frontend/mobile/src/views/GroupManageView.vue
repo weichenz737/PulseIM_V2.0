@@ -774,8 +774,8 @@ async function onDissolve() {
 <template>
   <div class="manage-page">
     <header class="page-header">
-      <button type="button" class="icon-btn" @click="goBack">
-        <span class="material-symbols-outlined">arrow_back_ios</span>
+      <button type="button" class="icon-btn" @click="goBack" aria-label="返回">
+        <IconBack />
       </button>
       <h1 class="page-title">群管理</h1>
       <span class="spacer" />
@@ -1016,10 +1016,10 @@ async function onDissolve() {
           placeholder="请输入群公告"
         />
         <div class="dialog-actions">
-          <button type="button" class="dialog-btn" @click="showNoticeDialog = false">取消</button>
-          <button type="button" class="dialog-btn primary" :disabled="saving" @click="confirmNotice">
+          <AppButton variant="secondary" type="button" class="dialog-btn" @click="showNoticeDialog = false">取消</AppButton>
+          <AppButton variant="primary" type="button" class="dialog-btn primary" :disabled="saving" @click="confirmNotice">
             确定
-          </button>
+          </AppButton>
         </div>
       </div>
     </div>
@@ -1036,8 +1036,8 @@ async function onDissolve() {
           placeholder="例如：欢迎加入本群，请先阅读群公告。留空表示关闭。"
         />
         <div class="dialog-actions">
-          <button type="button" class="dialog-btn" @click="showWelcomeDialog = false">取消</button>
-          <button type="button" class="dialog-btn primary" :disabled="saving" @click="confirmWelcome">保存</button>
+          <AppButton variant="secondary" type="button" class="dialog-btn" @click="showWelcomeDialog = false">取消</AppButton>
+          <AppButton variant="primary" type="button" class="dialog-btn primary" :disabled="saving" @click="confirmWelcome">保存</AppButton>
         </div>
       </div>
     </div>
@@ -1089,9 +1089,9 @@ async function onDissolve() {
               <div v-else class="scheduled-file-icon"><span class="material-symbols-outlined">description</span></div>
               <div class="file-picker-name">{{ scheduledFileContents[type] ? scheduledFileName(scheduledFileContents[type]!) : '未选择文件' }}</div>
             </div>
-            <button type="button" class="dialog-btn" :disabled="scheduledUploading" @click="chooseScheduledFile(type)">
+            <AppButton variant="secondary" type="button" class="dialog-btn" :disabled="scheduledUploading" @click="chooseScheduledFile(type)">
               {{ scheduledUploading && scheduledUploadingType === type ? '上传中…' : scheduledFileContents[type] ? '重新选择' : '选择并上传' }}
-            </button>
+            </AppButton>
           </div>
         </div>
         <input
@@ -1111,13 +1111,13 @@ async function onDissolve() {
           <span class="material-symbols-outlined dialog-picker-arrow">chevron_right</span>
         </button>
         <div class="dialog-actions">
-          <button type="button" class="dialog-btn" @click="showScheduledDialog = false">取消</button>
-          <button type="button" class="dialog-btn primary" :disabled="saving || scheduledUploading" @click="confirmScheduled">保存</button>
+          <AppButton variant="secondary" type="button" class="dialog-btn" @click="showScheduledDialog = false">取消</AppButton>
+          <AppButton variant="primary" type="button" class="dialog-btn primary" :disabled="saving || scheduledUploading" @click="confirmScheduled">保存</AppButton>
         </div>
       </div>
     </div>
 
-    <van-popup v-model:show="showScheduledTypeSheet" position="bottom" round teleport="body" class="scheduled-picker-popup">
+    <AppBottomSheet v-model:show="showScheduledTypeSheet" position="bottom" round teleport="body" class="scheduled-picker-popup">
       <section class="scheduled-type-sheet">
         <div class="scheduled-sheet-handle" />
         <div class="scheduled-sheet-header">
@@ -1142,9 +1142,9 @@ async function onDissolve() {
         </button>
         <button type="button" class="scheduled-sheet-done" @click="finishScheduledTypeSelection">完成</button>
       </section>
-    </van-popup>
+    </AppBottomSheet>
 
-    <van-popup v-model:show="showScheduledTimePicker" position="bottom" round teleport="body" class="scheduled-picker-popup">
+    <AppBottomSheet v-model:show="showScheduledTimePicker" position="bottom" round teleport="body" class="scheduled-picker-popup">
       <van-picker
         v-model="scheduledTimePickerValue"
         title="选择发送时间"
@@ -1154,7 +1154,7 @@ async function onDissolve() {
         @confirm="confirmScheduledTime"
         @cancel="showScheduledTimePicker = false"
       />
-    </van-popup>
+    </AppBottomSheet>
 
     <van-action-sheet
       v-model:show="showSearchModeSheet"
@@ -1204,7 +1204,7 @@ async function onDissolve() {
   flex: 1;
   margin: 0;
   text-align: center;
-  font-size: 18px;
+  font-size: var(--pulse-font-title);
   font-weight: 600;
   color: var(--pulse-primary);
 }
@@ -1253,7 +1253,7 @@ async function onDissolve() {
   align-items: center;
   gap: 6px;
   color: var(--pulse-text);
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
 }
 
 .scheduled-title > span:last-child {
@@ -1265,7 +1265,7 @@ async function onDissolve() {
 .scheduled-meta, .scheduled-error {
   margin-top: 5px;
   color: var(--pulse-text-secondary);
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
 }
 
 .scheduled-error { color: var(--pulse-error); }
@@ -1294,13 +1294,13 @@ async function onDissolve() {
 .menu-row:last-child { border-bottom: none; }
 
 .menu-label {
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   color: var(--pulse-text);
 }
 
 .menu-sub {
   margin: 6px 0 0;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   color: var(--pulse-text-secondary);
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -1310,12 +1310,12 @@ async function onDissolve() {
 
 .chevron {
   color: var(--pulse-outline);
-  font-size: 20px;
+  font-size: var(--pulse-font-heading);
 }
 
 .section-title {
   padding: 14px 16px 8px;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   color: var(--pulse-text-secondary);
 }
 
@@ -1369,7 +1369,7 @@ async function onDissolve() {
 }
 
 .member-nick {
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
   color: var(--pulse-text);
   overflow: hidden;
@@ -1386,7 +1386,7 @@ async function onDissolve() {
 }
 
 .role-tag {
-  font-size: 11px;
+  font-size: var(--pulse-font-caption);
   padding: 2px 6px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.08);
@@ -1468,7 +1468,7 @@ async function onDissolve() {
   border: none;
   background: transparent;
   color: var(--pulse-primary);
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   line-height: 1.4;
   padding: 0;
   cursor: pointer;
@@ -1486,7 +1486,7 @@ async function onDissolve() {
   border-radius: 12px;
   background: #93000a;
   color: #ffdad6;
-  font-size: 16px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
   cursor: pointer;
 }
@@ -1530,7 +1530,7 @@ async function onDissolve() {
 
 .sheet-header h3 {
   margin: 0;
-  font-size: 16px;
+  font-size: var(--pulse-font-body);
   color: var(--pulse-text);
 }
 
@@ -1538,7 +1538,7 @@ async function onDissolve() {
   border: none;
   background: transparent;
   color: var(--pulse-primary);
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
   cursor: pointer;
 }
 
@@ -1584,7 +1584,7 @@ async function onDissolve() {
 
 .name {
   color: var(--pulse-text);
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
 }
 
 .dialog {
@@ -1602,7 +1602,7 @@ async function onDissolve() {
 
 .dialog h3 {
   margin: 0 0 14px;
-  font-size: 17px;
+  font-size: var(--pulse-font-title);
   text-align: center;
 }
 
@@ -1614,7 +1614,7 @@ async function onDissolve() {
   background: var(--pulse-page-bg, var(--pulse-bg));
   color: var(--pulse-text);
   padding: 12px;
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   outline: none;
   resize: none;
 }
@@ -1622,7 +1622,7 @@ async function onDissolve() {
 .dialog-tip {
   margin: -4px 0 12px;
   color: var(--pulse-text-secondary);
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   line-height: 1.5;
 }
 
@@ -1630,7 +1630,7 @@ async function onDissolve() {
   display: block;
   margin: 12px 0 6px;
   color: var(--pulse-text-secondary);
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
 }
 
 .dialog-select, .dialog-input {
@@ -1641,7 +1641,7 @@ async function onDissolve() {
   padding: 10px 12px;
   background: var(--pulse-surface-highest);
   color: var(--pulse-text);
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
 }
 
 .scheduled-dialog .dialog-textarea { margin-top: 0; }
@@ -1684,19 +1684,19 @@ async function onDissolve() {
 .dialog-picker-copy small,
 .dialog-picker-copy em {
   color: var(--pulse-text-secondary);
-  font-size: 11px;
+  font-size: var(--pulse-font-caption);
   font-style: normal;
 }
 
 .dialog-picker-copy strong {
   overflow: hidden;
   color: var(--pulse-text);
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.dialog-picker-arrow { color: var(--pulse-outline); font-size: 20px; }
+.dialog-picker-arrow { color: var(--pulse-outline); font-size: var(--pulse-font-heading); }
 .time-picker-button { margin-top: 14px; }
 
 .scheduled-file-field { margin-top: 14px; }
@@ -1709,7 +1709,7 @@ async function onDissolve() {
 }
 
 .scheduled-file-heading .field-label { margin: 0 0 6px; }
-.scheduled-file-hint { color: var(--pulse-text-secondary); font-size: 11px; }
+.scheduled-file-hint { color: var(--pulse-text-secondary); font-size: var(--pulse-font-caption); }
 
 .file-picker-box {
   display: flex;
@@ -1725,14 +1725,14 @@ async function onDissolve() {
 .scheduled-file-preview { position: relative; min-width: 0; display: flex; align-items: center; gap: 9px; }
 .scheduled-file-preview img, .scheduled-file-preview video { width: 54px; height: 54px; flex: 0 0 54px; object-fit: cover; border-radius: 8px; background: #111; }
 .scheduled-file-preview video:not(.scheduled-video-ready) { visibility: hidden; }
-.scheduled-video-loading { position: absolute; left: 0; width: 54px; color: var(--pulse-text-secondary); font-size: 10px; line-height: 1.2; text-align: center; pointer-events: none; }
+.scheduled-video-loading { position: absolute; left: 0; width: 54px; color: var(--pulse-text-secondary); font-size: var(--pulse-font-caption); line-height: 1.2; text-align: center; pointer-events: none; }
 .scheduled-file-preview audio { width: 150px; max-width: 42vw; }
 .scheduled-file-icon { width: 42px; height: 42px; display: grid; place-items: center; color: var(--pulse-primary); background: color-mix(in srgb, var(--pulse-primary) 12%, transparent); border-radius: 8px; }
 
 .file-picker-name {
   min-width: 0;
   color: var(--pulse-text);
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1753,7 +1753,7 @@ async function onDissolve() {
   border-radius: 10px;
   background: var(--pulse-surface-highest);
   color: var(--pulse-text-secondary);
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   cursor: pointer;
 }
 
@@ -1789,10 +1789,10 @@ async function onDissolve() {
   justify-content: space-between;
 }
 
-.scheduled-sheet-header small { color: var(--pulse-primary); font-size: 11px; font-weight: 700; }
-.scheduled-sheet-header h3 { margin: 4px 0 0; font-size: 20px; }
+.scheduled-sheet-header small { color: var(--pulse-primary); font-size: var(--pulse-font-caption); font-weight: 700; }
+.scheduled-sheet-header h3 { margin: 4px 0 0; font-size: var(--pulse-font-heading); }
 .scheduled-sheet-header button { display: grid; width: 34px; height: 34px; place-items: center; border: 0; border-radius: 50%; background: var(--pulse-surface-high); color: var(--pulse-text-secondary); }
-.scheduled-sheet-tip { margin: 9px 0 14px; color: var(--pulse-text-secondary); font-size: 12px; line-height: 1.5; }
+.scheduled-sheet-tip { margin: 9px 0 14px; color: var(--pulse-text-secondary); font-size: var(--pulse-font-caption); line-height: 1.5; }
 
 .scheduled-type-option {
   width: 100%;
@@ -1826,9 +1826,9 @@ async function onDissolve() {
 }
 
 .scheduled-type-option-copy { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 3px; }
-.scheduled-type-option-copy strong { font-size: 14px; }
-.scheduled-type-option-copy small { color: var(--pulse-text-secondary); font-size: 11px; }
-.scheduled-type-check { color: var(--pulse-outline); font-size: 21px; }
+.scheduled-type-option-copy strong { font-size: var(--pulse-font-body); }
+.scheduled-type-option-copy small { color: var(--pulse-text-secondary); font-size: var(--pulse-font-caption); }
+.scheduled-type-check { color: var(--pulse-outline); font-size: var(--pulse-font-heading); }
 .scheduled-type-option.selected .scheduled-type-check { color: var(--pulse-primary); }
 
 .scheduled-sheet-done {
@@ -1839,7 +1839,7 @@ async function onDissolve() {
   border-radius: 12px;
   background: var(--pulse-primary);
   color: var(--pulse-on-primary);
-  font-size: 15px;
-  font-weight: 650;
+  font-size: var(--pulse-font-body);
+  font-weight: 600;
 }
 </style>

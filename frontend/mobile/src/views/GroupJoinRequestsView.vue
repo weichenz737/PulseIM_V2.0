@@ -100,8 +100,8 @@ async function onReject(item: GroupJoinRequestItem) {
 <template>
   <div class="join-req-page">
     <header class="page-header">
-      <button type="button" class="icon-btn" @click="goBack">
-        <span class="material-symbols-outlined">arrow_back_ios</span>
+      <button type="button" class="icon-btn" @click="goBack" aria-label="返回">
+        <IconBack />
       </button>
       <h1 class="page-title">加群申请</h1>
       <span class="spacer" />
@@ -172,7 +172,7 @@ async function onReject(item: GroupJoinRequestItem) {
   flex: 1;
   margin: 0;
   text-align: center;
-  font-size: 17px;
+  font-size: var(--pulse-font-title);
   font-weight: 700;
 }
 
@@ -229,20 +229,20 @@ async function onReject(item: GroupJoinRequestItem) {
 }
 
 .nick {
-  font-size: 16px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
 }
 
 .meta,
 .time {
   margin-top: 4px;
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   color: var(--pulse-outline);
 }
 
 .message {
   margin-top: 8px;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   color: #c8c7ce;
   line-height: 1.4;
 }
@@ -259,7 +259,7 @@ async function onReject(item: GroupJoinRequestItem) {
   height: 34px;
   border: none;
   border-radius: 8px;
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
   cursor: pointer;
 }

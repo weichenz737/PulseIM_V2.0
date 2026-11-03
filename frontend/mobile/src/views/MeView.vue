@@ -523,7 +523,7 @@ async function handleLogout() {
   background: var(--pulse-surface-container);
   color: var(--pulse-primary);
   font: inherit;
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
   cursor: pointer;
   box-shadow: 0 5px 16px rgba(0, 0, 0, 0.05);
@@ -578,7 +578,7 @@ async function handleLogout() {
 .profile-id {
   flex: 1;
   min-width: 0;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   font-weight: 500;
   color: var(--pulse-text-secondary);
   font-variant-numeric: tabular-nums;
@@ -608,7 +608,7 @@ async function handleLogout() {
   background: transparent;
   color: var(--pulse-primary);
   font: inherit;
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   cursor: pointer;
 }
 
@@ -625,7 +625,7 @@ async function handleLogout() {
   height: 18px;
   line-height: 18px;
   margin-top: 6px;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   color: var(--pulse-text-secondary);
   white-space: nowrap;
   overflow: hidden;
@@ -637,7 +637,7 @@ async function handleLogout() {
   height: 36px;
   line-height: 18px;
   margin-top: 4px;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   color: var(--pulse-outline);
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -713,7 +713,7 @@ async function handleLogout() {
 
 .item-sub {
   color: var(--pulse-text-secondary);
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   line-height: 1.35;
 }
 
@@ -725,7 +725,7 @@ async function handleLogout() {
 }
 
 .item-extra {
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   font-weight: 500;
 }
 
@@ -755,7 +755,7 @@ async function handleLogout() {
 .brand-footer {
   margin: 32px 0 0;
   text-align: center;
-  font-size: 11px;
+  font-size: var(--pulse-font-caption);
   font-weight: 600;
   letter-spacing: 0.15em;
   text-transform: uppercase;

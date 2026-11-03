@@ -1044,13 +1044,13 @@ function onForward() {
   text-overflow: ellipsis;
   white-space: nowrap;
   color: #f4f4f6;
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
 }
 
 .fp-sub {
   color: rgba(255, 255, 255, 0.55);
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
 }
 
 .fp-close {
@@ -1062,7 +1062,7 @@ function onForward() {
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.16);
   color: #fff;
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
@@ -1083,7 +1083,7 @@ function onForward() {
   border: 0;
   background: transparent;
   color: #adc6ff;
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
@@ -1148,7 +1148,7 @@ function onForward() {
   position: absolute;
   z-index: 1;
   color: rgba(255, 255, 255, .76);
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
   pointer-events: none;
 }
 .fp-audio { width: min(100%, 420px); }
@@ -1207,7 +1207,7 @@ function onForward() {
   white-space: pre-wrap;
   word-break: break-word;
   color: #e3e2e7;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   line-height: 1.6;
 }
 
@@ -1215,7 +1215,7 @@ function onForward() {
   margin: 0;
   padding: 8px 14px 14px;
   color: #c1c6d7;
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
 }
 
 .fp-unsupported {
@@ -1226,7 +1226,7 @@ function onForward() {
   padding: 24px;
   text-align: center;
   color: #c1c6d7;
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
   line-height: 1.6;
 }
 
@@ -1260,7 +1260,7 @@ function onForward() {
   border-radius: 23px;
   background: rgba(255, 255, 255, 0.12);
   color: #fff;
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   font-weight: 600;
   cursor: pointer;
 }

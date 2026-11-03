@@ -176,9 +176,9 @@ function openLegalText(key: SystemTextKey) {
           </span>
         </label>
 
-        <button type="button" class="primary-btn" :disabled="loading" @click="handleComplete">
+        <AppButton variant="primary" type="button" class="primary-btn" :disabled="loading" @click="handleComplete">
           创建账号
-        </button>
+        </AppButton>
       </div>
     </main>
     <LegalTextDialog ref="legalDialog" />
@@ -223,7 +223,7 @@ function openLegalText(key: SystemTextKey) {
 
 .step-text {
   margin: 0 0 24px;
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   color: var(--pulse-text-secondary);
 }
 
@@ -237,7 +237,7 @@ function openLegalText(key: SystemTextKey) {
 
 .hint-card p {
   margin: 0;
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   line-height: 20px;
   color: var(--pulse-text-secondary);
   text-align: center;
@@ -256,7 +256,7 @@ function openLegalText(key: SystemTextKey) {
 }
 
 .field-label {
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   font-weight: 500;
   color: var(--pulse-text-secondary);
   padding-left: 4px;
@@ -290,7 +290,7 @@ function openLegalText(key: SystemTextKey) {
   border: none;
   border-radius: 8px;
   color: var(--pulse-text);
-  font-size: 15px;
+  font-size: var(--pulse-font-body);
   outline: none;
   transition: box-shadow 0.2s;
 }
@@ -312,7 +312,7 @@ function openLegalText(key: SystemTextKey) {
   align-items: flex-start;
   gap: 12px;
   padding: 8px 4px 0;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   font-weight: 500;
   line-height: 1.4;
   color: var(--pulse-text-secondary);
@@ -340,7 +340,7 @@ function openLegalText(key: SystemTextKey) {
   border-radius: 8px;
   background: var(--pulse-primary-container);
   color: var(--pulse-on-primary-container);
-  font-size: 20px;
+  font-size: var(--pulse-font-heading);
   font-weight: 700;
   cursor: pointer;
   box-shadow: 0 8px 24px rgba(75, 142, 255, 0.2);

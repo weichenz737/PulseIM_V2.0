@@ -702,8 +702,8 @@ async function openMediaPreview(item: MomentItem, index: number) {
   <div class="moments-page">
     <header class="moments-header">
       <div class="header-left">
-        <button type="button" class="icon-btn" @click="goBack">
-          <span class="material-symbols-outlined">arrow_back_ios</span>
+        <button type="button" class="icon-btn" @click="goBack" aria-label="返回">
+          <IconBack />
         </button>
         <h1 class="header-title">朋友圈</h1>
       </div>
@@ -978,7 +978,7 @@ async function openMediaPreview(item: MomentItem, index: number) {
   border-radius: 8px;
   background: #ee0a24;
   color: #fff;
-  font-size: 10px;
+  font-size: var(--pulse-font-caption);
   font-weight: 600;
   line-height: 16px;
   text-align: center;
@@ -987,7 +987,7 @@ async function openMediaPreview(item: MomentItem, index: number) {
 
 .header-title {
   margin: 0;
-  font-size: 20px;
+  font-size: var(--pulse-font-heading);
   font-weight: 600;
   line-height: 25px;
   color: var(--pulse-text);
@@ -1049,7 +1049,7 @@ async function openMediaPreview(item: MomentItem, index: number) {
   border-radius: 999px;
   background: rgba(0, 0, 0, 0.35);
   color: rgba(255, 255, 255, 0.85);
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   pointer-events: none;
   opacity: 0.75;
 }
@@ -1075,7 +1075,7 @@ async function openMediaPreview(item: MomentItem, index: number) {
 
 .cover-name {
   margin: 0;
-  font-size: 20px;
+  font-size: var(--pulse-font-heading);
   font-weight: 600;
   line-height: 25px;
   color: #fff;
@@ -1084,7 +1084,7 @@ async function openMediaPreview(item: MomentItem, index: number) {
 
 .cover-sig {
   margin: 4px 0 0;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   font-weight: 500;
   color: rgba(193, 198, 215, 0.8);
   max-width: 180px;
@@ -1119,7 +1119,7 @@ async function openMediaPreview(item: MomentItem, index: number) {
   margin-top: 80px;
   text-align: center;
   color: var(--pulse-text-secondary);
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
 }
 
 .feed-item {
@@ -1220,7 +1220,7 @@ async function openMediaPreview(item: MomentItem, index: number) {
 }
 
 .private-tag {
-  font-size: 10px;
+  font-size: var(--pulse-font-caption);
   font-weight: 600;
   padding: 1px 6px;
   border-radius: 4px;
@@ -1248,7 +1248,7 @@ async function openMediaPreview(item: MomentItem, index: number) {
   border: 0;
   background: transparent;
   color: var(--pulse-primary);
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   font-family: inherit;
   text-align: left;
   cursor: pointer;
@@ -1260,13 +1260,13 @@ async function openMediaPreview(item: MomentItem, index: number) {
 }
 
 .feed-location .location-chevron {
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
   opacity: 0.72;
 }
 
 .feed-mention {
   margin: 0;
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   color: var(--pulse-primary);
   opacity: 0.85;
 }
@@ -1438,7 +1438,7 @@ async function openMediaPreview(item: MomentItem, index: number) {
 }
 
 .like-ico {
-  font-size: 14px;
+  font-size: var(--pulse-font-body);
   margin-top: 1px;
 }
 

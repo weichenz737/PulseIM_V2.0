@@ -380,14 +380,14 @@ onMounted(() => {
   border-radius: 999px;
   background: #ff6b6b;
   color: #fff;
-  font-size: 10px;
+  font-size: var(--pulse-font-caption);
   font-weight: 700;
   line-height: 16px;
   text-align: center;
 }
 
 .tab-label {
-  font-size: 12px;
+  font-size: var(--pulse-font-caption);
   line-height: 15px;
   font-weight: 600;
   letter-spacing: 0.01em;
@@ -416,7 +416,7 @@ onMounted(() => {
   }
 
   .tab-label {
-    font-size: 11px;
+    font-size: var(--pulse-font-caption);
   }
 }
 </style>

@@ -206,7 +206,7 @@ async function handleLogout() {
 
 .page-title {
   margin: 0;
-  font-size: 20px;
+  font-size: var(--pulse-font-heading);
   font-weight: 600;
   color: var(--pulse-primary);
 }
@@ -251,14 +251,14 @@ async function handleLogout() {
 }
 
 .profile-name {
-  font-size: 20px;
+  font-size: var(--pulse-font-heading);
   font-weight: 600;
   color: var(--pulse-text);
 }
 
 .profile-id {
   margin-top: 4px;
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   font-weight: 500;
   color: var(--pulse-text-secondary);
 }
@@ -311,12 +311,12 @@ async function handleLogout() {
 }
 
 .item-label {
-  font-size: 17px;
+  font-size: var(--pulse-font-title);
   color: var(--pulse-text);
 }
 
 .item-sub {
-  font-size: 11px;
+  font-size: var(--pulse-font-caption);
   font-weight: 600;
   color: var(--pulse-text-secondary);
 }
@@ -329,7 +329,7 @@ async function handleLogout() {
 }
 
 .item-extra {
-  font-size: 13px;
+  font-size: var(--pulse-font-small);
   font-weight: 500;
 }
 
@@ -345,7 +345,7 @@ async function handleLogout() {
   border-radius: var(--pulse-radius);
   background: var(--pulse-surface-container);
   color: var(--pulse-error);
-  font-size: 20px;
+  font-size: var(--pulse-font-heading);
   font-weight: 600;
   cursor: pointer;
   transition: transform 0.15s;
