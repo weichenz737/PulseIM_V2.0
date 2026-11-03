@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { showToast, showLoadingToast, closeToast } from 'vant'
+import { Dialog as VanDialog, showToast, showLoadingToast, closeToast } from 'vant'
 import PulseLogo from '@/components/PulseLogo.vue'
 import IconPhone from '@/components/icons/IconPhone.vue'
 import IconLock from '@/components/icons/IconLock.vue'
 import LegalTextDialog from '@/components/LegalTextDialog.vue'
 import { useUserStore } from '@/stores/user'
 import { sendSmsCode } from '@/api/auth'
+import { SERVER_ORIGIN, setServerOrigin } from '@/config/endpoints'
 import type { SystemTextKey } from '@/api/systemText'
 
 const REMEMBER_KEY = 'pulse_remember_login'
@@ -25,6 +26,34 @@ const securityCode = ref('')
 const securityCodeRequired = ref(false)
 const rememberPassword = ref(false)
 const loading = ref(false)
+const serverAddress = ref(SERVER_ORIGIN || window.location.origin)
+const loginError = ref('')
+const serverSettingsOpen = ref(false)
+const serverAddressError = ref('')
+
+function openServerSettings() {
+  serverAddress.value = SERVER_ORIGIN || window.location.origin
+  serverAddressError.value = ''
+  serverSettingsOpen.value = true
+}
+
+function saveServerAddress() {
+  try {
+    serverAddress.value = setServerOrigin(serverAddress.value)
+    loginError.value = ''
+    serverSettingsOpen.value = false
+    showToast('服务器地址已保存')
+  } catch (e) { serverAddressError.value = (e as Error).message }
+}
+
+function chineseLoginError(error: unknown): string {
+  const message = (error as Error)?.message || ''
+  if (/SECURITY_CODE_REQUIRED/.test(message)) return '这是新设备，请输入账号安全码'
+  if (/timeout|超时/i.test(message)) return '连接服务器超时，请检查服务器地址和网络后重试'
+  if (/network|connect|failed to fetch|无法连接/i.test(message)) return '无法连接服务器，请检查登录页的服务器地址、网络及电脑服务是否已启动'
+  if (/[\u4e00-\u9fff]/.test(message)) return message
+  return '登录失败，请检查账号、密码及服务器地址后重试'
+}
 const smsCountdown = ref(0)
 const legalDialog = ref<InstanceType<typeof LegalTextDialog>>()
 let smsTimer: ReturnType<typeof setInterval> | null = null
@@ -112,6 +141,7 @@ async function handleLogin() {
   }
 
   loading.value = true
+  loginError.value = ''
   showLoadingToast({ message: '登录中...', forbidClick: true })
 
   try {
@@ -142,10 +172,12 @@ async function handleLogin() {
     const message = (e as Error)?.message || ''
     if (message.includes('SECURITY_CODE_REQUIRED')) {
       securityCodeRequired.value = true
+      loginError.value = '这是新设备，请输入账号安全码'
       showToast('这是新设备，请输入账号安全码')
       return
     }
-    showToast((e as Error)?.message || '登录失败，请检查账号信息')
+    loginError.value = chineseLoginError(e)
+    showToast({ message: loginError.value, duration: 4000 })
   } finally {
     loading.value = false
   }
@@ -184,6 +216,7 @@ function safeLocalPath(value: unknown) {
 
 <template>
   <div class="login-page">
+    <button type="button" class="server-settings-toggle" :disabled="loading" @click="openServerSettings">服务器设置</button>
     <main class="login-main">
       <header class="login-header">
         <PulseLogo />
@@ -304,6 +337,7 @@ function safeLocalPath(value: unknown) {
             </div>
           </div>
 
+          <p v-if="loginError" class="login-error" role="alert">{{ loginError }}</p>
           <button type="button" class="login-btn" :disabled="loading" @click="handleLogin">
             <span>登录</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -324,29 +358,51 @@ function safeLocalPath(value: unknown) {
         </div>
       </footer>
     </main>
+    <VanDialog v-model:show="serverSettingsOpen" title="服务器设置" :show-confirm-button="false" teleport="body" close-on-click-overlay>
+      <form class="server-settings" @submit.prevent="saveServerAddress">
+        <label for="server-address">服务器地址</label>
+        <input id="server-address" v-model="serverAddress" type="text" inputmode="url" placeholder="http://192.168.1.97:5173" autocomplete="off" autocapitalize="off" spellcheck="false" @input="serverAddressError = ''" />
+        <p>USB 调试填写 http://127.0.0.1:5173；局域网填写电脑 IP 和端口。</p>
+        <p v-if="serverAddressError" class="login-error" role="alert">{{ serverAddressError }}</p>
+        <div class="server-settings-actions">
+          <button type="button" @click="serverSettingsOpen = false">取消</button>
+          <button type="submit">保存</button>
+        </div>
+      </form>
+    </VanDialog>
     <LegalTextDialog ref="legalDialog" />
   </div>
 </template>
 
 <style scoped>
+.login-error { color: #d84040; font-size: 13px; line-height: 1.6; }
+.server-settings-toggle { position: absolute; top: calc(8px + var(--pulse-safe-top)); right: 16px; border: 0; background: transparent; color: var(--pulse-primary); padding: 12px 8px; font-size: 14px; }
+.server-settings { display: grid; gap: 12px; padding: 20px 24px 24px; text-align: left; font-size: 13px; color: var(--pulse-text); }
+.server-settings input { width: 100%; box-sizing: border-box; padding: 12px; border: 1px solid #ccd5df; border-radius: 10px; color: inherit; background: transparent; }
+.server-settings p { margin: 0; line-height: 1.6; }
+.server-settings button { padding: 10px; border: 0; border-radius: 10px; color: white; background: var(--primary-color, #0084ff); }
+.server-settings-actions { display: flex; justify-content: flex-end; gap: 12px; }
+.server-settings-actions button { min-width: 72px; background: var(--pulse-primary); color: var(--pulse-on-primary, white); }
+.server-settings-actions button:first-child { background: var(--pulse-surface-low); color: var(--pulse-text-secondary); }
 .login-page {
+  position: relative;
+  box-sizing: border-box;
   width: 100%;
   height: 100%;
   min-height: 100%;
-  min-height: 100dvh;
+  min-height: 0;
   overflow-y: auto;
   background-color: var(--pulse-bg);
   background: radial-gradient(circle at 50% 90%, var(--pulse-surface-low) 0%, var(--pulse-bg) 60%);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  padding: calc(32px + var(--pulse-safe-top)) 16px calc(32px + var(--pulse-safe-bottom));
+  padding: calc(56px + var(--pulse-safe-top)) 16px calc(24px + var(--pulse-safe-bottom));
 }
 
 .login-main {
   width: 100%;
   max-width: 420px;
-  animation: fadeIn 0.8s ease-out forwards;
 }
 
 @keyframes fadeIn {
@@ -356,16 +412,18 @@ function safeLocalPath(value: unknown) {
 
 .login-header {
   text-align: center;
-  margin-bottom: 32px;
+  margin-bottom: 16px;
 }
 
 .login-header :deep(.pulse-logo) {
-  margin: 0 auto 16px;
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 10px;
 }
 
 .title {
   margin: 0 0 4px;
-  font-size: 34px;
+  font-size: 28px;
   font-weight: 700;
   line-height: 41px;
   letter-spacing: -0.02em;
@@ -384,7 +442,7 @@ function safeLocalPath(value: unknown) {
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   border-radius: 32px;
-  padding: 32px;
+  padding: 24px;
   border: 1px solid rgba(65, 71, 85, 0.3);
   box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4);
 }

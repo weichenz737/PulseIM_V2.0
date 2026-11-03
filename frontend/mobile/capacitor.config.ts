@@ -5,6 +5,13 @@ const config: CapacitorConfig = {
   appName: '脉冲',
   webDir: 'dist',
   backgroundColor: '#121317',
+  // 默认使用 APK 内置页面，断网也可启动。仅显式开启实时调试时加载 Vite。
+  ...(process.env.PULSE_DEV_SERVER_URL ? {
+    server: {
+      url: process.env.PULSE_DEV_SERVER_URL,
+      cleartext: true,
+    },
+  } : {}),
   plugins: {
     CapacitorHttp: {
       enabled: true,

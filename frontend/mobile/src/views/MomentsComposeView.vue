@@ -788,7 +788,7 @@ async function handlePublish() {
         <div class="option-item" @click="openLocation">
           <div class="option-left">
             <div class="option-icon-wrap">
-              <span class="material-symbols-outlined">location_on</span>
+              <span class="material-symbols-outlined">place</span>
             </div>
             <div>
               <p class="option-title">所在位置</p>
@@ -979,7 +979,7 @@ async function handlePublish() {
             class="mention-item location-item"
             @click="selectLocation(item)"
           >
-            <span class="material-symbols-outlined location-pin">location_on</span>
+            <span class="material-symbols-outlined location-pin">place</span>
             <span class="location-text">
               <strong>{{ item.title || '所在位置' }}</strong>
               <small>{{ item.address || '暂无详细地址' }}</small>

@@ -30,6 +30,18 @@ import { initializeServerOrigin } from '@/config/endpoints'
 import 'vant/lib/index.css'
 import './styles/global.css'
 
+// Material Symbols uses English ligatures such as "home" and "search".
+// Reveal icon slots only after the bundled font can render those ligatures.
+if (document.fonts) {
+  void document.fonts.load("24px 'Material Symbols Outlined'", 'home')
+    .then((faces) => {
+      if (faces.length) document.documentElement.classList.add('material-symbols-ready')
+    })
+    .catch(() => undefined)
+} else {
+  document.documentElement.classList.add('material-symbols-ready')
+}
+
 document.documentElement.classList.toggle('capacitor-native', isNativeApp)
 
 // CapacitorHttp's patched fetch returns binary responses as text by default.
@@ -200,22 +212,31 @@ function syncSafeAreaTopVar(force = false) {
 }
 
 syncSafeAreaTopVar(true)
-if (isNativeApp) {
+function syncNativeSafeAreaInsets() {
+  if (!isNativeApp || isSoftKeyboardOpen()) return
   void getNativeSafeAreaInsets()
-    .then(({ top }) => {
+    .then(({ top, bottom, left, right }) => {
       const nativeTop = Math.round(Math.max(0, Math.min(Number(top) || 0, 59)))
-      if (nativeTop <= 0) return
-      lockedSafeTopPx = nativeTop
-      document.documentElement.style.setProperty('--pulse-safe-top', `${nativeTop}px`)
+      if (nativeTop > 0) {
+        lockedSafeTopPx = nativeTop
+        document.documentElement.style.setProperty('--pulse-safe-top', `${nativeTop}px`)
+      }
+      document.documentElement.style.setProperty('--pulse-native-safe-bottom', `${Math.max(0, Math.round(Number(bottom) || 0))}px`)
+      document.documentElement.style.setProperty('--pulse-native-safe-left', `${Math.max(0, Math.round(Number(left) || 0))}px`)
+      document.documentElement.style.setProperty('--pulse-native-safe-right', `${Math.max(0, Math.round(Number(right) || 0))}px`)
     })
     .catch(() => {
       // Keep the CSS environment value when the optional native probe fails.
     })
 }
+syncNativeSafeAreaInsets()
 window.addEventListener('resize', () => syncSafeAreaTopVar(false))
 window.addEventListener('orientationchange', () => {
   lockedSafeTopPx = null
-  window.setTimeout(() => syncSafeAreaTopVar(true), 280)
+  window.setTimeout(() => {
+    syncSafeAreaTopVar(true)
+    syncNativeSafeAreaInsets()
+  }, 280)
 })
 // 不在 visualViewport.resize 上重算安全区（键盘开合会误伤全局顶栏）
 

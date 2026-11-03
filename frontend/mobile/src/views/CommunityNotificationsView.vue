@@ -297,7 +297,7 @@ function goBack(): void {
         </div>
 
         <div v-else-if="filteredNotifications.length === 0" class="page-state empty-state">
-          <span class="material-symbols-outlined">notifications_none</span>
+          <span class="material-symbols-outlined">notifications</span>
           <strong>{{ notifications.length ? '这个分类暂时没有消息' : '暂无圈子消息' }}</strong>
           <p>有人与你互动或圈子身份变化时，会第一时间通知你</p>
         </div>

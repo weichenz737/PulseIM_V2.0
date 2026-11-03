@@ -223,7 +223,7 @@ async function submitFeedback() {
           <button type="button" class="retry-btn" @click="loadQuestions">重新加载</button>
         </div>
         <div v-else-if="questions.length === 0" class="state">
-          <span class="material-symbols-outlined state-icon">help_outline</span>
+          <span class="material-symbols-outlined state-icon">help</span>
           <span>暂无相关问题</span>
         </div>
         <div v-else-if="filteredQuestions.length === 0" class="state search-empty">

@@ -319,7 +319,7 @@ async function onMore() {
         </button>
       </div>
       <p v-if="item.locationName" class="moment-location">
-        <span class="material-symbols-outlined">location_on</span>
+        <span class="material-symbols-outlined">place</span>
         {{ item.locationName }}
       </p>
 

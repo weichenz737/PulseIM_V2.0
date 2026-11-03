@@ -837,7 +837,7 @@ async function openMediaPreview(item: MomentItem, index: number) {
                   class="feed-location"
                   @click="openMomentLocation(item)"
                 >
-                  <span class="material-symbols-outlined">location_on</span>
+                  <span class="material-symbols-outlined">place</span>
                   <span>{{ item.locationName }}</span>
                   <span class="material-symbols-outlined location-chevron">chevron_right</span>
                 </button>

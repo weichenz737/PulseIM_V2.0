@@ -11,8 +11,29 @@ function normalizeOrigin(value: string): string {
   return value.trim().replace(/\/+$/, '')
 }
 
-const DEFAULT_BOOTSTRAP_ORIGIN = 'https://110.42.238.238:9001'
+// Live reload 跟随页面地址，兼容局域网和 USB 转发两种本地调试方式。
+const LOCAL_NATIVE_ORIGIN = typeof window !== 'undefined' && /^https?:$/.test(window.location.protocol)
+  && !['localhost', ''].includes(window.location.hostname)
+  ? window.location.origin
+  : 'http://127.0.0.1:5173'
 const SERVER_ORIGIN_CACHE_KEY = 'pulse_server_origin'
+const CUSTOM_SERVER_KEY = 'pulse_custom_server_origin'
+function savedOrigin(): string {
+  try { return localStorage.getItem(CUSTOM_SERVER_KEY) || '' } catch { return '' }
+}
+
+export function setServerOrigin(value: string): string {
+  let url: URL
+  try { url = new URL(value.trim()) } catch { throw new Error('请输入完整的服务器地址，例如 http://192.168.1.97:5173') }
+  if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password || url.search || url.hash || (url.pathname !== '/' && url.pathname !== '')) {
+    throw new Error('服务器地址仅支持 http 或 https，请勿填写账号、接口路径或参数')
+  }
+  const origin = url.origin
+  localStorage.setItem(CUSTOM_SERVER_KEY, origin)
+  SERVER_ORIGIN = origin
+  API_BASE_URL = `${origin}/api`
+  return origin
+}
 const configuredOrigin = normalizeOrigin(import.meta.env.VITE_SERVER_ORIGIN || '')
 const configuredDeployPrefix = normalizeOrigin(import.meta.env.VITE_DEPLOY_PREFIX || '')
 const browserDeployOrigin = configuredDeployPrefix && typeof window !== 'undefined'
@@ -23,96 +44,27 @@ const browserDeployOrigin = configuredDeployPrefix && typeof window !== 'undefin
  * Web continues to use the same-origin nginx proxy. The packaged app cannot use
  * relative /api and /ws URLs because its origin is Capacitor's local web server.
  */
-export let SERVER_ORIGIN = configuredOrigin ||
-  (isNativeRuntime() ? 'https://110.42.238.238:9001' : browserDeployOrigin)
+export let SERVER_ORIGIN = savedOrigin() || configuredOrigin ||
+  (isNativeRuntime() ? LOCAL_NATIVE_ORIGIN : browserDeployOrigin)
 
 export let API_BASE_URL = SERVER_ORIGIN ? `${SERVER_ORIGIN}/api` : '/api'
 
-let discoveryPromise: Promise<string> | null = null
-let discoveryCompleted = false
-
-function validOrigin(value: unknown): string {
-  const normalized = normalizeOrigin(String(value || ''))
-  if (!normalized) return ''
-  try {
-    const url = new URL(normalized)
-    if (!['http:', 'https:'].includes(url.protocol)) return ''
-    if (!url.hostname || url.username || url.password || url.search || url.hash) return ''
-    return normalized
-  } catch {
-    return ''
-  }
-}
-
-function readCachedOrigin(): string {
-  try {
-    return validOrigin(localStorage.getItem(SERVER_ORIGIN_CACHE_KEY))
-  } catch {
-    return ''
-  }
-}
-
-function cacheOrigin(origin: string): void {
-  try {
-    localStorage.setItem(SERVER_ORIGIN_CACHE_KEY, origin)
-  } catch {
-    // Caching is best effort; the bootstrap address remains available.
-  }
-}
-
-function applyServerOrigin(origin: string): string {
-  const next = validOrigin(origin)
-  if (!next) return SERVER_ORIGIN
-  SERVER_ORIGIN = next
-  API_BASE_URL = `${next}/api`
-  return next
-}
-
 /**
- * Packaged clients start from the old server as a bootstrap address, then
- * follow the public migration switch. Browser builds stay same-origin so the
- * /pulseim deployment prefix is not lost.
+ * 优先使用用户明确保存的地址；未设置时 Native 使用本地调试地址。
+ * 旧版本自动写入的服务器缓存不作为配置来源。
  */
-export function initializeServerOrigin(force = false): Promise<string> {
-  if (!isNativeRuntime()) return Promise.resolve(SERVER_ORIGIN)
-  if (discoveryPromise) return discoveryPromise
-  if (discoveryCompleted && !force) return Promise.resolve(SERVER_ORIGIN)
-
-  discoveryPromise = (async () => {
-    const candidates = [readCachedOrigin(), configuredOrigin, DEFAULT_BOOTSTRAP_ORIGIN]
-      .map(validOrigin)
-      .filter((value, index, values) => value && values.indexOf(value) === index)
-    for (const candidate of candidates) {
-      const controller = new AbortController()
-      const timeout = window.setTimeout(() => controller.abort(), 2500)
-      try {
-        const response = await fetch(`${candidate}/api/v1/config/server-origin`, {
-          cache: 'no-store',
-          credentials: 'omit',
-          signal: controller.signal,
-        })
-        if (!response.ok) continue
-        const body = await response.json() as {
-          code?: number
-          data?: { serverOrigin?: unknown }
-        }
-        if (typeof body.code === 'number' && body.code !== 0) continue
-        const discovered = validOrigin(body.data?.serverOrigin)
-        if (!discovered) continue
-        cacheOrigin(discovered)
-        return applyServerOrigin(discovered)
-      } catch {
-        // Try the next bootstrap candidate. The last working origin remains.
-      } finally {
-        window.clearTimeout(timeout)
-      }
+export function initializeServerOrigin(_force = false): Promise<string> {
+  if (isNativeRuntime()) {
+    SERVER_ORIGIN = savedOrigin() || configuredOrigin || LOCAL_NATIVE_ORIGIN
+    API_BASE_URL = `${SERVER_ORIGIN}/api`
+    try {
+      // 兼容仍读取旧缓存键的代码。
+      localStorage.setItem(SERVER_ORIGIN_CACHE_KEY, SERVER_ORIGIN)
+    } catch {
+      // 本地存储不可用时仍使用内存中的本地地址。
     }
-    return SERVER_ORIGIN
-  })().finally(() => {
-    discoveryCompleted = true
-    discoveryPromise = null
-  })
-  return discoveryPromise
+  }
+  return Promise.resolve(SERVER_ORIGIN)
 }
 
 export function websocketUrl(): string {

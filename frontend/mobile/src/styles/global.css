@@ -35,6 +35,9 @@
   --pulse-danger: #ff5447;
   --pulse-radius: 12px;
   --pulse-radius-lg: 16px;
+  --pulse-control-radius: 12px;
+  --pulse-control-height: 44px;
+  --pulse-icon-control-size: 40px;
   /* 聊天内容字号（通用设置可调）；界面标题/导航等用各自固定 px，保持层级 */
   --chat-font-size: 15px;
   --pulse-content-font-size: clamp(13px, var(--chat-font-size), 20px);
@@ -44,9 +47,9 @@
   --chat-bubble-pad-x: 14px;
   /* 顶栏安全区：仅保留安全区 + 少量间距，避免部分机型顶部空一大截 */
   --pulse-safe-top: env(safe-area-inset-top, 0px);
-  --pulse-safe-right: env(safe-area-inset-right, 0px);
-  --pulse-safe-bottom: env(safe-area-inset-bottom, 0px);
-  --pulse-safe-left: env(safe-area-inset-left, 0px);
+  --pulse-safe-right: var(--pulse-native-safe-right, env(safe-area-inset-right, 0px));
+  --pulse-safe-bottom: var(--pulse-native-safe-bottom, env(safe-area-inset-bottom, 0px));
+  --pulse-safe-left: var(--pulse-native-safe-left, env(safe-area-inset-left, 0px));
   --pulse-keyboard-height: 0px;
   --pulse-keyboard-offset: 0px;
   --pulse-keyboard-base-height: 0px;
@@ -202,17 +205,6 @@ a {
   --pulse-safe-bottom: 0px;
 }
 
-/* The lock screen owns the whole viewport. Keep the app tab bar from moving
-   with the password keyboard underneath the modal. */
-:root.lock-screen-open .pulse-tabbar,
-:root.lock-screen-open .pulse-tabbar-backdrop {
-  display: none !important;
-}
-
-:root.lock-screen-open .app-root {
-  overflow: hidden !important;
-}
-
 /* Browser visualViewport handling can resize the shell while the IME is
    open. Android native uses the platform's adjustResize bounds directly. */
 :root.pulse-keyboard-open body,
@@ -232,17 +224,6 @@ a {
   height: var(--pulse-viewport-height, 100%) !important;
   max-height: var(--pulse-viewport-height, 100%) !important;
   min-height: 100% !important;
-}
-
-/* Bottom sheets must sit above the IME even on WebViews that keep the fixed
-   containing block at the full, pre-keyboard height. Their content remains
-   scrollable so the last password field and save button can be reached. */
-:root.pulse-keyboard-open .lock-password-popup,
-:root.native-keyboard-open .lock-password-popup {
-  bottom: var(--pulse-keyboard-offset, 0px) !important;
-  max-height: calc(var(--pulse-viewport-height, 100dvh) - 12px) !important;
-  overflow-y: auto !important;
-  overscroll-behavior: contain;
 }
 
 /* 隐藏纵向滚动条，保留触摸/滚轮滚动 */
@@ -270,6 +251,29 @@ a {
 input,
 button {
   font-family: inherit;
+}
+
+button {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+button:focus-visible {
+  outline: 2px solid var(--pulse-primary);
+  outline-offset: 2px;
+}
+
+button:disabled {
+  cursor: default;
+}
+
+/* Header actions share one tap target and icon treatment across routes. */
+:is(.page-header, .header, .chat-header, .top-bar) :is(.icon-btn, .back-btn, .desktop-session-btn) {
+  width: var(--pulse-icon-control-size);
+  height: var(--pulse-icon-control-size);
+  min-width: var(--pulse-icon-control-size);
+  min-height: var(--pulse-icon-control-size);
+  border-radius: 50%;
 }
 
 .van-toast {
@@ -1503,6 +1507,19 @@ button {
   scrollbar-width: none;
 }
 
+@font-face {
+  font-family: 'Material Symbols Outlined';
+  src: url('../assets/fonts/material-symbols-outlined.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 100 700;
+  font-display: block;
+}
+
+/* Keep the icon slot stable while the bundled font is being decoded. */
+html:not(.material-symbols-ready) .material-symbols-outlined {
+  visibility: hidden !important;
+}
+
 .material-symbols-outlined {
   font-family: 'Material Symbols Outlined';
   font-weight: normal;
@@ -1512,9 +1529,13 @@ button {
   letter-spacing: normal;
   text-transform: none;
   display: inline-block;
+  inline-size: 1em;
+  block-size: 1em;
+  overflow: hidden;
   white-space: nowrap;
   word-wrap: normal;
   direction: ltr;
+  font-feature-settings: 'liga';
   font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
   -webkit-font-smoothing: antialiased;
 }

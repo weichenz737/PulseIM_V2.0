@@ -206,7 +206,7 @@ function locationMapUrl(item: ForwardCardItem) {
             </span>
           </div>
           <div v-else-if="item.msgType === 6 && locationOf(item)" class="location-card">
-            <span class="material-symbols-outlined location-icon">location_on</span>
+            <span class="material-symbols-outlined location-icon">place</span>
             <span class="location-meta">
               <strong>{{ locationOf(item)!.name || '位置信息' }}</strong>
               <small>{{ locationOf(item)!.address || '暂无详细地址' }}</small>

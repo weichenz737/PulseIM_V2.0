@@ -408,7 +408,7 @@ function suppressMomentClick(event: MouseEvent) {
             </button>
           </div>
           <p v-if="item.locationName" class="feed-location">
-            <span class="material-symbols-outlined">location_on</span>
+            <span class="material-symbols-outlined">place</span>
             {{ item.locationName }}
           </p>
           <div class="feed-actions">

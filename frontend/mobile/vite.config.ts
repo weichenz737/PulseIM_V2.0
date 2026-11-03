@@ -1,6 +1,5 @@
 import { defineConfig, loadEnv, type Plugin } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import basicSsl from '@vitejs/plugin-basic-ssl'
 import { fileURLToPath, URL } from 'node:url'
 
 function enforceNativeApiBoundary(): Plugin {
@@ -34,7 +33,7 @@ export default defineConfig(({ mode }) => {
   // non-existent paths such as /moments/assets/*.js. Capacitor also serves
   // the packaged web directory from its own origin root.
   base: deployPrefix ? `${deployPrefix}/` : '/',
-  plugins: [enforceNativeApiBoundary(), vue(), basicSsl()],
+  plugins: [enforceNativeApiBoundary(), vue()],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
@@ -61,6 +60,7 @@ export default defineConfig(({ mode }) => {
   server: {
     host: '0.0.0.0',
     port: 5173,
+    strictPort: true,
     proxy: {
       '/api': {
         target: 'http://localhost:8080',
@@ -68,6 +68,10 @@ export default defineConfig(({ mode }) => {
         // 保证视频 Range 请求不被缓冲改写
         configure: (proxy) => {
           proxy.on('proxyReq', (proxyReq, req) => {
+            // Keep the device-facing origin when Android accesses Vite via adb reverse.
+            // The server-origin discovery endpoint must point back to this proxy.
+            if (req.headers.host) proxyReq.setHeader('X-Forwarded-Host', req.headers.host)
+            proxyReq.setHeader('X-Forwarded-Proto', 'http')
             const range = req.headers['range']
             if (range) proxyReq.setHeader('Range', range)
           })

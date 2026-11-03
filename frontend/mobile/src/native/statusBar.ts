@@ -9,7 +9,7 @@ interface PulseSystemBarPlugin {
     color: string
     darkIcons: boolean
   }>
-  getInsets(): Promise<{ top: number }>
+  getInsets(): Promise<{ top: number; bottom: number; left: number; right: number }>
 }
 
 const PulseSystemBar = registerPlugin<PulseSystemBarPlugin>('PulseSystemBar')
@@ -50,6 +50,6 @@ export function applyNativeStatusBar(
 }
 
 export function getNativeSafeAreaInsets() {
-  if (!isAndroid) return Promise.resolve({ top: 0 })
+  if (!isAndroid) return Promise.resolve({ top: 0, bottom: 0, left: 0, right: 0 })
   return PulseSystemBar.getInsets()
 }

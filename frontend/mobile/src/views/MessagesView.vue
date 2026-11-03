@@ -28,13 +28,10 @@ import { friendTagStyle } from '@/utils/friendTagColor'
 import { warmChatMessages } from '@/stores/chatWarmCache'
 import { setCachedAvatar } from '@/stores/avatarCache'
 import { chatDraftRevision, getChatDraft } from '@/stores/chatDraft'
-import { useLockScreenStore } from '@/stores/lockScreen'
-import { isNativeApp } from '@/native'
 import UserAvatar from '@/components/UserAvatar.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
-const lockScreen = useLockScreenStore()
 const inbox = useConversationInboxStore()
 const conversations = ref<ConversationItem[]>([])
 const loading = ref(true)
@@ -94,15 +91,6 @@ async function loadDesktopSessions(options: { showLoading?: boolean } = {}) {
 function openDesktopSessions() {
   showDesktopSessions.value = true
   void loadDesktopSessions({ showLoading: !desktopSessionsLoaded.value })
-}
-
-function handleLockScreen() {
-  if (!isNativeApp) return
-  if (lockScreen.hasPassword) {
-    lockScreen.lock()
-    return
-  }
-  void router.push({ path: '/settings/security', query: { lockScreen: '1' } })
 }
 
 async function revokeDesktopSession(device: DeviceSession) {
@@ -938,15 +926,6 @@ function goSearch() {
           >
             <span class="material-symbols-outlined">computer</span>
           </button>
-          <button
-            v-if="isNativeApp"
-            type="button"
-            class="lock-screen-btn"
-            aria-label="锁定当前设备"
-            @click.stop="handleLockScreen"
-          >
-            <span class="material-symbols-outlined">lock</span>
-          </button>
         </div>
       </div>
       <div class="top-row">
@@ -1143,7 +1122,7 @@ function goSearch() {
           <van-loading size="24px" vertical>正在查询登录状态…</van-loading>
         </div>
         <div v-else-if="desktopSessionsError && desktopSessions.length === 0" class="desktop-sessions-state">
-          <span class="material-symbols-outlined">error_outline</span>
+          <span class="material-symbols-outlined">error</span>
           <p>{{ desktopSessionsError }}</p>
           <button type="button" class="desktop-session-retry" @click="loadDesktopSessions({ showLoading: true })">重新查询</button>
         </div>
@@ -1232,8 +1211,8 @@ function goSearch() {
 
 .desktop-session-btn {
   position: relative;
-  width: 36px;
-  height: 36px;
+  width: var(--pulse-icon-control-size);
+  height: var(--pulse-icon-control-size);
   margin-right: 0;
   padding: 0;
   border: 0;
@@ -1254,32 +1233,6 @@ function goSearch() {
 
 .desktop-session-btn .material-symbols-outlined {
   font-size: 24px;
-}
-
-.lock-screen-btn {
-  position: relative;
-  width: 36px;
-  height: 36px;
-  margin-right: 0;
-  padding: 0;
-  border: 0;
-  border-radius: 50%;
-  background: transparent;
-  color: var(--pulse-text-secondary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.lock-screen-btn:active {
-  background: var(--pulse-pressed);
-  transform: scale(0.95);
-}
-
-.lock-screen-btn .material-symbols-outlined {
-  font-size: 22px;
 }
 
 .top-row {
@@ -1958,10 +1911,6 @@ function goSearch() {
 }
 
 :root[data-theme='light'] .top-bar .desktop-session-btn {
-  color: #14243a;
-}
-
-:root[data-theme='light'] .top-bar .lock-screen-btn {
   color: #14243a;
 }
 

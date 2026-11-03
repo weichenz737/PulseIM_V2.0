@@ -235,6 +235,9 @@ export async function uploadChatFile(
 
 export interface FileSendConfig {
   maxSizeMb: number
+  imageMaxSizeMb: number
+  videoMaxSizeMb: number
+  fileMaxSizeMb: number
   allowedExtensions: string[]
 }
 
@@ -247,6 +250,9 @@ export async function fetchFileSendConfig(force = false): Promise<FileSendConfig
     const { data } = await http.get<ApiResult<FileSendConfig>>('/v1/files/config')
     const config = {
       maxSizeMb: Number(data.data?.maxSizeMb || 100),
+      imageMaxSizeMb: Number(data.data?.imageMaxSizeMb || data.data?.maxSizeMb || 100),
+      videoMaxSizeMb: Number(data.data?.videoMaxSizeMb || data.data?.maxSizeMb || 100),
+      fileMaxSizeMb: Number(data.data?.fileMaxSizeMb || data.data?.maxSizeMb || 100),
       allowedExtensions: Array.isArray(data.data?.allowedExtensions)
         ? data.data.allowedExtensions.map((item) => String(item).toLowerCase())
         : [],
@@ -255,7 +261,8 @@ export async function fetchFileSendConfig(force = false): Promise<FileSendConfig
     return config
   } catch {
     if (cachedFileSendConfig) return cachedFileSendConfig
-    return { maxSizeMb: 100, allowedExtensions: [] }
+    return { maxSizeMb: 100, imageMaxSizeMb: 100, videoMaxSizeMb: 100,
+      fileMaxSizeMb: 100, allowedExtensions: [] }
   }
 }
 
@@ -272,15 +279,20 @@ export async function validateClientFileSend(
   file: File,
   config?: FileSendConfig,
 ): Promise<string> {
-  const cfg = config || (await fetchFileSendConfig())
-  const maxBytes = Number(cfg.maxSizeMb || 100) * 1024 * 1024
+  const cfg = config || (await fetchFileSendConfig(true))
+  const contentType = normalizeUploadContentType(file)
+  const isImage = contentType.startsWith('image/')
+  const isVideo = contentType.startsWith('video/')
+  const maxSizeMb = isImage ? cfg.imageMaxSizeMb : isVideo ? cfg.videoMaxSizeMb : cfg.fileMaxSizeMb
+  const label = isImage ? '图片' : isVideo ? '视频' : '文件'
+  const maxBytes = Number(maxSizeMb || cfg.maxSizeMb || 100) * 1024 * 1024
   if (file.size > maxBytes) {
-    return `文件不能超过 ${cfg.maxSizeMb}MB`
+    return `${label}不能超过 ${maxSizeMb}MB`
   }
   const allowed = cfg.allowedExtensions || []
   if (!allowed.length) return ''
   const ext = fileExtensionOf(file.name)
-  if (ext && allowed.includes(ext)) return ''
+  if (ext) return allowed.includes(ext) ? '' : `仅支持发送 ${allowed.join('、')} 类型的文件`
   const subtype = normalizeUploadContentType(file).split('/')[1]?.split(';')[0]?.trim().toLowerCase()
   if (subtype && allowed.includes(subtype === 'jpeg' ? 'jpg' : subtype)) return ''
   return `仅支持发送 ${allowed.join('、')} 类型的文件`

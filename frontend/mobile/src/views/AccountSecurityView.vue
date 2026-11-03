@@ -1,8 +1,8 @@
 <script setup lang="ts">
 defineOptions({ name: 'AccountSecurityView' })
-import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { showConfirmDialog, showToast } from 'vant'
-import { useRoute, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 import {
   deleteAccount,
   fetchAccountSecurity,
@@ -16,14 +16,10 @@ import {
 import { fetchWallet } from '@/api/wallet'
 import { fetchSystemText } from '@/api/systemText'
 import { useUserStore } from '@/stores/user'
-import { useLockScreenStore } from '@/stores/lockScreen'
-import { isNativeApp } from '@/native'
 import { smartBack } from '@/utils/navBack'
 
-const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
-const lockScreen = useLockScreenStore()
 const phone = ref('')
 const loading = ref(false)
 const securityCodeEnabled = ref(false)
@@ -42,16 +38,6 @@ const deletionAgreed = ref(false)
 const deletionAgreement = ref({ title: '账号注销协议', content: '' })
 const deletionBalance = ref(0)
 const deletionError = ref('')
-const lockPasswordVisible = ref(false)
-const lockPassword = ref('')
-const lockPasswordConfirm = ref('')
-const lockPasswordHint = ref('')
-const lockPasswordBusy = ref(false)
-const lockPasswordError = ref('')
-const lockPasswordContent = ref<HTMLElement | null>(null)
-
-const lockPasswordConfigured = computed(() => lockScreen.hasPassword)
-
 const maskedPhone = computed(() => {
   if (!/^1\d{10}$/.test(phone.value)) return phone.value || '未绑定'
   return `${phone.value.slice(0, 3)}****${phone.value.slice(-4)}`
@@ -113,99 +99,10 @@ const securityCodeDisplay = computed(() => {
   return securityCodeVisible.value ? securityCode.value : '••••••'
 })
 
-function maybeOpenLockPasswordSettings() {
-  if (isNativeApp && route.query.lockScreen === '1') {
-    void nextTick(() => {
-      if (!lockPasswordConfigured.value) openLockPasswordSettings()
-    })
-  }
-}
-
 onMounted(() => {
   void loadAccount()
   void loadDevices()
-  maybeOpenLockPasswordSettings()
 })
-
-watch(() => route.query.lockScreen, () => {
-  maybeOpenLockPasswordSettings()
-})
-
-function openLockPasswordSettings() {
-  lockPassword.value = ''
-  lockPasswordConfirm.value = ''
-  lockPasswordHint.value = lockScreen.passwordHint || ''
-  lockPasswordError.value = ''
-  lockPasswordVisible.value = true
-  void nextTick(() => {
-    const input = lockPasswordContent.value?.querySelector<HTMLInputElement>('input')
-    input?.focus({ preventScroll: true })
-    keepLockPasswordFieldVisible(input ?? null)
-  })
-}
-
-function keepLockPasswordFieldVisible(target: HTMLElement | null) {
-  if (!target) return
-  window.setTimeout(() => {
-    target.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' })
-  }, 180)
-}
-
-function keepLockPasswordFieldVisibleFromEvent(event: FocusEvent) {
-  keepLockPasswordFieldVisible(event.target instanceof HTMLElement ? event.target : null)
-}
-
-async function saveLockPassword() {
-  if (lockPasswordBusy.value) return
-  const password = lockPassword.value.trim()
-  const confirm = lockPasswordConfirm.value.trim()
-  if (password.length < 4 || password.length > 64) {
-    lockPasswordError.value = '锁屏密码需为 4-64 位'
-    return
-  }
-  if (password !== confirm) {
-    lockPasswordError.value = '两次输入的密码不一致'
-    return
-  }
-  lockPasswordBusy.value = true
-  lockPasswordError.value = ''
-  try {
-    await lockScreen.setPassword(password, lockPasswordHint.value)
-    lockPasswordVisible.value = false
-    showToast('锁屏密码已设置')
-  } catch (error) {
-    lockPasswordError.value = error instanceof Error ? error.message : '锁屏密码设置失败'
-  } finally {
-    lockPasswordBusy.value = false
-  }
-}
-
-async function disableLockPassword() {
-  if (!lockPasswordConfigured.value || lockPasswordBusy.value) return
-  try {
-    await showConfirmDialog({
-      title: '关闭锁屏密码',
-      message: '关闭后，当前设备将不再需要锁屏密码。确定继续吗？',
-      confirmButtonText: '关闭密码',
-      confirmButtonColor: '#ee0a24',
-      cancelButtonText: '暂不关闭',
-    })
-  } catch {
-    return
-  }
-  lockPasswordBusy.value = true
-  lockPasswordError.value = ''
-  try {
-    lockScreen.clearPassword()
-    lockPasswordVisible.value = false
-    showToast('锁屏密码已关闭')
-  } catch (error) {
-    lockPasswordError.value = error instanceof Error ? error.message : '锁屏密码关闭失败'
-  } finally {
-    lockPasswordBusy.value = false
-  }
-}
-
 async function loadAccount() {
   loading.value = true
   accountError.value = ''
@@ -422,7 +319,7 @@ async function continueAccountDeletion() {
         <span class="security-badge" :class="{ enabled: securityCodeEnabled }">{{ securityStatus }}</span>
       </section>
       <section class="phone-card">
-        <span class="material-symbols-outlined">smartphone</span>
+        <span class="material-symbols-outlined">mobile</span>
         <div>
           <div class="label">当前绑定手机号</div>
           <div class="phone">{{ loading ? '加载中...' : maskedPhone }}</div>
@@ -434,7 +331,7 @@ async function continueAccountDeletion() {
       </div>
       <section class="menu">
         <button type="button" aria-label="修改手机号" @click="router.push('/settings/security/phone')">
-          <span class="material-symbols-outlined">phone_iphone</span>
+          <span class="material-symbols-outlined">mobile</span>
           <span>修改手机号</span>
           <span class="material-symbols-outlined arrow">chevron_right</span>
         </button>
@@ -461,7 +358,7 @@ async function continueAccountDeletion() {
         <div v-else class="device-list">
           <div v-for="device in displayDevices" :key="device.deviceKey" class="device-item">
             <div class="device-info">
-              <span class="device-icon material-symbols-outlined">{{ ['windows', 'windows_web'].includes(String(device.platform || '').toLowerCase()) ? (device.platform === 'windows_web' ? 'language' : 'grid_view') : device.platform === 'web' ? 'language' : 'smartphone' }}</span>
+              <span class="device-icon material-symbols-outlined">{{ ['windows', 'windows_web'].includes(String(device.platform || '').toLowerCase()) ? (device.platform === 'windows_web' ? 'language' : 'grid_view') : device.platform === 'web' ? 'language' : 'mobile' }}</span>
               <div class="device-copy"><strong>{{ deviceLabel(device) }}<em v-if="device.current">当前设备</em></strong><small>{{ deviceLoginTime(device.loginAt) }}<span v-if="device.trusted"> · 已验证</span></small></div>
             </div>
             <button type="button" class="device-more" :aria-label="device.current ? '当前设备' : `退出${deviceLabel(device)}`" @click="handleDevice(device)"><span class="material-symbols-outlined">more_horiz</span></button>
@@ -495,18 +392,6 @@ async function continueAccountDeletion() {
           <p class="security-code-tip">更新后，其他设备需要使用新的安全码重新验证。</p>
         </div>
       </section>
-      <section v-if="isNativeApp" class="lock-screen-card">
-        <div class="lock-screen-card-copy">
-          <strong>锁屏密码</strong>
-          <p>{{ lockPasswordConfigured ? '已设置锁屏密码，点击首页锁定按钮即可锁定当前设备。退出登录不会删除设置；卸载重装后本机锁屏密码会清除，需要重新设置。' : '设置后可在首页快速锁定当前设备，解锁时需要输入密码。锁屏密码仅保存在本机。' }}</p>
-        </div>
-        <div class="lock-screen-actions">
-          <button type="button" @click="openLockPasswordSettings">
-            {{ lockPasswordConfigured ? '修改密码' : '设置密码' }}
-          </button>
-          <button v-if="lockPasswordConfigured" type="button" class="danger" @click="disableLockPassword">关闭密码</button>
-        </div>
-      </section>
       <section class="account-deletion-card">
         <div>
           <strong>注销账号</strong>
@@ -530,19 +415,6 @@ async function continueAccountDeletion() {
           <span>我已阅读并同意《{{ deletionAgreement.title }}》</span>
         </label>
         <button type="button" class="deletion-continue" @click="continueAccountDeletion">同意并继续</button>
-      </div>
-    </van-popup>
-    <van-popup v-model:show="lockPasswordVisible" position="bottom" round closeable teleport="body" class="lock-password-popup">
-      <div ref="lockPasswordContent" class="lock-password-content">
-        <header>
-          <h2>{{ lockPasswordConfigured ? '修改锁屏密码' : '设置锁屏密码' }}</h2>
-          <p>锁屏密码仅保存在当前设备，用于保护当前登录会话。退出登录后仍保留；卸载重装软件后会清除。</p>
-        </header>
-        <label><span>锁屏密码</span><input v-model="lockPassword" type="password" autocomplete="new-password" maxlength="64" placeholder="请输入 4-64 位密码" @focus="keepLockPasswordFieldVisibleFromEvent" /></label>
-        <label><span>确认密码</span><input v-model="lockPasswordConfirm" type="password" autocomplete="new-password" maxlength="64" placeholder="请再次输入锁屏密码" @focus="keepLockPasswordFieldVisibleFromEvent" /></label>
-        <label><span>密码提示（可选）</span><input v-model="lockPasswordHint" type="text" maxlength="120" placeholder="例如：我最喜欢的颜色" @focus="keepLockPasswordFieldVisibleFromEvent" /></label>
-        <p v-if="lockPasswordError" class="lock-password-error">{{ lockPasswordError }}</p>
-        <button type="button" class="lock-password-submit" :disabled="lockPasswordBusy" @click="saveLockPassword">{{ lockPasswordBusy ? '保存中…' : '保存锁屏密码' }}</button>
       </div>
     </van-popup>
   </div>
@@ -612,25 +484,6 @@ async function continueAccountDeletion() {
 .security-code-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
 .security-code-actions button { min-height: 38px; border: 1px solid color-mix(in srgb, var(--pulse-primary) 50%, var(--pulse-divider)); border-radius: 7px; background: transparent; color: var(--pulse-primary); font-size: 13px; }
 .security-code-actions button:disabled { opacity: .5; }
-.lock-screen-card { display: flex; align-items: center; gap: 16px; margin-top: 16px; padding: 18px 16px; border-radius: 8px; background: var(--pulse-surface-container); }
-.lock-screen-card-copy { min-width: 0; flex: 1; }
-.lock-screen-card strong { font-size: 16px; }
-.lock-screen-card p { margin: 8px 0 0; color: var(--pulse-outline); font-size: 13px; line-height: 1.55; }
-.lock-screen-actions { display: flex; flex: 0 0 auto; align-items: center; gap: 8px; }
-.lock-screen-actions button { padding: 8px 12px; border: 1px solid color-mix(in srgb, var(--pulse-primary) 45%, var(--pulse-border)); border-radius: 8px; background: transparent; color: var(--pulse-primary); font-size: 13px; white-space: nowrap; }
-.lock-screen-actions button.danger { border-color: rgba(238, 10, 36, .38); color: #ee0a24; }
-.lock-password-popup { max-height: min(80vh, 720px); overflow: hidden; color: var(--pulse-text); }
-.lock-password-content { max-height: calc(100dvh - 12px); padding: 24px 18px calc(24px + env(safe-area-inset-bottom, 0px) + var(--pulse-keyboard-offset, 0px)); overflow-y: auto; overscroll-behavior: contain; background: var(--pulse-surface-high); }
-.lock-password-content header { padding-right: 26px; }
-.lock-password-content h2 { margin: 0; font-size: 20px; }
-.lock-password-content header p { margin: 8px 0 20px; color: var(--pulse-outline); font-size: 13px; line-height: 1.5; }
-.lock-password-content label { display: block; margin-top: 14px; }
-.lock-password-content label span { display: block; margin-bottom: 7px; color: var(--pulse-text-secondary); font-size: 13px; }
-.lock-password-content input { box-sizing: border-box; width: 100%; height: 44px; padding: 0 12px; border: 1px solid var(--pulse-border); border-radius: 10px; outline: none; background: var(--pulse-surface-container); color: var(--pulse-text); font: inherit; }
-.lock-password-content input:focus { border-color: var(--pulse-primary); }
-.lock-password-error { margin: 12px 0 0; color: #ee0a24; font-size: 13px; }
-.lock-password-submit { width: 100%; height: 44px; margin-top: 20px; border: 0; border-radius: 10px; background: var(--pulse-primary); color: var(--pulse-on-primary, #fff); font-size: 15px; font-weight: 600; }
-.lock-password-submit:disabled { opacity: .55; }
 .account-deletion-card { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 16px; padding: 18px 16px; border: 1px solid rgba(238, 10, 36, .18); border-radius: 8px; background: color-mix(in srgb, #ee0a24 5%, var(--pulse-surface-container)); }
 .account-deletion-card > div { min-width: 0; flex: 1 1 auto; }
 .account-deletion-card strong { color: #ee0a24; font-size: 16px; }

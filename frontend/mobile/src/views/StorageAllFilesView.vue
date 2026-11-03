@@ -293,7 +293,7 @@ onUnmounted(() => {
         <span>收藏</span>
       </button>
       <button v-if="selected.size === 1" type="button" @click="locateSelected">
-        <span class="material-symbols-outlined">location_on</span>
+        <span class="material-symbols-outlined">place</span>
         <span>定位</span>
       </button>
       <button type="button" class="danger" :disabled="!selected.size" @click="deleteSelected">

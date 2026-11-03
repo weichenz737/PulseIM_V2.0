@@ -11,8 +11,6 @@ import { useGroupCallStore } from '@/stores/groupCall'
 import MediaVideoOverlay from '@/components/MediaVideoOverlay.vue'
 import MediaActionOverlay from '@/components/MediaActionOverlay.vue'
 import FilePreviewOverlay from '@/components/FilePreviewOverlay.vue'
-import LockScreenOverlay from '@/components/LockScreenOverlay.vue'
-import { useLockScreenStore } from '@/stores/lockScreen'
 import { closeMediaVideoPreview } from '@/composables/useMediaVideoPreview'
 import { closeMediaActions } from '@/composables/useMediaActions'
 import { closeFilePreview } from '@/composables/useFilePreview'
@@ -58,7 +56,6 @@ const friendRequest = useFriendRequestStore()
 const discover = useDiscoverStore()
 const voiceCall = useVoiceCallStore()
 const groupCall = useGroupCallStore()
-const lockScreen = useLockScreenStore()
 const router = useRouter()
 let sessionEventUnsubscribe: (() => void) | null = null
 let handlingSessionEvent = false
@@ -487,7 +484,6 @@ router.afterEach(() => {
     <MediaVideoOverlay />
     <MediaActionOverlay />
     <FilePreviewOverlay />
-    <LockScreenOverlay v-if="isNativeApp && lockScreen.isLocked" />
     <Teleport to="body">
       <div v-if="availableVersion" class="forced-update-mask">
         <section class="forced-update-card" role="dialog" aria-modal="true" aria-labelledby="update-title">

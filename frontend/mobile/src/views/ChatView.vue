@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { showConfirmDialog, showToast, showLoadingToast, closeToast } from 'vant'
+import { Icon as VanIcon, showConfirmDialog, showToast, showLoadingToast, closeToast } from 'vant'
 import {
   fetchMessage,
   fetchLocatableMessage,
@@ -41,7 +41,9 @@ import {
   fetchFileMetadata,
   fileDownloadUrl,
   resolveFileUrl,
+  fetchFileSendConfig,
   validateClientFileSend,
+  type FileSendConfig,
 } from '@/api/file'
 import {
   cacheChatFile,
@@ -373,6 +375,7 @@ const viewportHeightPx = ref(0)
 const viewportTopPx = ref(0)
 const keyboardOpen = ref(false)
 const composerFocused = ref(false)
+const switchingToKeyboard = ref(false)
 const nativeKeyboardHeightPx = ref(0)
 let keyboardSyncRaf = 0
 let nativeKeyboardVisible = false
@@ -498,9 +501,11 @@ function scheduleKeyboardInsetAfterHide() {
 }
 
 function onComposerFocus() {
+  switchingToKeyboard.value = true
   composerFocused.value = true
   keyboardBackConsumed = false
   showEmojiPanel.value = false
+  showPlusSheet.value = false
   syncKeyboardInset()
   // 键盘弹起后滚到底，避免输入框被挡；不再反复改 transform
   window.setTimeout(() => {
@@ -513,13 +518,31 @@ function onComposerFocus() {
   }, 360)
 }
 
-function ensureComposerFocus(event: Event) {
+function onComposerPointerDown(event: PointerEvent) {
+  event.stopPropagation()
+  if (!showPlusSheet.value && !showEmojiPanel.value) return
+  event.preventDefault()
+  void ensureComposerFocus(event)
+}
+
+async function ensureComposerFocus(event: Event) {
   const input = event.currentTarget instanceof HTMLTextAreaElement
     ? event.currentTarget
     : composerRef.value
   if (!input || input.disabled) return
+  // Remove the dock synchronously before the IME changes the viewport bounds.
+  // A leaving Transition otherwise retains its full-height child during resize.
+  switchingToKeyboard.value = true
+  showEmojiPanel.value = false
+  showPlusSheet.value = false
+  voiceMode.value = false
+  // Let Vue remove the panel before focusing the final composer layout.
+  await nextTick()
+  if (composerRef.value !== input || input.disabled) return
   if (document.activeElement !== input) input.focus({ preventScroll: true })
-  if (isNativeApp) void nativeKeyboard.showKeyboard().catch(() => {})
+  if (isNativeApp && document.activeElement === input) {
+    void nativeKeyboard.showKeyboard().catch(() => {})
+  }
   scheduleKeyboardInset()
 }
 
@@ -704,8 +727,6 @@ function onMessageListTouchEnd() {
 
 const listRef = ref<HTMLElement | null>(null)
 const showPlusSheet = ref(false)
-const plusScroller = ref<HTMLElement | null>(null)
-const plusPage = ref(0)
 const showMediaPicker = ref(false)
 const mediaSendPickerRef = ref<{ handleBack?: () => boolean } | null>(null)
 const mediaPickerFiles = ref<File[]>([])
@@ -757,6 +778,24 @@ const showDeleteModeSheet = ref(false)
 const pendingDeleteIds = ref<string[]>([])
 const showForwardSheet = ref(false)
 const showEmojiPanel = ref(false)
+const emojiPage = ref(0)
+const emojiPages = Array.from({ length: Math.ceil(EMOJI_LIST.length / 31) }, (_, i) =>
+  EMOJI_LIST.slice(i * 31, (i + 1) * 31),
+)
+let composerSelectionStart = 0
+let composerSelectionEnd = 0
+
+function rememberComposerSelection() {
+  const input = composerRef.value
+  if (!input) return
+  composerSelectionStart = input.selectionStart
+  composerSelectionEnd = input.selectionEnd
+}
+
+function onEmojiScroll(event: Event) {
+  const el = event.currentTarget as HTMLElement
+  emojiPage.value = Math.round(el.scrollLeft / Math.max(1, el.clientWidth))
+}
 const voiceMode = ref(false)
 const recording = ref(false)
 const recordCancel = ref(false)
@@ -855,8 +894,14 @@ function hydrateCachedGroupDetail() {
 function onNativeKeyboard(event: Event) {
   const detail = (event as CustomEvent<{ visible?: boolean; keyboardHeight?: number }>).detail
   nativeKeyboardVisible = !!detail?.visible
+  if (nativeKeyboardVisible && (showPlusSheet.value || showEmojiPanel.value)) {
+    // Ignore a delayed IME-show callback from the previous input focus.
+    if (isNativeApp) void nativeKeyboard.hideKeyboard().catch(() => {})
+    return
+  }
   if (nativeKeyboardVisible) keyboardBackConsumed = false
   if (nativeKeyboardVisible) {
+    showPlusSheet.value = false
     if (!keyboardBaseHeightPx) {
       keyboardBaseHeightPx = Math.max(readRootPx('--pulse-keyboard-base-height'), currentLayoutHeight())
     }
@@ -879,8 +924,13 @@ function onNativeKeyboard(event: Event) {
 function onNativeKeyboardSettled(event: Event) {
   const detail = (event as CustomEvent<{ visible?: boolean; keyboardHeight?: number }>).detail
   nativeKeyboardVisible = !!detail?.visible
+  if (nativeKeyboardVisible && (showPlusSheet.value || showEmojiPanel.value)) {
+    if (isNativeApp) void nativeKeyboard.hideKeyboard().catch(() => {})
+    return
+  }
   if (nativeKeyboardVisible) keyboardBackConsumed = false
   if (nativeKeyboardVisible) {
+    showPlusSheet.value = false
     if (!keyboardBaseHeightPx) {
       keyboardBaseHeightPx = Math.max(readRootPx('--pulse-keyboard-base-height'), currentLayoutHeight())
     }
@@ -1121,6 +1171,45 @@ const msgActions = computed(() => {
   )
   if (canRecallMessage(msg)) actions.push({ name: '撤回' })
   return actions
+})
+
+const messageMenuPosition = ref({ left: '12px', top: '80px', width: '320px' })
+const messageMenuArrowLeft = ref('50%')
+const messageMenuBelow = ref(false)
+function messageActionIcon(name: string): string {
+  return ({
+    '复制': 'description', '复制文件名': 'description', '转发': 'share',
+    '删除': 'delete', '多选': 'certificate', '引用': 'comment',
+    '撤回': 'revoke', '编辑图片': 'edit', '保存到相册': 'photo',
+    '定位到原消息': 'location',
+  } as Record<string, string>)[name] || 'more-o'
+}
+
+watch(showMsgSheet, async (visible) => {
+  if (!visible) {
+    onMessageSheetClosed()
+    return
+  }
+  await nextTick()
+  const row = Array.from(listRef.value?.querySelectorAll<HTMLElement>('[data-msg-id]') || [])
+    .find((el) => el.dataset.msgId === activeMsg.value?.id)
+  const anchor = row?.querySelector<HTMLElement>('.bubble, .call-record') || row
+  const rect = !msgActionsFromPreview.value ? anchor?.getBoundingClientRect() : undefined
+  const width = Math.min(330, window.innerWidth - 24)
+  const height = Math.ceil(msgActions.value.length / 5) * 72 + 16
+  const viewportTop = window.visualViewport?.offsetTop || 0
+  const viewportBottom = viewportTop + (window.visualViewport?.height || window.innerHeight)
+  const center = rect ? rect.left + rect.width / 2 : window.innerWidth / 2
+  const left = Math.max(12, Math.min(window.innerWidth - width - 12, center - width / 2))
+  messageMenuBelow.value = !!rect && rect.top - height - 10 < viewportTop + 12
+  const top = rect
+    ? messageMenuBelow.value ? rect.bottom + 10 : rect.top - height - 10
+    : viewportTop + (viewportBottom - viewportTop - height) / 2
+  messageMenuPosition.value = {
+    left: `${left}px`, width: `${width}px`,
+    top: `${Math.max(viewportTop + 12, Math.min(viewportBottom - height - 12, top))}px`,
+  }
+  messageMenuArrowLeft.value = `${Math.max(18, Math.min(width - 18, center - left))}px`
 })
 
 /** 删除模式可选操作：群聊仅群主可双向删除（全员不可见） */
@@ -2459,6 +2548,9 @@ onMounted(async () => {
 
 onUnmounted(() => {
   chatViewMounted = false
+  dockScrollFollowing = false
+  if (dockScrollFrame) cancelAnimationFrame(dockScrollFrame)
+  dockScrollFrame = 0
   for (const timer of keyboardHideTimers) window.clearTimeout(timer)
   keyboardHideTimers = []
   // Keep the latest keystrokes even if navigation happens before Vue flushes
@@ -2781,6 +2873,33 @@ async function refreshLatest(full = false) {
 }
 
 let stickToBottom = true
+let dockScrollFrame = 0
+let dockScrollFollowing = false
+
+function followDockBottom() {
+  const el = listRef.value
+  if (!el) return
+  el.scrollTop = el.scrollHeight
+  stickToBottom = true
+  showJumpLatest.value = false
+}
+
+function onDockTransitionStart() {
+  if (dockScrollFrame) cancelAnimationFrame(dockScrollFrame)
+  dockScrollFollowing = true
+  const follow = () => {
+    followDockBottom()
+    if (dockScrollFollowing) dockScrollFrame = requestAnimationFrame(follow)
+  }
+  dockScrollFrame = requestAnimationFrame(follow)
+}
+
+function onDockTransitionEnd() {
+  dockScrollFollowing = false
+  if (dockScrollFrame) cancelAnimationFrame(dockScrollFrame)
+  dockScrollFrame = 0
+  void nextTick(followDockBottom)
+}
 let messageMutationObserver: MutationObserver | null = null
 let scrollSettleTimer: number | null = null
 // A locate jump and the normal "stay at bottom" compensation can be queued
@@ -2839,6 +2958,9 @@ function jumpToNextMention() {
 function onMessageListScroll() {
   const el = listRef.value
   if (!el) return
+  // An expanding dock changes clientHeight and emits scroll events itself.
+  // Do not misclassify those as the user leaving the latest message.
+  if (dockScrollFollowing) return
   const locateActive = isLocateScrollActive()
   if (locateActive) stickToBottom = false
   if (historyReady.value && el.scrollTop < 36 && historyHasMore.value && !historyLoading.value) {
@@ -3124,8 +3246,6 @@ function clearLongPress() {
 let bubbleTouchStartY = 0
 let bubbleTouchStartX = 0
 let bubbleTouchMoved = false
-const swipingMessageId = ref('')
-const swipeReplyOffset = ref(0)
 let bubblePressAt = 0
 let bubbleLongPressOpened = false
 
@@ -3146,8 +3266,6 @@ function onBubblePressStart(msg: ChatMessage, e?: TouchEvent | MouseEvent) {
     // 不能 preventDefault：否则 iOS 会吞掉后续 click，语音/图片点不开
     bubbleTouchStartY = e.touches[0]?.clientY ?? 0
     bubbleTouchStartX = e.touches[0]?.clientX ?? 0
-    swipingMessageId.value = msg.id
-    swipeReplyOffset.value = 0
     clearTextSelection()
   }
   clearLongPress()
@@ -3167,30 +3285,11 @@ function onBubblePressStart(msg: ChatMessage, e?: TouchEvent | MouseEvent) {
   }, 420)
 }
 
-function onBubblePressEnd(msg?: ChatMessage) {
+function onBubblePressEnd() {
   clearLongPress()
-  const offset = swipeReplyOffset.value
-  if (
-    msg &&
-    !msg.recalled &&
-    !multiMode.value &&
-    (isMine(msg) ? offset <= -56 : offset >= 56)
-  ) {
-    replyTarget.value = msg
-    try {
-      navigator.vibrate?.(8)
-    } catch {
-      // ignore
-    }
-    void nextTick(() => composerRef.value?.focus())
-  }
-  swipeReplyOffset.value = 0
-  window.setTimeout(() => {
-    swipingMessageId.value = ''
-  }, 180)
 }
 
-function onBubbleTouchMove(msg: ChatMessage, e: TouchEvent) {
+function onBubbleTouchMove(e: TouchEvent) {
   const x = e.touches[0]?.clientX ?? bubbleTouchStartX
   const y = e.touches[0]?.clientY ?? bubbleTouchStartY
   const dx = x - bubbleTouchStartX
@@ -3198,16 +3297,6 @@ function onBubbleTouchMove(msg: ChatMessage, e: TouchEvent) {
   if (Math.abs(dx) > 8 || Math.abs(dy) > 8) {
     bubbleTouchMoved = true
     clearLongPress()
-  }
-  // 别人发的消息：右滑快速引用；自己发的消息保持原左滑
-  if (isMine(msg)) {
-    if (dx < 0 && Math.abs(dx) > Math.abs(dy) * 1.25) {
-      e.preventDefault()
-      swipeReplyOffset.value = Math.max(-72, dx * 0.72)
-    }
-  } else if (dx > 0 && Math.abs(dx) > Math.abs(dy) * 1.25) {
-    e.preventDefault()
-    swipeReplyOffset.value = Math.min(72, dx * 0.72)
   }
 }
 
@@ -3823,29 +3912,58 @@ async function sendMessage() {
   }
 }
 
-function onPlusClick() {
+function toggleComposerPanel(panel: 'types' | 'emoji') {
   if (!canChat.value) {
     showToast(chatBlockTip.value || '无法发送消息')
     return
   }
-  showEmojiPanel.value = false
-  showPlusSheet.value = true
-  plusPage.value = 0
-  void nextTick(() => plusScroller.value?.scrollTo({ left: 0, behavior: 'auto' }))
+  const closing = panel === 'types' ? showPlusSheet.value : showEmojiPanel.value
+  switchingToKeyboard.value = false
+  rememberComposerSelection()
+  if (panel === 'emoji' && !showEmojiPanel.value) emojiPage.value = 0
+  showPlusSheet.value = !closing && panel === 'types'
+  showEmojiPanel.value = !closing && panel === 'emoji'
+  voiceMode.value = false
+  composerRef.value?.blur()
+  composerFocused.value = false
+  if (isNativeApp) void nativeKeyboard.hideKeyboard().catch(() => {})
+  scheduleKeyboardInsetAfterHide()
+  void nextTick(() => scrollToBottom(false))
+}
+
+function onPlusClick() {
+  toggleComposerPanel('types')
 }
 
 function toggleEmojiPanel() {
-  if (!canChat.value) {
-    showToast(chatBlockTip.value || '无法发送消息')
-    return
-  }
-  showPlusSheet.value = false
-  voiceMode.value = false
-  showEmojiPanel.value = !showEmojiPanel.value
+  toggleComposerPanel('emoji')
 }
 
 function insertEmoji(emoji: string) {
-  inputText.value += emoji
+  replaceComposerSelection(emoji)
+}
+
+function replaceComposerSelection(text: string, start = composerSelectionStart) {
+  inputText.value = inputText.value.slice(0, start) + text + inputText.value.slice(composerSelectionEnd)
+  composerSelectionStart = composerSelectionEnd = start + text.length
+  void nextTick(() => composerRef.value?.setSelectionRange(composerSelectionStart, composerSelectionEnd))
+}
+
+function deleteComposerCharacter() {
+  if (composerSelectionStart !== composerSelectionEnd) {
+    replaceComposerSelection('')
+    return
+  }
+  const before = inputText.value.slice(0, composerSelectionStart)
+  if (!before) return
+  // Delete a complete emoji (including variation selectors and joined sequences).
+  const intl = Intl as typeof Intl & { Segmenter?: new (locale?: string, options?: { granularity: string }) => {
+    segment(value: string): Iterable<{ index: number }>
+  } }
+  const start = intl.Segmenter
+    ? Array.from(new intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(before)).pop()!.index
+    : before.length - Array.from(before).pop()!.length
+  replaceComposerSelection('', start)
 }
 
 function toggleVoiceMode() {
@@ -4186,19 +4304,6 @@ const plusActions = computed(() => {
     !['redpacket', 'transfer', 'call', 'videocall'].includes(item.key),
   )
 })
-
-const plusPages = computed(() => {
-  const items = plusActions.value
-  const pages = []
-  for (let i = 0; i < items.length; i += 8) pages.push(items.slice(i, i + 8))
-  return pages
-})
-
-function onPlusScroll(event: Event) {
-  const el = event.currentTarget as HTMLElement
-  if (!el.clientWidth) return
-  plusPage.value = Math.max(0, Math.min(plusPages.value.length - 1, Math.round(el.scrollLeft / el.clientWidth)))
-}
 
 function startVoiceCall() {
   if (isFileTransferAssistant.value) {
@@ -4946,6 +5051,14 @@ async function sendImageFiles(files: File[], options: { fromCamera?: boolean; or
     return files.length
   }
   if (!files.length) return 0
+  const fileConfig = await fetchFileSendConfig(true)
+  for (const file of files) {
+    const error = await validateClientFileSend(file, fileConfig)
+    if (error) {
+      showToast(error)
+      return files.length
+    }
+  }
   uploading.value = true
   showLoadingToast({
     message: files.length > 1 ? `图片发送中 0/${files.length}` : '图片上传中...',
@@ -4956,7 +5069,7 @@ async function sendImageFiles(files: File[], options: { fromCamera?: boolean; or
   let failed = 0
   try {
     failed = await runMediaUploads(files, async (file) => {
-      await sendImageFile(file, { ...options, skipUi: true })
+      await sendImageFile(file, { ...options, skipUi: true, fileConfig })
     }, '图片')
   } finally {
     closeToast()
@@ -5006,10 +5119,8 @@ async function onMediaPickerSend(payload: { files: File[]; original: boolean }) 
   mediaPickerEditIndices.value = []
   const images = payload.files.filter((file) => isImageMediaFile(file))
   const videos = payload.files.filter((file) => isVideoMedia(file.type, file.name))
-  let failed = 0
-  if (images.length) failed += await sendImageFiles(images, { original: payload.original })
-  if (videos.length) failed += await sendVideoFiles(videos, { original: payload.original })
-  if (failed) showToast(failed === payload.files.length ? '媒体发送失败' : `${failed} 个媒体发送失败`)
+  if (images.length) await sendImageFiles(images, { original: payload.original })
+  if (videos.length) await sendVideoFiles(videos, { original: payload.original })
 }
 
 async function sendVideoFiles(files: File[], options: { original?: boolean } = {}): Promise<number> {
@@ -5022,6 +5133,14 @@ async function sendVideoFiles(files: File[], options: { original?: boolean } = {
     showToast('一次最多发送 3 个视频')
     files = files.slice(0, 3)
   }
+  const fileConfig = await fetchFileSendConfig(true)
+  for (const file of files) {
+    const error = await validateClientFileSend(file, fileConfig)
+    if (error) {
+      showToast(error)
+      return files.length
+    }
+  }
   uploading.value = true
   showLoadingToast({
     message: files.length > 1 ? `视频发送中 0/${files.length}` : '视频发送中...',
@@ -5032,7 +5151,7 @@ async function sendVideoFiles(files: File[], options: { original?: boolean } = {
   let failed = 0
   try {
     failed = await runMediaUploads(files, async (file) => {
-      await sendVideoFile(file, { skipUi: true, original: options.original })
+      await sendVideoFile(file, { skipUi: true, original: options.original, fileConfig })
     }, '视频')
   } finally {
     closeToast()
@@ -5086,8 +5205,14 @@ async function runMediaUploads(
 
 async function sendImageFile(
   file: File,
-  options: { fromCamera?: boolean; skipUi?: boolean; original?: boolean } = {},
+  options: { fromCamera?: boolean; skipUi?: boolean; original?: boolean; fileConfig?: FileSendConfig } = {},
 ) {
+  const fileConfigError = await validateClientFileSend(file, options.fileConfig)
+  if (fileConfigError) {
+    if (options.skipUi) throw new Error(fileConfigError)
+    showToast(fileConfigError)
+    return
+  }
   if (!options.skipUi) {
     if (!canChat.value) {
       showToast(chatBlockTip.value || '无法发送消息')
@@ -5137,7 +5262,7 @@ async function sendImageFile(
   }
 }
 
-async function sendVideoFile(file: File, options: { skipUi?: boolean; original?: boolean } = {}) {
+async function sendVideoFile(file: File, options: { skipUi?: boolean; original?: boolean; fileConfig?: FileSendConfig } = {}) {
   if (!options.skipUi && !canChat.value) {
     showToast(chatBlockTip.value || '无法发送消息')
     return
@@ -5148,10 +5273,10 @@ async function sendVideoFile(file: File, options: { skipUi?: boolean; original?:
     showToast(err.message)
     return
   }
-  if (file.size > 80 * 1024 * 1024) {
-    const err = new Error('为保证稳定发送，视频不能超过 80MB')
-    if (options.skipUi) throw err
-    showToast(err.message)
+  const fileConfigError = await validateClientFileSend(file, options.fileConfig)
+  if (fileConfigError) {
+    if (options.skipUi) throw new Error(fileConfigError)
+    showToast(fileConfigError)
     return
   }
   if (!options.skipUi) {
@@ -5353,18 +5478,14 @@ function imageUrlOf(msg: ChatMessage): string {
 function imagePreviewUrlOf(msg: ChatMessage): string {
   if (msg.msgType !== 1) return ''
   const f = parseFilePayload(msg.content)
-  return resolveFileUrl(f?.previewUrl || f?.thumbUrl || f?.url || msg.content)
-}
-
-function originalSentOf(msg: ChatMessage): boolean {
-  return parseFilePayload(msg.content)?.originalSent === true
+  // A private attachment without a rendition should still expose its
+  // explicit original action, without treating the original as a preview.
+  return resolveFileUrl(f?.previewUrl || f?.thumbUrl || (f?.fileId ? '' : f?.url || msg.content))
 }
 
 function imageOriginalUrlOf(msg: ChatMessage): string {
   if (msg.msgType !== 1) return ''
   const f = parseFilePayload(msg.content)
-  // 发送方已经明确选择原图时，接收方直接按原图打开，不再展示“查看原图”。
-  if (f?.originalSent || usesMediaOriginal(msg)) return ''
   const orig = f?.originalUrl ? resolveFileUrl(f.originalUrl) : ''
   const preview = imagePreviewUrlOf(msg)
   if (!orig || orig === preview) return ''
@@ -5636,60 +5757,10 @@ function videoThumbUrlOf(msg: ChatMessage): string {
 
 function videoOriginalUrlOf(msg: ChatMessage): string {
   const f = fileOf(msg)
-  if (f?.originalSent || usesMediaOriginal(msg)) return ''
   const orig = f?.originalUrl ? resolveFileUrl(f.originalUrl) : ''
   const preview = videoUrlOf(msg)
   if (!orig || orig === preview) return ''
   return orig
-}
-
-/** Device-local preference; cache clearing removes the matching type/file IDs. */
-const MEDIA_ORIGINAL_KEY_PREFIX = 'pulse_media_original_v2:'
-const mediaOriginalVersion = ref(0)
-
-function mediaOriginalStorageKey(): string {
-  try {
-    const raw = localStorage.getItem('pulse_user_profile')
-    const userId = raw ? JSON.parse(raw)?.userId : ''
-    return `${MEDIA_ORIGINAL_KEY_PREFIX}${encodeURIComponent(String(userId || 'anonymous'))}`
-  } catch {
-    return `${MEDIA_ORIGINAL_KEY_PREFIX}anonymous`
-  }
-}
-
-function readMediaOriginalKeys(): Set<string> {
-  try {
-    const raw = localStorage.getItem(mediaOriginalStorageKey())
-    if (!raw) return new Set()
-    const arr = JSON.parse(raw)
-    return new Set(Array.isArray(arr) ? arr.filter((v) => typeof v === 'string') : [])
-  } catch {
-    return new Set()
-  }
-}
-
-function mediaOriginalKey(msg: ChatMessage): string {
-  const payload = parseFilePayload(msg.content)
-  const kind = msg.msgType === 1 ? 'image' : isVideoMsg(msg) ? 'video' : ''
-  const id = payload?.fileId || msg.id
-  return kind && id ? `${kind}:${id}` : ''
-}
-
-function usesMediaOriginal(msg: ChatMessage | null | undefined): boolean {
-  void mediaOriginalVersion.value
-  if (!msg?.id || isBurnMessage(msg)) return false
-  const key = mediaOriginalKey(msg)
-  return !!key && readMediaOriginalKeys().has(key)
-}
-
-function rememberMediaOriginal(msg: ChatMessage): void {
-  if (!msg.id || isBurnMessage(msg)) return
-  const key = mediaOriginalKey(msg)
-  if (!key) return
-  const keys = readMediaOriginalKeys()
-  keys.add(key)
-  try { localStorage.setItem(mediaOriginalStorageKey(), JSON.stringify([...keys])) } catch { /* best effort */ }
-  mediaOriginalVersion.value += 1
 }
 
 function onChatCacheCleared(event: Event) {
@@ -5708,11 +5779,8 @@ function onChatCacheCleared(event: Event) {
     if (!matchesScope(message)) return
     delete cachedFileUrls[messageId]
   })
-  // fileCache clears the current account's v2 preference, including messages
-  // not currently paged into this ChatView. This handler only refreshes rendering.
   if (!fileId && (!kind || kind === 'all')) warmAttachments(messages.value)
   else warmAttachments(messages.value.filter((message) => matchesScope(message)))
-  mediaOriginalVersion.value += 1
 }
 
 const videoPlayerVisible = ref(false)
@@ -6085,7 +6153,7 @@ async function waitForVideoPreview(
 async function openVideoPlayer(msg: ChatMessage, forceOriginal = false) {
   if (multiMode.value) return
   if (!(await unlockBurnMedia(msg))) return
-  const wantOriginal = forceOriginal || originalSentOf(msg) || usesMediaOriginal(msg)
+  const wantOriginal = forceOriginal
   const openToken = ++videoPlayerOpenToken
   videoPlayerMsg = msg
   videoPlayerErrorAttempts = 0
@@ -6118,7 +6186,6 @@ async function openVideoPlayer(msg: ChatMessage, forceOriginal = false) {
     return
   }
   if (!(await activateVideoPlayerSource(playableMessage, loaded, openToken))) return
-  if (wantOriginal) rememberMediaOriginal(playableMessage)
 }
 
 let videoPlayerVariant: ChatCacheVariant = 'preview'
@@ -6136,7 +6203,6 @@ async function openOriginalVideo() {
     markChatCacheInUse(fileOf(msg)?.fileId || '', videoPlayerVariant, false)
     markChatCacheInUse(fileOf(msg)?.fileId || '', loaded.variant, true)
     videoPlayerVariant = loaded.variant
-    rememberMediaOriginal(msg)
     videoPlayerUrl.value = loaded.url
     videoPlayerLoading.value = false
     videoPlayerErrorAttempts = 0
@@ -6284,13 +6350,26 @@ async function openImagePreview(msg: ChatMessage, forceOriginal = false) {
   if (!(await unlockBurnMedia(msg))) return
   let loaded: { url: string; variant: ChatCacheVariant }
   try {
-    const preferOriginal = forceOriginal || originalSentOf(msg) || usesMediaOriginal(msg)
-    loaded = await loadChatMedia(msg, preferOriginal ? 'original' : 'preview')
-    // Keep inline bubbles conservative, but allow an explicit tap to open
-    // legacy files whose compressed rendition is unavailable.
-    if (!loaded.url && loaded.variant !== 'original') loaded = await loadChatMedia(msg, 'original')
+    const payload = parseFilePayload(msg.content)
+    if (!forceOriginal && payload?.fileId && !payload.previewUrl) {
+      try {
+        const metadata = await fetchFileMetadata(payload.fileId)
+        msg = { ...msg, content: JSON.stringify({ ...payload, ...metadata }) }
+        const index = messages.value.findIndex((item) => item.id === msg.id)
+        if (index >= 0) messages.value[index] = msg
+      } catch { /* retain the existing message if metadata is unavailable */ }
+    }
+    loaded = await loadChatMedia(msg, forceOriginal ? 'original' : 'preview')
+    // A missing private rendition must not silently download the large original.
+    // The bubble has a separate "查看原图" action when the user wants it.
+    if (!loaded.url && !payload?.fileId && loaded.variant !== 'original') {
+      loaded = await loadChatMedia(msg, 'original')
+    }
   } catch { showToast('图片加载失败'); return }
-  if (!loaded.url) return
+  if (!loaded.url) {
+    showToast('图片预览暂不可用，可选择查看原图')
+    return
+  }
   const list = previewableMediaMessages(msg)
   imagePreviewList.value = list
   const idx = list.findIndex((m) => m.id === msg.id)
@@ -6300,7 +6379,6 @@ async function openImagePreview(msg: ChatMessage, forceOriginal = false) {
   imagePreviewUrl.value = loaded.url
   markChatCacheInUse(fileOf(msg)?.fileId || parseFilePayload(msg.content)?.fileId || '', loaded.variant, true)
   imagePreviewVariant = loaded.variant
-  if (forceOriginal) rememberMediaOriginal(msg)
   imagePreviewVisible.value = true
   pushMediaPreviewHistory()
 }
@@ -6322,7 +6400,6 @@ async function openOriginalImage() {
     markChatCacheInUse(fileId, imagePreviewVariant, false)
     markChatCacheInUse(fileId, loaded.variant, true)
     imagePreviewVariant = loaded.variant
-    rememberMediaOriginal(msg)
     imagePreviewUrl.value = loaded.url
   } catch (error) {
     showToast(error instanceof Error ? error.message : '原图加载失败')
@@ -8134,12 +8211,10 @@ function onDeleteModeSelect(action: { name?: string }) {
                 voice: msg.msgType === 3,
                 location: msg.msgType === 6 && !!locationOf(msg),
                 business: msg.msgType === 7 || msg.msgType === 8,
-                'swipe-replying': swipingMessageId === msg.id,
               }"
-              :style="swipingMessageId === msg.id ? { transform: `translateX(${swipeReplyOffset}px)` } : undefined"
               @touchstart.stop="onBubblePressStart(msg, $event)"
-              @touchmove.stop="onBubbleTouchMove(msg, $event)"
-              @touchend.stop="onBubblePressEnd(msg)"
+              @touchmove.stop.passive="onBubbleTouchMove($event)"
+              @touchend.stop="onBubblePressEnd()"
               @touchcancel.stop="onBubblePressEnd()"
               @mousedown="!multiMode && onBubblePressStart(msg)"
               @mouseup="onBubblePressEnd()"
@@ -8148,7 +8223,6 @@ function onDeleteModeSelect(action: { name?: string }) {
               @selectstart.prevent
               @dragstart.prevent
             >
-              <span v-if="swipingMessageId === msg.id" class="swipe-reply-icon material-symbols-outlined">reply</span>
               <button
                 v-if="msg.replyToMsgId"
                 type="button"
@@ -8205,7 +8279,7 @@ function onDeleteModeSelect(action: { name?: string }) {
               >
                 <span class="live-location-card-map">
                   <i /><i /><i />
-                  <span class="material-symbols-outlined">location_on</span>
+                  <span class="material-symbols-outlined">place</span>
                 </span>
                 <span class="live-location-card-body">
                   <span class="live-location-card-copy">
@@ -8246,7 +8320,7 @@ function onDeleteModeSelect(action: { name?: string }) {
                 @click.stop="openLocation(msg)"
               >
                 <div class="location-card-map">
-                  <span class="material-symbols-outlined">location_on</span>
+                  <span class="material-symbols-outlined">place</span>
                   <i></i><i></i><i></i>
                 </div>
                 <div class="location-card-meta">
@@ -8567,8 +8641,8 @@ function onDeleteModeSelect(action: { name?: string }) {
         </button>
       </div>
       <div v-if="composerVisible" class="composer-row" :class="{ 'is-checking': composerChecking }">
-        <button type="button" class="plus-btn" :disabled="composerChecking" @click="onPlusClick">
-          <span class="material-symbols-outlined">add</span>
+        <button type="button" class="plus-btn" :disabled="composerChecking" :aria-expanded="showPlusSheet" aria-label="切换消息类型" @pointerdown.prevent @click.stop="onPlusClick">
+          <span class="material-symbols-outlined">{{ showPlusSheet ? 'close' : 'add' }}</span>
         </button>
 
         <template v-if="voiceMode">
@@ -8624,13 +8698,15 @@ function onDeleteModeSelect(action: { name?: string }) {
               data-bwignore="true"
               :placeholder="muteBannerTip ? '全员禁言中，你仍可发言...' : '输入消息...'"
               @focus="onComposerFocus"
-              @touchend.passive="ensureComposerFocus"
-              @click="ensureComposerFocus"
+              @pointerdown="onComposerPointerDown"
+              @click.stop="ensureComposerFocus"
               @blur="onComposerBlur"
+              @select="rememberComposerSelection"
+              @keyup="rememberComposerSelection"
               @input="onComposerInput"
               @keydown.enter.exact.prevent="sendMessage"
             />
-            <button type="button" class="emoji-btn" :disabled="composerChecking" @click="toggleEmojiPanel">
+            <button type="button" class="emoji-btn" :disabled="composerChecking" aria-label="切换表情面板" :aria-expanded="showEmojiPanel" @pointerdown.prevent @click.stop="toggleEmojiPanel">
               <span class="material-symbols-outlined">{{
                 showEmojiPanel ? 'keyboard' : 'sentiment_satisfied'
               }}</span>
@@ -8653,17 +8729,41 @@ function onDeleteModeSelect(action: { name?: string }) {
         </template>
       </div>
 
-      <div v-if="canChat && showEmojiPanel" class="emoji-panel">
+      <Transition name="composer-dock" :css="!switchingToKeyboard"
+        @before-enter="onDockTransitionStart" @after-enter="onDockTransitionEnd"
+        @before-leave="onDockTransitionStart" @after-leave="onDockTransitionEnd"
+        @enter-cancelled="onDockTransitionEnd" @leave-cancelled="onDockTransitionEnd">
+      <div v-if="canChat && (showPlusSheet || showEmojiPanel)" class="composer-dock">
+      <div v-if="showPlusSheet" class="plus-panel composer-panel" aria-label="消息类型">
         <button
-          v-for="emoji in EMOJI_LIST"
-          :key="emoji"
+          v-for="item in plusActions"
+          :key="item.key"
           type="button"
-          class="emoji-item"
-          @click="insertEmoji(emoji)"
+          class="plus-item"
+          :disabled="uploading || !item.enabled"
+          @touchstart.passive="onPlusTouchStart(item.key)"
+          @click="onPlusAction(item.key)"
         >
-          {{ emoji }}
+          <span class="plus-icon-wrap" aria-hidden="true">
+            <span class="material-symbols-outlined">{{ item.icon }}</span>
+          </span>
+          <span class="plus-label">{{ item.label }}</span>
         </button>
       </div>
+
+      <div v-else class="emoji-panel composer-panel" aria-label="表情">
+        <div class="emoji-pages" @scroll.passive="onEmojiScroll">
+          <div v-for="(page, index) in emojiPages" :key="index" class="emoji-page" :aria-label="`表情第 ${index + 1} 页`">
+            <button v-for="emoji in page" :key="emoji" type="button" class="emoji-item" @pointerdown.prevent @click.stop="insertEmoji(emoji)">{{ emoji }}</button>
+          </div>
+        </div>
+        <div class="emoji-toolbar">
+          <div class="emoji-dots" aria-hidden="true"><i v-for="(_, index) in emojiPages" :key="index" :class="{ active: emojiPage === index }" /></div>
+        </div>
+        <button type="button" class="emoji-delete" aria-label="删除上一个字符" :disabled="!inputText" @pointerdown.prevent @click.stop="deleteComposerCharacter"><span class="emoji-backspace-icon" aria-hidden="true">&#xe14a;</span></button>
+      </div>
+      </div>
+      </Transition>
     </footer>
 
     <van-popup
@@ -8869,44 +8969,6 @@ function onDeleteModeSelect(action: { name?: string }) {
       </div>
     </van-overlay>
 
-    <van-popup
-      v-model:show="showPlusSheet"
-      position="bottom"
-      round
-      teleport="body"
-      close-on-click-overlay
-      safe-area-inset-bottom
-      class="plus-popup"
-      :style="{ background: 'var(--pulse-surface-container)' }"
-    >
-      <div class="plus-panel">
-        <div class="plus-handle" />
-        <h3 class="plus-title">选择操作</h3>
-        <div ref="plusScroller" class="plus-pages" @scroll.passive="onPlusScroll">
-          <div v-for="(page, pageIndex) in plusPages" :key="pageIndex" class="plus-grid">
-            <button
-              v-for="item in page"
-              :key="item.key"
-              type="button"
-              class="plus-item"
-              :class="{ disabled: !item.enabled }"
-              :disabled="uploading"
-              @touchstart.passive="onPlusTouchStart(item.key)"
-              @click="onPlusAction(item.key)"
-            >
-              <span class="plus-icon-wrap">
-                <span class="material-symbols-outlined">{{ item.icon }}</span>
-              </span>
-              <span class="plus-label">{{ item.label }}</span>
-            </button>
-          </div>
-        </div>
-        <div v-if="plusPages.length > 1" class="plus-dots">
-          <i v-for="(_, i) in plusPages" :key="i" :class="{ on: plusPage === i }" />
-        </div>
-      </div>
-    </van-popup>
-
     <van-overlay
       :show="showImageEditor"
       z-index="3200"
@@ -9035,7 +9097,7 @@ function onDeleteModeSelect(action: { name?: string }) {
             {{ videoPlayerPreparingPreview ? '视频播放版准备中…' : '视频加载中…' }}
           </div>
           <button
-            v-if="videoPlayerMsg && videoOriginalUrlOf(videoPlayerMsg) && !usesMediaOriginal(videoPlayerMsg)"
+            v-if="videoPlayerMsg && videoPlayerVariant !== 'original' && videoOriginalUrlOf(videoPlayerMsg)"
             type="button"
             class="media-original-action"
             @click.stop="openOriginalVideo"
@@ -9083,7 +9145,7 @@ function onDeleteModeSelect(action: { name?: string }) {
       <div class="image-preview-overlay" @click.stop>
         <div class="image-preview-stage">
           <button
-            v-if="imagePreviewMsg && imageOriginalUrlOf(imagePreviewMsg) && !usesMediaOriginal(imagePreviewMsg)"
+            v-if="imagePreviewMsg && imagePreviewVariant !== 'original' && imageOriginalUrlOf(imagePreviewMsg)"
             type="button"
             class="media-original-action"
             @click.stop="openOriginalImage"
@@ -9106,16 +9168,20 @@ function onDeleteModeSelect(action: { name?: string }) {
       </div>
     </van-overlay>
 
-    <van-action-sheet
-      v-model:show="showMsgSheet"
-      teleport="body"
-      :z-index="10050"
-      :actions="msgActions"
-      cancel-text="取消"
-      safe-area-inset-bottom
-      @select="onMsgAction"
-      @closed="onMessageSheetClosed"
-    />
+    <van-overlay :show="showMsgSheet" teleport="body" :z-index="10050"
+      :custom-style="{ background: 'transparent', backdropFilter: 'none' }"
+      :lock-scroll="false" class="message-menu-overlay" @click="showMsgSheet = false">
+      <div class="message-float-menu" :class="{ below: messageMenuBelow }"
+        :style="messageMenuPosition" role="menu" aria-label="消息操作"
+        @click.stop @touchstart.stop @contextmenu.prevent @keydown.esc="showMsgSheet = false">
+        <button v-for="action in msgActions" :key="action.name" type="button"
+          role="menuitem" class="message-menu-action" @click="onMsgAction(action)">
+          <VanIcon :name="messageActionIcon(action.name)" aria-hidden="true" />
+          <span>{{ action.name }}</span>
+        </button>
+        <span class="message-menu-arrow" :style="{ left: messageMenuArrowLeft }" />
+      </div>
+    </van-overlay>
     <van-action-sheet
       v-model:show="showDeleteModeSheet"
       :actions="deleteModeActions"
@@ -9294,6 +9360,13 @@ function onDeleteModeSelect(action: { name?: string }) {
 </template>
 
 <style scoped>
+.message-menu-overlay { background: transparent; }
+.message-float-menu { position: fixed; display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); padding: 8px; box-sizing: border-box; border-radius: 5px; background: #4b4b4b; color: #fff; box-shadow: 0 4px 16px rgb(0 0 0 / 12%); }
+.message-menu-action { min-width: 0; height: 72px; padding: 8px 1px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 4px; background: transparent; color: #fff; font: inherit; font-size: 12px; line-height: 16px; cursor: pointer; }
+.message-menu-action .van-icon { font-size: 22px; color: #fff; }
+.message-menu-action:active, .message-menu-action:focus-visible { background: rgb(255 255 255 / 14%); }
+.message-menu-arrow { position: absolute; bottom: -5px; width: 10px; height: 10px; background: #4b4b4b; transform: translateX(-50%) rotate(45deg); pointer-events: none; }
+.message-float-menu.below .message-menu-arrow { bottom: auto; top: -5px; }
 .group-call-picker{height:min(72vh,620px);overflow:hidden}.group-call-picker-head{display:flex;align-items:center;justify-content:space-between;padding:18px 16px 12px}.group-call-picker-head button{min-width:64px;border:0;background:none;color:#2477f3;font-size:15px}.group-call-picker-head button:first-child{text-align:left;color:#666}.group-call-picker-head button:last-child{text-align:right}.group-call-picker-head button:disabled{color:#aaa}.group-call-picker-tip{margin:0;padding:0 18px 12px;color:#888;font-size:13px}.group-call-member-list{height:calc(100% - 88px);overflow:auto}.group-call-member{width:100%;display:flex;align-items:center;gap:12px;padding:10px 18px;border:0;background:#fff}.group-call-member img,.group-call-member .initials{width:46px;height:46px;border-radius:50%;object-fit:cover}.group-call-member .initials{display:grid;place-items:center;background:#e7ebf2}.group-call-member .name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.group-call-member .check{margin-left:auto;color:#2477f3}
 .group-call-picker{color:var(--pulse-text);background:var(--pulse-surface-container)}.group-call-picker-head{border-bottom:1px solid rgba(255,255,255,.08);background:var(--pulse-surface-high)}.group-call-picker-head strong{color:#fff}.group-call-picker-head button{color:#69a7ff}.group-call-picker-head button:first-child{color:var(--pulse-text-secondary)}.group-call-picker-head button:disabled{color:#626d7c}.group-call-picker-tip{padding-top:12px;color:#aab4c2;background:var(--pulse-surface-container)}.group-call-member-list{background:var(--pulse-surface-container)}.group-call-member{padding:11px 18px;border-bottom:1px solid rgba(255,255,255,.055);color:var(--pulse-text);background:var(--pulse-surface-container);text-align:left}.group-call-member:active{background:#2a3443}.group-call-member img,.group-call-member .initials{flex:0 0 46px;border:1px solid rgba(255,255,255,.16)}.group-call-member .initials{color:#fff;background:linear-gradient(145deg,#5478d8,#7656c7);font-size:18px;font-weight:600}.group-call-member .name{color:var(--pulse-text)}.group-call-member .check{color:#69a7ff}
 .chat-page {
@@ -9311,6 +9384,7 @@ function onDeleteModeSelect(action: { name?: string }) {
   /* 减少无关重绘 */
   contain: layout style;
   overscroll-behavior: none;
+  /* Android already animates IME resize. Do not animate viewport bounds again. */
 }
 
 /* 键盘弹起：去掉底部 home indicator 留白，避免键盘上方一条空白 */
@@ -9655,37 +9729,6 @@ function onDeleteModeSelect(action: { name?: string }) {
 
 @keyframes history-spin {
   to { transform: rotate(360deg); }
-}
-
-.bubble.swipe-replying {
-  position: relative;
-  transition: none;
-  will-change: transform;
-}
-
-.bubble:not(.swipe-replying) {
-  transition: transform 0.18s ease-out;
-}
-
-.swipe-reply-icon {
-  position: absolute;
-  top: 50%;
-  right: -42px;
-  width: 30px;
-  height: 30px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  color: #fff;
-  background: var(--pulse-primary, #1677ff);
-  transform: translateY(-50%);
-  font-size: 18px;
-  pointer-events: none;
-}
-
-.bubble.swipe-replying:not(.mine) .swipe-reply-icon {
-  right: auto;
-  left: -42px;
 }
 
 .jump-latest-btn {
@@ -11089,92 +11132,38 @@ function onDeleteModeSelect(action: { name?: string }) {
 }
 
 .plus-panel {
-  padding: 8px 16px calc(28px + env(safe-area-inset-bottom));
-  background: var(--pulse-surface-container);
-  color: var(--pulse-text);
   width: 100%;
-  box-sizing: border-box;
-}
-
-.plus-handle {
-  width: 36px;
-  height: 4px;
-  margin: 4px auto 16px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.18);
-}
-
-.plus-title {
-  margin: 0 4px 20px;
-  font-size: 20px;
-  font-weight: 700;
-  color: #fff;
-}
-
-.plus-pages {
-  display: flex;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  scrollbar-width: none;
-  margin: 0 -16px;
-}
-
-.plus-pages::-webkit-scrollbar {
-  display: none;
-}
-
-.plus-grid {
-  flex: 0 0 100%;
-  box-sizing: border-box;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  grid-template-rows: repeat(2, 82px);
-  gap: 18px 10px;
-  padding: 0 16px;
-  scroll-snap-align: start;
-}
-
-.plus-dots {
-  display: flex;
-  justify-content: center;
-  gap: 6px;
-  margin-top: 18px;
-}
-
-.plus-dots i {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: #55565c;
-}
-
-.plus-dots i.on {
-  background: #c9cad0;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px 8px;
+  padding: 16px 4px 8px;
+  border-top: 1px solid var(--pulse-divider);
+  align-content: start;
 }
 
 .plus-item {
+  min-width: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--pulse-text);
+  font: inherit;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  border: none;
-  background: transparent;
-  color: inherit;
+  gap: 7px;
   cursor: pointer;
-  padding: 0;
-}
-
-.plus-item.disabled {
-  opacity: 0.45;
 }
 
 .plus-icon-wrap {
-  width: 56px;
-  height: 56px;
+  width: 54px;
+  height: 54px;
+  border: 1px solid var(--pulse-border);
   border-radius: 16px;
   background: var(--pulse-surface-high);
   display: grid;
   place-items: center;
+  transition: transform .15s ease, background .15s ease;
 }
 
 .plus-icon-wrap .material-symbols-outlined {
@@ -11183,8 +11172,24 @@ function onDeleteModeSelect(action: { name?: string }) {
 }
 
 .plus-label {
+  max-width: 100%;
+  color: var(--pulse-text-secondary);
   font-size: 12px;
-  color: #c5c6cb;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+.plus-item:active .plus-icon-wrap {
+  transform: scale(.94);
+  background: var(--pulse-pressed);
+}
+
+.plus-item:disabled {
+  opacity: .45;
+}
+
+@media (max-width: 360px) {
+  .plus-panel { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
 .bubble-text {
@@ -11907,8 +11912,8 @@ function onDeleteModeSelect(action: { name?: string }) {
 }
 
 .plus-btn {
-  width: 40px;
-  height: 40px;
+  width: var(--pulse-icon-control-size);
+  height: var(--pulse-icon-control-size);
   border: none;
   border-radius: 50%;
   background: var(--pulse-surface-high);
@@ -12003,8 +12008,8 @@ function onDeleteModeSelect(action: { name?: string }) {
 }
 
 .mic-btn {
-  width: 48px;
-  height: 48px;
+  width: var(--pulse-icon-control-size);
+  height: var(--pulse-icon-control-size);
   border: none;
   border-radius: 50%;
   background: var(--pulse-primary);
@@ -12060,15 +12065,44 @@ function onDeleteModeSelect(action: { name?: string }) {
 }
 
 .emoji-panel {
-  display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  gap: 4px;
-  max-height: 220px;
-  overflow-y: auto;
-  padding: 8px 4px 4px;
-  margin-top: 8px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 8px 0 0;
+  margin-top: 0;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
   -webkit-overflow-scrolling: touch;
+  align-content: start;
+}
+
+.composer-dock { height: min(260px, 38vh); overflow: hidden; flex-shrink: 0; }
+/* The IME and an outgoing panel must never reserve space simultaneously. */
+.chat-page.keyboard-open .composer-dock { display: none; }
+.composer-dock-enter-active, .composer-dock-leave-active { transition: height 200ms cubic-bezier(.2,.7,.2,1), opacity 160ms ease; }
+.composer-dock-enter-from, .composer-dock-leave-to { height: 0; opacity: 0; }
+.emoji-pages { display: flex; flex: 1; min-height: 0; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior-x: contain; touch-action: pan-x; }
+.emoji-pages::-webkit-scrollbar { display: none; }
+.emoji-page { flex: 0 0 100%; min-width: 0; display: grid; grid-template-columns: repeat(8,minmax(0,1fr)); grid-template-rows: repeat(4,minmax(0,1fr)); scroll-snap-align: start; scroll-snap-stop: always; }
+.emoji-page::after { content: ''; grid-column: 8 / 9; grid-row: 4 / 5; }
+.emoji-toolbar { display: flex; align-items: center; justify-content: center; position: relative; flex: 0 0 20px; }
+.emoji-dots { position: absolute; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; }
+.emoji-dots i { width: 5px; height: 5px; border-radius: 50%; background: var(--pulse-text-secondary); opacity: .3; }
+.emoji-dots i.active { opacity: 1; background: var(--pulse-primary); }
+.emoji-delete { position: absolute; right: 0; bottom: 20px; width: 12.5%; height: calc((100% - 29px) / 4); padding: 0; display: grid; place-items: center; border: 0; border-radius: 0; box-shadow: none; background: transparent; color: var(--pulse-text-secondary); }
+.emoji-backspace-icon { display: grid; place-items: center; background: transparent; font: 24px 'Pulse Backspace'; }
+.emoji-delete:disabled .emoji-backspace-icon { color: var(--pulse-text-secondary); opacity: .45; }
+@font-face { font-family: 'Pulse Backspace'; src: url('../assets/fonts/backspace.ttf') format('truetype'); font-display: block; }
+@media (prefers-reduced-motion: reduce) {
+  .chat-page, .composer-dock-enter-active, .composer-dock-leave-active { transition: none; }
+}
+
+/* Both panels occupy the same dock; switching never moves the input row. */
+.composer-panel {
+  box-sizing: border-box;
+  height: min(260px, 38vh);
+  flex-shrink: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .emoji-item {
@@ -12201,7 +12235,7 @@ function onDeleteModeSelect(action: { name?: string }) {
 }
 
 .send-btn {
-  height: 40px;
+  height: var(--pulse-icon-control-size);
   min-width: 56px;
   padding: 0 14px;
   border: none;
@@ -12378,13 +12412,6 @@ function onDeleteModeSelect(action: { name?: string }) {
 </style>
 
 <style>
-/* teleported popups：去掉默认白底两侧露边 */
-.plus-popup.van-popup,
-.plus-popup.van-popup--bottom {
-  background: var(--pulse-surface-container) !important;
-  overflow: hidden;
-}
-
 .group-read-popup.van-popup,
 .group-read-popup.van-popup--bottom {
   background: var(--pulse-surface-highest, var(--pulse-surface-container)) !important;

@@ -3,6 +3,7 @@ package com.pulse.im;
 import android.graphics.Color;
 import android.os.Build;
 import android.content.Context;
+import android.util.DisplayMetrics;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowInsets;
@@ -23,13 +24,23 @@ public class SystemBarPlugin extends Plugin {
     public void getInsets(PluginCall call) {
         getActivity().runOnUiThread(() -> {
             int topPx = 0;
+            int bottomPx = 0;
+            int leftPx = 0;
+            int rightPx = 0;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 WindowInsets insets = getActivity().getWindow().getDecorView().getRootWindowInsets();
                 if (insets != null) {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                         topPx = insets.getInsets(WindowInsets.Type.statusBars()).top;
+                        android.graphics.Insets navigation = insets.getInsets(WindowInsets.Type.navigationBars());
+                        bottomPx = navigation.bottom;
+                        leftPx = navigation.left;
+                        rightPx = navigation.right;
                     } else {
                         topPx = insets.getStableInsetTop();
+                        bottomPx = insets.getStableInsetBottom();
+                        leftPx = insets.getStableInsetLeft();
+                        rightPx = insets.getStableInsetRight();
                     }
                 }
             }
@@ -37,9 +48,24 @@ public class SystemBarPlugin extends Plugin {
                 int id = getContext().getResources().getIdentifier("status_bar_height", "dimen", "android");
                 if (id > 0) topPx = getContext().getResources().getDimensionPixelSize(id);
             }
+            // Older Android versions keep the WebView above the navigation bar.
+            // Only add padding when the WebView actually extends underneath it.
+            if (getBridge() != null && getBridge().getWebView() != null) {
+                View webView = getBridge().getWebView();
+                int[] location = new int[2];
+                webView.getLocationOnScreen(location);
+                DisplayMetrics display = new DisplayMetrics();
+                getActivity().getWindowManager().getDefaultDisplay().getRealMetrics(display);
+                if (location[1] + webView.getHeight() <= display.heightPixels - bottomPx / 2) bottomPx = 0;
+                if (location[0] >= leftPx / 2) leftPx = 0;
+                if (location[0] + webView.getWidth() <= display.widthPixels - rightPx / 2) rightPx = 0;
+            }
             float density = getContext().getResources().getDisplayMetrics().density;
             JSObject result = new JSObject();
             result.put("top", density > 0 ? topPx / density : topPx);
+            result.put("bottom", density > 0 ? bottomPx / density : bottomPx);
+            result.put("left", density > 0 ? leftPx / density : leftPx);
+            result.put("right", density > 0 ? rightPx / density : rightPx);
             call.resolve(result);
         });
     }
@@ -73,6 +99,7 @@ public class SystemBarPlugin extends Plugin {
             }
             window.getDecorView().setBackgroundColor(backgroundColor);
             window.setStatusBarColor(color);
+            window.setNavigationBarColor(backgroundColor);
             if (getBridge() != null && getBridge().getWebView() != null) {
                 getBridge().getWebView().setBackgroundColor(backgroundColor);
             }
@@ -85,17 +112,18 @@ public class SystemBarPlugin extends Plugin {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 WindowInsetsController controller = window.getInsetsController();
                 if (controller != null) {
-                    controller.setSystemBarsAppearance(
-                        darkIcons ? WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS : 0,
-                        WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
-                    );
+                    int bars = WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
+                        | WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS;
+                    controller.setSystemBarsAppearance(darkIcons ? bars : 0, bars);
                 }
             } else {
                 int flags = window.getDecorView().getSystemUiVisibility();
                 if (darkIcons) {
                     flags |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) flags |= View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
                 } else {
                     flags &= ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) flags &= ~View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
                 }
                 window.getDecorView().setSystemUiVisibility(flags);
             }

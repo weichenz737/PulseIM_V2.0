@@ -42,6 +42,11 @@ public class MainActivity extends BridgeActivity {
         webView.setBackgroundColor(backgroundColor);
         getWindow().getDecorView().setBackgroundColor(backgroundColor);
         WebSettings webSettings = webView.getSettings();
+        // Debug connects to the local HTTP/WS services from bundled HTTPS pages.
+        // Keep the default mixed-content restriction in release builds.
+        if ((getApplicationInfo().flags & android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
+            webSettings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             webSettings.setAlgorithmicDarkeningAllowed(false);
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {

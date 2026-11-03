@@ -603,7 +603,7 @@ async function onRemove() {
           </div>
 
           <div v-else-if="item.msgType === 6 && locationPayload" class="location-card">
-            <span class="material-symbols-outlined location-icon">location_on</span>
+            <span class="material-symbols-outlined location-icon">place</span>
             <div class="location-info">
               <div class="location-name">{{ locationPayload.name || '位置信息' }}</div>
               <div class="location-address">{{ locationPayload.address || '暂无详细地址' }}</div>

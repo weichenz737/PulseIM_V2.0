@@ -487,7 +487,7 @@ onBeforeUnmount(() => {
           <span v-if="isSelectedPlace(item)" class="material-symbols-outlined selected-mark">check</span>
         </button>
         <div v-if="!nearbyPlaces.length" class="selected-placeholder">
-          <span class="material-symbols-outlined">location_on</span>
+          <span class="material-symbols-outlined">place</span>
           <div>
             <strong>{{ selected?.name || '点击地图选择位置' }}</strong>
             <p>{{ selected?.address || '也可以搜索地点或发送当前位置' }}</p>

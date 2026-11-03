@@ -1204,7 +1204,7 @@ const calendarMinDate = new Date(new Date().getFullYear() - 5, 0, 1)
           收藏
         </button>
         <button type="button" :disabled="!selectedFileCount" @click="locateSelectedFile">
-          <span class="material-symbols-outlined">location_on</span>
+          <span class="material-symbols-outlined">place</span>
           定位
         </button>
         <button type="button" class="danger" :disabled="!selectedFileCount" @click="deleteFileMessages([...selectedFileIds])">

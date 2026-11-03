@@ -467,7 +467,7 @@ onBeforeUnmount(() => {
 
         <button v-if="post.locationName" type="button" class="location-card" @click="openLocationMap">
           <div class="location-mark">
-            <span class="material-symbols-outlined">location_on</span>
+            <span class="material-symbols-outlined">place</span>
             <i /><i /><i />
           </div>
           <div class="location-copy">
@@ -508,7 +508,7 @@ onBeforeUnmount(() => {
         <section ref="commentsSectionRef" class="comments-section">
           <header><h2>评论</h2><span>{{ post.commentCount }}</span></header>
           <div v-if="!post.comments.length" class="comments-empty">
-            <span class="material-symbols-outlined">chat_bubble_outline</span>
+            <span class="material-symbols-outlined">chat_bubble</span>
             <p>还没有评论，说说你的看法吧</p>
           </div>
           <MomentComments

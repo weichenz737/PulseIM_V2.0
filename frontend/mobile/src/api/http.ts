@@ -201,7 +201,18 @@ http.interceptors.response.use(
       return http.request(config)
     }
     const responseData = error.response?.data as { message?: string } | undefined
-    const wrapped = new Error(responseData?.message || error.message || '网络错误') as Error & {
+    const networkMessage = error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT'
+      ? '连接服务器超时，请检查服务器地址和网络后重试'
+      : !error.response
+        ? '无法连接服务器，请检查服务器地址、网络及本地服务是否已启动'
+        : status === 401 ? '账号或密码错误，或登录已过期，请重新登录'
+          : status === 403 ? '访问被拒绝，请确认账号状态和访问权限'
+            : status === 404 ? '服务器接口不存在，请检查服务器地址'
+              : status === 429 ? '操作过于频繁，请稍后重试'
+                : status >= 500 ? '服务器暂时异常，请稍后重试'
+                  : '请求失败，请检查输入信息后重试'
+    const serverMessage = responseData?.message
+    const wrapped = new Error(serverMessage && /[\u4e00-\u9fff]|SECURITY_CODE_REQUIRED/.test(serverMessage) ? serverMessage : networkMessage) as Error & {
       status?: number
       code?: string
     }

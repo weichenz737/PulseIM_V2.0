@@ -712,7 +712,7 @@ onBeforeUnmount(() => {
             </div>
 
             <button v-if="post.locationName" type="button" class="location-row" @click.stop="openLocationMap(post)">
-              <span class="material-symbols-outlined">location_on</span>
+              <span class="material-symbols-outlined">place</span>
               <span class="location-copy"><strong>{{ post.locationName }}</strong><small v-if="post.locationAddress">{{ post.locationAddress }}</small></span>
               <span class="material-symbols-outlined location-open">open_in_new</span>
             </button>
