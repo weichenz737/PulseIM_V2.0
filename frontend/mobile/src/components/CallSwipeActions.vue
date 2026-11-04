@@ -124,9 +124,9 @@ onBeforeUnmount(() => {
       :style="{ '--p': String(rejectProgress) }"
     >
       <div class="guide" aria-hidden="true">
-        <span class="material-symbols-outlined chev">keyboard_arrow_up</span>
-        <span class="material-symbols-outlined chev delay">keyboard_arrow_up</span>
-        <span class="material-symbols-outlined chev delay2">keyboard_arrow_up</span>
+        <AppIcon name="keyboard_arrow_up" class="chev" />
+        <AppIcon name="keyboard_arrow_up" class="chev delay" />
+        <AppIcon name="keyboard_arrow_up" class="chev delay2" />
       </div>
       <div class="track">
         <div class="glow" />
@@ -154,9 +154,9 @@ onBeforeUnmount(() => {
       :style="{ '--p': String(acceptProgress) }"
     >
       <div class="guide" aria-hidden="true">
-        <span class="material-symbols-outlined chev">keyboard_arrow_up</span>
-        <span class="material-symbols-outlined chev delay">keyboard_arrow_up</span>
-        <span class="material-symbols-outlined chev delay2">keyboard_arrow_up</span>
+        <AppIcon name="keyboard_arrow_up" class="chev" />
+        <AppIcon name="keyboard_arrow_up" class="chev delay" />
+        <AppIcon name="keyboard_arrow_up" class="chev delay2" />
       </div>
       <div class="track">
         <div class="glow" />
@@ -172,7 +172,7 @@ onBeforeUnmount(() => {
         >
           <span class="ring" />
           <span class="ring late" />
-          <span class="material-symbols-outlined filled ico">{{ acceptIcon }}</span>
+          <AppIcon :name="acceptIcon" class="filled ico" />
         </button>
       </div>
       <span class="hint">上滑{{ acceptLabel }}</span>
@@ -223,7 +223,7 @@ onBeforeUnmount(() => {
 
 .chev {
   font-size: var(--pulse-font-heading);
-  line-height: 12px;
+  line-height: calc(12px * var(--pulse-font-scale, 1));
   color: var(--accent);
   animation: chevRise 1.35s ease-in-out infinite;
   opacity: 0;
@@ -304,7 +304,7 @@ onBeforeUnmount(() => {
 }
 
 .ico {
-  font-size: 30px;
+  font-size: calc(30px * var(--pulse-font-scale, 1));
   line-height: 1;
   position: relative;
   z-index: 2;

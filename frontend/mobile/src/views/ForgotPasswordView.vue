@@ -164,7 +164,7 @@ function goLogin() {
                 class="field-input"
                 autocomplete="new-password"
               />
-              <button type="button" class="password-toggle" @click="showPassword = !showPassword"><span class="material-symbols-outlined">{{ showPassword ? 'visibility_off' : 'visibility' }}</span></button>
+              <button type="button" class="password-toggle" @click="showPassword = !showPassword"><AppIcon :name="showPassword ? 'visibility_off' : 'visibility'"  /></button>
             </div>
           </div>
 
@@ -179,7 +179,7 @@ function goLogin() {
                 class="field-input"
                 autocomplete="new-password"
               />
-              <button type="button" class="password-toggle" @click="showConfirmPassword = !showConfirmPassword"><span class="material-symbols-outlined">{{ showConfirmPassword ? 'visibility_off' : 'visibility' }}</span></button>
+              <button type="button" class="password-toggle" @click="showConfirmPassword = !showConfirmPassword"><AppIcon :name="showConfirmPassword ? 'visibility_off' : 'visibility'"  /></button>
             </div>
           </div>
 
@@ -224,7 +224,7 @@ function goLogin() {
 
 .title {
   margin: 0 0 6px;
-  font-size: 28px;
+  font-size: calc(28px * var(--pulse-font-scale, 1));
   font-weight: 700;
   color: var(--pulse-text);
 }

@@ -120,7 +120,7 @@ function openPasswordSettings() {
 .payment-confirm-body > b {
   display: block;
   margin: 8px 0 20px;
-  font-size: 34px;
+  font-size: calc(34px * var(--pulse-font-scale, 1));
   color: var(--pulse-text);
 }
 

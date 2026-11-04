@@ -374,7 +374,7 @@ onBeforeUnmount(() => {
         <p>{{ fatalError }}</p>
       </div>
       <button v-if="!fatalError" type="button" class="locate-btn" aria-label="定位到当前位置" @click="locateCurrent">
-        <span class="material-symbols-outlined">{{ locating ? 'progress_activity' : 'my_location' }}</span>
+        <AppIcon :name="locating ? 'progress_activity' : 'my_location'"  />
       </button>
     </section>
 
@@ -413,12 +413,12 @@ onBeforeUnmount(() => {
         aria-label="收起地点列表"
         @click="collapseSheet"
       >
-        <span class="material-symbols-outlined">{{ sheetHandleIcon }}</span>
+        <AppIcon :name="sheetHandleIcon"  />
       </button>
 
       <div class="search-row">
         <div class="search-box">
-          <span class="material-symbols-outlined">{{ searching ? 'progress_activity' : 'search' }}</span>
+          <AppIcon :name="searching ? 'progress_activity' : 'search'"  />
           <input
             ref="searchInput"
             v-model="keyword"
@@ -437,7 +437,7 @@ onBeforeUnmount(() => {
             aria-label="清除搜索"
             @click="clearSearchKeyword"
           >
-            <span class="material-symbols-outlined">cancel</span>
+            <AppIcon name="cancel"  />
           </button>
         </div>
         <button
@@ -987,7 +987,7 @@ onBeforeUnmount(() => {
 .selected-mark {
   flex: 0 0 28px !important;
   color: #07c160 !important;
-  font-size: 28px;
+  font-size: calc(28px * var(--pulse-font-scale, 1));
   font-weight: 600;
 }
 .selected-placeholder {

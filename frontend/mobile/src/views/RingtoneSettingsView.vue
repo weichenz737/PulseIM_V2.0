@@ -110,7 +110,7 @@ onUnmounted(stopPreview)
 
 <template>
   <div class="ringtone-page">
-    <header class="page-header">
+    <header class="pulse-page-nav page-header">
       <button type="button" class="back-btn" @click="goBack" aria-label="返回">
         <IconBack />
       </button>
@@ -154,12 +154,10 @@ onUnmounted(stopPreview)
             </div>
           </div>
           <div class="menu-right">
-            <span
-              class="material-symbols-outlined check"
+            <AppIcon :name="isChecked(item) ? 'check_circle' : 'radio_button_unchecked'"
+              class="check"
               :class="{ on: isChecked(item) }"
-            >
-              {{ isChecked(item) ? 'check_circle' : 'radio_button_unchecked' }}
-            </span>
+             />
           </div>
         </button>
       </section>
@@ -342,7 +340,7 @@ onUnmounted(stopPreview)
 
 .check {
   color: #697586;
-  font-size: 24px;
+  font-size: calc(24px * var(--pulse-font-scale, 1));
 }
 
 .check.on {

@@ -96,8 +96,8 @@ onMounted(() => void load())
 
 <template>
   <div class="important-page">
-    <header class="page-header">
-      <button type="button" class="icon-btn" aria-label="返回" @click="goBack">
+    <header class="pulse-page-nav page-header unified-back-header">
+      <button type="button" class="icon-btn detail-back-button" aria-label="返回" @click="goBack">
         <IconBack />
       </button>
       <h1 class="page-title">重要消息仍通知</h1>
@@ -120,7 +120,7 @@ onMounted(() => void load())
       <section class="card">
         <button type="button" class="follow-row" @click="openMemberPicker">
           <div class="setting-copy"><strong>关注群成员的消息</strong><small>{{ setting.followedMemberIds.length ? setting.followedMemberIds.map(memberName).join('、') : '点击添加成员' }}</small></div>
-          <span class="material-symbols-outlined chevron">chevron_right</span>
+          <AppIcon name="chevron_right" class="chevron" />
         </button>
       </section>
       <p class="tip">关注的群成员在群内发消息时，即使开启免打扰也会继续通知。</p>

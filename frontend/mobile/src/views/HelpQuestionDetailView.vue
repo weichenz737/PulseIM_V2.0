@@ -28,7 +28,7 @@ async function load() {
 
 <template>
   <div class="page">
-    <header class="header">
+    <header class="pulse-page-nav header">
       <button type="button" class="icon-btn" aria-label="返回" @click="smartBack(router)">
         <IconBack />
       </button>

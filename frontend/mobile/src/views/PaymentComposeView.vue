@@ -151,7 +151,7 @@ function openPasswordSettings() {
 
 <template>
   <div class="pay-page">
-    <header class="pay-header">
+    <header class="pulse-page-nav pay-header">
       <button type="button" class="back-btn" aria-label="返回" @click="router.back()"><IconBack /></button>
       <h1 class="page-title">{{ mode === 'red-packet' ? '发红包' : '转账' }}</h1>
       <span class="header-space" />
@@ -164,7 +164,7 @@ function openPasswordSettings() {
             <small>{{ selectedPacketType.description }}</small>
           </span>
           <span class="field-row-value">{{ selectedPacketType.title }}</span>
-          <span class="material-symbols-outlined field-row-arrow">chevron_right</span>
+          <AppIcon name="chevron_right" class="field-row-arrow" />
         </button>
         <button
           v-if="packetType === 'EXCLUSIVE'"
@@ -179,7 +179,7 @@ function openPasswordSettings() {
           <span class="field-row-value" :class="{ placeholder: !selectedMember }">
             {{ selectedMember?.nickname || '请选择' }}
           </span>
-          <span class="material-symbols-outlined field-row-arrow">chevron_right</span>
+          <AppIcon name="chevron_right" class="field-row-arrow" />
         </button>
         <label v-if="packetType !== 'EXCLUSIVE'" class="field-row">
           红包个数
@@ -263,9 +263,7 @@ function openPasswordSettings() {
             <strong>{{ option.title }}</strong>
             <small>{{ option.description }}</small>
           </span>
-          <span class="material-symbols-outlined payment-choice-check">
-            {{ packetType === option.value ? 'check_circle' : 'radio_button_unchecked' }}
-          </span>
+          <AppIcon :name="packetType === option.value ? 'check_circle' : 'radio_button_unchecked'" class="payment-choice-check" />
         </button>
       </div>
     </AppBottomSheet>
@@ -294,9 +292,7 @@ function openPasswordSettings() {
         >
           <span class="payment-member-avatar">{{ member.nickname.slice(0, 1) }}</span>
           <span class="payment-member-name">{{ member.nickname }}</span>
-          <span class="material-symbols-outlined payment-choice-check">
-            {{ String(targetUserId) === String(member.userId) ? 'check_circle' : 'radio_button_unchecked' }}
-          </span>
+          <AppIcon :name="String(targetUserId) === String(member.userId) ? 'check_circle' : 'radio_button_unchecked'" class="payment-choice-check" />
         </button>
       </div>
       <div v-else class="payment-picker-empty">暂无可指定的群成员</div>
@@ -345,7 +341,7 @@ function openPasswordSettings() {
   border: 0;
   background: none;
   color: var(--pulse-primary);
-  font-size: 28px;
+  font-size: calc(28px * var(--pulse-font-scale, 1));
   line-height: 1;
   cursor: pointer;
 }
@@ -447,7 +443,7 @@ main {
   color: var(--pulse-text);
   text-align: right;
   font-size: var(--pulse-font-body);
-  line-height: 24px;
+  line-height: calc(24px * var(--pulse-font-scale, 1));
   min-height: 32px;
   color-scheme: light dark;
 }
@@ -583,7 +579,7 @@ main {
 
 .amount-label {
   display: block;
-  font-size: 13px;
+  font-size: calc(13px * var(--pulse-font-scale, 1));
   font-weight: 500;
   color: var(--pulse-text-secondary, #777);
 }
@@ -598,7 +594,7 @@ main {
 }
 
 .amount-row b {
-  font-size: 28px;
+  font-size: calc(28px * var(--pulse-font-scale, 1));
   font-weight: 600;
   color: var(--pulse-text);
 }
@@ -610,7 +606,7 @@ main {
   outline: 0;
   background: transparent;
   color: var(--pulse-text);
-  font-size: 40px;
+  font-size: calc(40px * var(--pulse-font-scale, 1));
   font-weight: 600;
   letter-spacing: -0.5px;
   padding: 4px 0;
@@ -629,7 +625,7 @@ main {
   display: block;
   margin-top: 10px;
   color: var(--pulse-text-secondary, #777);
-  font-size: 12px;
+  font-size: calc(12px * var(--pulse-font-scale, 1));
 }
 
 .amount-limit-error {

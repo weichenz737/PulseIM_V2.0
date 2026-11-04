@@ -22,6 +22,9 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.imageio.ImageIO;
+import javax.imageio.ImageWriteParam;
+import javax.imageio.ImageWriter;
+import javax.imageio.stream.ImageOutputStream;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
@@ -724,15 +727,15 @@ public class ChatFileStorageService {
         return HexFormat.of().formatHex(digest.digest());
     }
 
-    private static Path createImageThumb(BufferedImage source) throws IOException {
-        return createImageRendition(source, 480, "pulse-chat-thumb-");
+    static Path createImageThumb(BufferedImage source) throws IOException {
+        return createImageRendition(source, 320, 0.68f, "pulse-chat-thumb-");
     }
 
-    private static Path createImagePreview(BufferedImage source) throws IOException {
-        return createImageRendition(source, 1440, "pulse-chat-preview-");
+    static Path createImagePreview(BufferedImage source) throws IOException {
+        return createImageRendition(source, 1280, 0.74f, "pulse-chat-preview-");
     }
 
-    private static Path createImageRendition(BufferedImage source, int max, String prefix) throws IOException {
+    private static Path createImageRendition(BufferedImage source, int max, float quality, String prefix) throws IOException {
         double scale = Math.min(1d, Math.min(max / (double) source.getWidth(), max / (double) source.getHeight()));
         int width = Math.max(1, (int) Math.round(source.getWidth() * scale));
         int height = Math.max(1, (int) Math.round(source.getHeight() * scale));
@@ -745,7 +748,19 @@ public class ChatFileStorageService {
             graphics.dispose();
         }
         Path targetPath = Files.createTempFile(prefix, ".jpg");
-        ImageIO.write(target, "jpg", targetPath.toFile());
+        ImageWriter writer = ImageIO.getImageWritersByFormatName("jpeg").next();
+        try (ImageOutputStream output = ImageIO.createImageOutputStream(targetPath.toFile())) {
+            writer.setOutput(output);
+            ImageWriteParam params = writer.getDefaultWriteParam();
+            params.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+            params.setCompressionQuality(quality);
+            writer.write(null, new javax.imageio.IIOImage(target, null, null), params);
+        } catch (IOException | RuntimeException error) {
+            Files.deleteIfExists(targetPath);
+            throw error;
+        } finally {
+            writer.dispose();
+        }
         return targetPath;
     }
 
@@ -786,13 +801,13 @@ public class ChatFileStorageService {
                     // The preview is only used for in-app playback. Keep it
                     // small and fast so mobile WebViews do not wait for a
                     // near-original 1440px transcode/download.
-                    "-vf", "scale='min(960,iw)':-2", "-c:v", "libx264", "-preset", "veryfast",
-                    "-crf", "30", "-c:a", "aac", "-b:a", "64k", "-movflags", "+faststart",
+                    "-vf", "scale='min(720,iw)':-2,fps=24", "-c:v", "libx264", "-preset", "veryfast",
+                    "-crf", "33", "-c:a", "aac", "-b:a", "48k", "-movflags", "+faststart",
                     output.toAbsolutePath().toString())
                     .redirectError(ProcessBuilder.Redirect.DISCARD)
                     .redirectOutput(ProcessBuilder.Redirect.DISCARD)
                     .start();
-            if (!process.waitFor(90, TimeUnit.SECONDS)) {
+            if (!process.waitFor(300, TimeUnit.SECONDS)) {
                 process.destroyForcibly();
                 Files.deleteIfExists(output);
                 return null;

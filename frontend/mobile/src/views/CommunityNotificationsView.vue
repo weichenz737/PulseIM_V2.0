@@ -251,7 +251,7 @@ function goBack(): void {
 
 <template>
   <div class="notifications-page">
-    <header class="notifications-header">
+    <header class="pulse-page-nav notifications-header">
       <button type="button" class="header-button" aria-label="返回圈子" @click="goBack">
         <IconBack />
       </button>
@@ -297,7 +297,7 @@ function goBack(): void {
         </div>
 
         <div v-else-if="filteredNotifications.length === 0" class="page-state empty-state">
-          <span class="material-symbols-outlined">notifications</span>
+          <AppIcon name="notifications"  />
           <strong>{{ notifications.length ? '这个分类暂时没有消息' : '暂无圈子消息' }}</strong>
           <p>有人与你互动或圈子身份变化时，会第一时间通知你</p>
         </div>
@@ -317,7 +317,7 @@ function goBack(): void {
                 {{ initials(item.actorNickname) }}
               </span>
               <span v-else class="notification-avatar avatar-icon" :class="notificationTone(item.type)">
-                <span class="material-symbols-outlined">{{ notificationIcon(item.type) }}</span>
+                <AppIcon :name="notificationIcon(item.type)"  />
               </span>
 
               <span class="notification-body">
@@ -348,7 +348,7 @@ function goBack(): void {
                   </span>
                   <span v-if="item.postId" class="view-detail">
                     查看动态
-                    <span class="material-symbols-outlined">chevron_right</span>
+                    <AppIcon name="chevron_right"  />
                   </span>
                 </span>
               </span>
@@ -362,7 +362,7 @@ function goBack(): void {
                 :disabled="deletingId === item.id"
                 @click.stop="deleteNotification(item)"
               >
-                <span class="material-symbols-outlined">delete</span>
+                <AppIcon name="delete"  />
                 <span>删除</span>
               </button>
             </template>
@@ -541,7 +541,7 @@ function goBack(): void {
   color: var(--pulse-primary);
   font-size: var(--pulse-font-caption);
   font-style: normal;
-  line-height: 17px;
+  line-height: calc(17px * var(--pulse-font-scale, 1));
 }
 
 .notifications-refresh {
@@ -687,7 +687,7 @@ function goBack(): void {
   flex: none;
   color: var(--pulse-text-secondary);
   font-size: var(--pulse-font-caption);
-  line-height: 20px;
+  line-height: calc(20px * var(--pulse-font-scale, 1));
   white-space: nowrap;
 }
 
@@ -762,7 +762,7 @@ function goBack(): void {
   color: var(--pulse-primary);
   font-size: var(--pulse-font-caption);
   font-weight: 600;
-  line-height: 15px;
+  line-height: calc(15px * var(--pulse-font-scale, 1));
 }
 
 .community-name {

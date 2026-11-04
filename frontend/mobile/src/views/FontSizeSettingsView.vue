@@ -38,7 +38,7 @@ function resetDefault() {
 
 <template>
   <div class="font-size-page">
-    <header class="page-header">
+    <header class="pulse-page-nav page-header">
       <button type="button" class="back-btn" @click="goBack" aria-label="返回">
         <IconBack />
       </button>
@@ -49,11 +49,11 @@ function resetDefault() {
     <main class="main">
       <section class="card">
         <div class="section-head">
-          <div class="section-title">聊天字体大小</div>
+          <div class="section-title">全局字体大小</div>
           <button type="button" class="reset-btn" @click="resetDefault">恢复默认</button>
         </div>
         <p class="section-desc">
-          仅调节聊天消息文字（约 11–28px）。页面标题、导航等界面字号保持原有大小层级；安卓系统大字体已自动校正。
+          同步调整聊天消息、会话名称、好友资料、个人资料、转账红包、钱包、收藏、朋友圈、通知及设置等页面的文字。标准字号为 15px，标题按比例调整。
         </p>
 
         <div class="slider-row">
@@ -75,7 +75,7 @@ function resetDefault() {
           <span>大</span>
         </div>
         <div class="slider-meta">
-          <span>聊天文字约 {{ pref.fontSizeLabel }}px</span>
+          <span>基准字号约 {{ pref.fontSizeLabel }}px</span>
         </div>
       </section>
 
@@ -84,11 +84,11 @@ function resetDefault() {
         <div class="preview-chat">
           <div class="preview-row">
             <div class="preview-avatar">对</div>
-            <div class="preview-bubble other">你好，拖动进度条即可调节聊天文字大小。</div>
+            <div class="preview-bubble other">你好，拖动进度条即可调节全 App 字体大小。</div>
           </div>
           <div class="preview-row mine">
             <div class="preview-avatar mine">我</div>
-            <div class="preview-bubble mine">标题和按钮大小不会跟着变。</div>
+            <div class="preview-bubble mine">会话名称、资料、钱包等页面也会同步生效。</div>
           </div>
         </div>
       </section>

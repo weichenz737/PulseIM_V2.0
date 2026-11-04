@@ -212,7 +212,7 @@ async function onDelete(type: string, id: string, label: string): Promise<void> 
 
 <template>
   <div class="group-invites-page">
-    <header class="page-header glass-header">
+    <header class="pulse-page-nav page-header glass-header">
       <button type="button" class="icon-btn" @click="goBack" aria-label="返回">
         <IconBack />
       </button>
@@ -279,7 +279,7 @@ async function onDelete(type: string, id: string, label: string): Promise<void> 
                 :disabled="deletingId === item.id"
                 @click.stop="onDelete('group-join', item.id, `「${item.groupTitle || '群聊'}」的加群申请`)"
               >
-                <span class="material-symbols-outlined">delete</span>
+                <AppIcon name="delete"  />
                 <span>删除</span>
               </button>
             </template>
@@ -323,7 +323,7 @@ async function onDelete(type: string, id: string, label: string): Promise<void> 
                 :disabled="deletingId === item.id"
                 @click.stop="onDelete('group-invite', item.id, `加入「${item.groupTitle || '群聊'}」的邀请`)"
               >
-                <span class="material-symbols-outlined">delete</span>
+                <AppIcon name="delete"  />
                 <span>删除</span>
               </button>
             </template>
@@ -333,7 +333,7 @@ async function onDelete(type: string, id: string, label: string): Promise<void> 
             <div class="req-item notice-item">
               <div class="req-main">
                 <div class="avatar notice-avatar">
-                  <span class="material-symbols-outlined">{{ eventIcon(item.eventType) }}</span>
+                  <AppIcon :name="eventIcon(item.eventType)"  />
                 </div>
                 <div class="req-info">
                   <div class="req-name">
@@ -351,7 +351,7 @@ async function onDelete(type: string, id: string, label: string): Promise<void> 
                 :disabled="deletingId === item.id"
                 @click.stop="onDelete('group-event', item.id, `「${item.groupTitle || '群聊'}」的群聊动态`)"
               >
-                <span class="material-symbols-outlined">delete</span>
+                <AppIcon name="delete"  />
                 <span>删除</span>
               </button>
             </template>

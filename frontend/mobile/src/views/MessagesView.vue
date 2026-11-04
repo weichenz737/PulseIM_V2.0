@@ -29,12 +29,18 @@ import { warmChatMessages } from '@/stores/chatWarmCache'
 import { setCachedAvatar } from '@/stores/avatarCache'
 import { chatDraftRevision, getChatDraft } from '@/stores/chatDraft'
 import UserAvatar from '@/components/UserAvatar.vue'
+import { readListSnapshot, writeListSnapshot } from '@/utils/listSnapshot'
 
 const router = useRouter()
 const userStore = useUserStore()
 const inbox = useConversationInboxStore()
-const conversations = ref<ConversationItem[]>([])
-const loading = ref(true)
+const initialSnapshot = readListSnapshot<ConversationItem>('conversations', String(userStore.userId || ''))
+const conversations = ref<ConversationItem[]>(initialSnapshot || [])
+const loading = ref(initialSnapshot === null)
+const listLoadFailed = ref(false)
+watch(conversations, (items) => {
+  writeListSnapshot('conversations', String(userStore.userId || ''), items)
+}, { deep: true })
 const refreshing = ref(false)
 const deviceSessions = ref<DeviceSession[]>([])
 const desktopSessionsLoading = ref(false)
@@ -415,9 +421,10 @@ const filteredList = computed(() => {
 async function loadConversations(showLoading = false) {
   if (conversationLoadTask) return conversationLoadTask
   const task = (async () => {
-  if (showLoading) loading.value = true
+  if (showLoading && !conversations.value.length) loading.value = true
   try {
     const all = await fetchConversations('all')
+    listLoadFailed.value = false
     const map = new Map<string, ConversationItem>()
     all.forEach((c) => map.set(c.id, c))
     const baseList = dedupeConversationItems([...map.values()])
@@ -466,6 +473,7 @@ async function loadConversations(showLoading = false) {
     })
   } catch {
     // 接口失败时保持当前列表，避免空列表造成误解
+    listLoadFailed.value = true
   } finally {
     loading.value = false
   }
@@ -886,8 +894,8 @@ const showMoreMenu = ref(false)
 
 const moreActions = [
   { key: 'add', label: '添加好友', icon: 'person_add', path: '/contacts/add' },
-  { key: 'group', label: '添加群聊', icon: 'group_add', path: '/group/add' },
-  { key: 'create-group', label: '发起群聊', icon: 'group_add', path: '/group/create' },
+  { key: 'group', label: '加入群聊', icon: 'group', path: '/group/add' },
+  { key: 'create-group', label: '创建群聊', icon: 'group_add', path: '/group/create' },
   { key: 'scan', label: '扫一扫', icon: 'qr_code_scanner', path: '/scan' },
 ] as const
 
@@ -913,10 +921,9 @@ function goSearch() {
 <template>
   <div class="messages-page" :class="{ editing: editMode }" @click="closeMoreMenu">
     <div class="head-area">
-    <header class="top-bar">
-      <div class="title-row">
-        <h1 class="page-title">消息</h1>
-        <div class="title-actions">
+    <header class="pulse-page-nav page-header tab-home-header home-tab-header">
+      <h1 class="page-title">消息</h1>
+      <div class="home-tab-actions">
           <button
             v-if="hasDesktopSession"
             type="button"
@@ -926,23 +933,10 @@ function goSearch() {
           >
             <span class="material-symbols-outlined">computer</span>
           </button>
-        </div>
-      </div>
-      <div class="top-row">
-        <div class="search-pill" role="button" tabindex="0" @click="goSearch" @keyup.enter="goSearch">
-          <svg class="search-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-            <circle cx="11" cy="11" r="7" />
-            <path d="m20 20-3.5-3.5" stroke-linecap="round" />
-          </svg>
-          <span class="search-placeholder">搜索</span>
-        </div>
+
         <div class="more-wrap" @click.stop>
           <button type="button" class="more-btn" aria-label="更多" @click.stop="onMore">
-            <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
-              <circle cx="12" cy="5" r="1.6" />
-              <circle cx="12" cy="12" r="1.6" />
-              <circle cx="12" cy="19" r="1.6" />
-            </svg>
+            <IconMore />
           </button>
           <div v-if="showMoreMenu" class="more-menu" @click.stop>
             <button
@@ -952,13 +946,21 @@ function goSearch() {
               class="more-item"
               @click="onMoreAction(item.path)"
             >
-              <span class="material-symbols-outlined more-icon">{{ item.icon }}</span>
+              <AppIcon :name="item.icon" class="more-icon" />
               <span>{{ item.label }}</span>
             </button>
           </div>
         </div>
+
       </div>
     </header>
+    <div class="top-row">
+        <div class="search-pill" role="button" tabindex="0" @click="goSearch" @keyup.enter="goSearch">
+          <AppIcon name="search" class="search-ico" :size="20" />
+          <span class="search-placeholder">搜索</span>
+        </div>
+    </div>
+    <p v-if="listLoadFailed" class="local-list-status connection-error" role="status">无法连接服务器，请检查网络后重试</p>
 
     </div>
 
@@ -1074,7 +1076,7 @@ function goSearch() {
               </van-swipe-cell>
             </template>
             <div v-if="!loading && filteredList.length === 0" class="empty-state">
-              暂无会话
+              {{ listLoadFailed ? '暂时无法同步；本机没有可显示的会话记录' : '暂无会话' }}
             </div>
           </div>
           <!-- 占满剩余高度，保证空白处也落在刷新触控区内 -->
@@ -1086,11 +1088,11 @@ function goSearch() {
     <!-- 编辑模式底部操作栏 -->
     <div v-if="editMode" class="edit-bar">
       <button type="button" class="edit-action cancel" @click.stop="exitEditMode">
-        <span class="material-symbols-outlined">close</span>
+        <AppIcon name="close"  />
         <span>取消</span>
       </button>
       <button type="button" class="edit-action danger" @click="batchDelete">
-        <span class="material-symbols-outlined">delete</span>
+        <AppIcon name="delete"  />
         <span>删除</span>
       </button>
       <button type="button" class="edit-action" @click="batchRead">
@@ -1191,7 +1193,7 @@ function goSearch() {
   margin: 0;
   font-size: calc(var(--pulse-content-font-size, 15px) + 3px);
   font-weight: 700;
-  line-height: 24px;
+  line-height: calc(24px * var(--pulse-font-scale, 1));
   color: var(--pulse-text);
 }
 
@@ -1266,7 +1268,7 @@ function goSearch() {
   min-width: 0;
   color: var(--pulse-text-secondary);
   font-size: var(--pulse-content-font-size, 15px);
-  line-height: 20px;
+  line-height: calc(20px * var(--pulse-font-scale, 1));
 }
 
 .more-btn {
@@ -1380,14 +1382,14 @@ function goSearch() {
 .desktop-sessions-heading h2 {
   margin: 0;
   font-size: var(--pulse-font-title);
-  line-height: 26px;
+  line-height: calc(26px * var(--pulse-font-scale, 1));
 }
 
 .desktop-sessions-heading p {
   margin: 2px 0 0;
   color: var(--pulse-text-secondary);
   font-size: var(--pulse-font-small);
-  line-height: 19px;
+  line-height: calc(19px * var(--pulse-font-scale, 1));
 }
 
 .desktop-session-list {
@@ -1424,7 +1426,7 @@ function goSearch() {
   color: var(--pulse-text);
   font-size: var(--pulse-font-body);
   font-weight: 600;
-  line-height: 21px;
+  line-height: calc(21px * var(--pulse-font-scale, 1));
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -1432,7 +1434,7 @@ function goSearch() {
 .desktop-session-copy span {
   color: var(--pulse-text-secondary);
   font-size: var(--pulse-font-caption);
-  line-height: 18px;
+  line-height: calc(18px * var(--pulse-font-scale, 1));
 }
 
 .desktop-session-logout,
@@ -1484,7 +1486,7 @@ function goSearch() {
   margin: 14px 0 0;
   color: var(--pulse-text-tertiary, var(--pulse-text-secondary));
   font-size: var(--pulse-font-caption);
-  line-height: 18px;
+  line-height: calc(18px * var(--pulse-font-scale, 1));
   text-align: center;
 }
 
@@ -1684,8 +1686,8 @@ function goSearch() {
   flex-wrap: wrap;
   gap: 4px;
   min-width: 0;
-  font-size: calc(var(--pulse-content-font-size, 15px) + 1px);
-  font-weight: 600;
+  font-size: var(--pulse-font-body);
+  font-weight: 700;
   line-height: 1.35;
   color: var(--pulse-text);
 }
@@ -1705,15 +1707,15 @@ function goSearch() {
   border-radius: 999px;
   font-size: var(--pulse-font-caption);
   font-weight: 600;
-  line-height: 16px;
+  line-height: calc(16px * var(--pulse-font-scale, 1));
   white-space: normal;
   overflow-wrap: anywhere;
 }
 
 .group-tag {
   flex-shrink: 0;
-  font-size: var(--pulse-font-caption);
-  font-weight: 700;
+  font-size: clamp(9px, calc(10px * var(--pulse-font-scale, 1)), 12px);
+  font-weight: 600;
   line-height: 1;
   padding: 2px 5px;
   border-radius: 3px;
@@ -1724,14 +1726,18 @@ function goSearch() {
 
 .avatar-group-tag {
   position: absolute;
-  right: -5px;
-  bottom: -3px;
+  right: -1px;
+  bottom: -1px;
   z-index: 2;
   box-sizing: border-box;
-  padding: 2px 5px;
-  border: 2px solid var(--pulse-bg);
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 16px;
+  padding: 0;
+  border: 1px solid var(--pulse-bg);
   border-radius: 999px;
-  line-height: 12px;
+  line-height: 1;
   background: var(--pulse-primary-container);
   color: var(--pulse-on-primary-container);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
@@ -1761,7 +1767,7 @@ function goSearch() {
   flex-shrink: 0;
   font-size: var(--pulse-font-caption);
   font-weight: 600;
-  line-height: 12px;
+  line-height: calc(12px * var(--pulse-font-scale, 1));
   color: var(--pulse-text-secondary);
 }
 
@@ -1780,7 +1786,8 @@ function goSearch() {
   margin: 0;
   flex: 1;
   min-width: 0;
-  font-size: var(--pulse-content-font-size, 15px);
+  font-size: calc(13px * var(--pulse-font-scale, 1));
+  font-weight: 400;
   line-height: 1.35;
   color: var(--pulse-text-secondary);
   overflow: hidden;

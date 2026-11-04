@@ -117,7 +117,7 @@ async function submit() {
 
 <template>
   <div class="create-group-page">
-    <header class="page-header glass-header">
+    <header class="pulse-page-nav page-header glass-header">
       <button type="button" class="icon-btn" @click="goBack" aria-label="返回">
         <IconBack />
       </button>
@@ -143,7 +143,7 @@ async function submit() {
     </div>
 
     <div class="search-row">
-      <span class="material-symbols-outlined search-icon">search</span>
+      <AppIcon name="search" class="search-icon" />
       <input
         v-model="keyword"
         type="text"
@@ -158,7 +158,7 @@ async function submit() {
         aria-label="清除搜索"
         @click="keyword = ''"
       >
-        <span class="material-symbols-outlined">cancel</span>
+        <AppIcon name="cancel"  />
       </button>
     </div>
 

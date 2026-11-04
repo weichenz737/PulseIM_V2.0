@@ -15,7 +15,7 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * 系统级文件发送参数：单文件大小上限 + 允许发送的文件类型。
+ * 系统级文件发送参数：图片、视频、普通文件大小上限 + 允许发送的文件类型。
  * 管理端可配置，客户端通过公开接口读取用于前端校验，服务端上传时强制生效。
  */
 @Service
@@ -30,7 +30,10 @@ public class FileConfigService {
     public Map<String, Object> getClientConfig() {
         Config config = load();
         Map<String, Object> result = new LinkedHashMap<>();
-        result.put("maxSizeMb", config.maxSizeMb());
+        result.put("maxSizeMb", config.fileMaxSizeMb());
+        result.put("imageMaxSizeMb", config.imageMaxSizeMb());
+        result.put("videoMaxSizeMb", config.videoMaxSizeMb());
+        result.put("fileMaxSizeMb", config.fileMaxSizeMb());
         result.put("allowedExtensions", config.allowedExtensions());
         return result;
     }
@@ -38,15 +41,21 @@ public class FileConfigService {
     public Map<String, Object> getAdminConfig() {
         Config config = load();
         Map<String, Object> result = new LinkedHashMap<>();
-        result.put("maxSizeMb", config.maxSizeMb());
+        result.put("maxSizeMb", config.fileMaxSizeMb());
+        result.put("imageMaxSizeMb", config.imageMaxSizeMb());
+        result.put("videoMaxSizeMb", config.videoMaxSizeMb());
+        result.put("fileMaxSizeMb", config.fileMaxSizeMb());
         result.put("allowedExtensions", config.allowedExtensions());
         result.put("updatedAt", config.updatedAt());
         return result;
     }
 
     @Transactional
-    public Map<String, Object> update(int maxSizeMb, List<String> allowedExtensions) {
-        int safeMax = maxSizeMb <= 0 ? DEFAULT_MAX_SIZE_MB : Math.min(maxSizeMb, MAX_SIZE_LIMIT_MB);
+    public Map<String, Object> update(int imageMaxSizeMb, int videoMaxSizeMb, int fileMaxSizeMb,
+                                      List<String> allowedExtensions) {
+        int safeImageMax = validateMax(imageMaxSizeMb);
+        int safeVideoMax = validateMax(videoMaxSizeMb);
+        int safeFileMax = validateMax(fileMaxSizeMb);
         List<String> normalized = new ArrayList<>();
         if (allowedExtensions != null) {
             for (String raw : allowedExtensions) {
@@ -55,22 +64,31 @@ public class FileConfigService {
             }
         }
         jdbcTemplate.update("""
-                INSERT INTO sys_file_config(id, max_size_mb, allowed_extensions, updated_at)
-                VALUES (1, ?, ?, ?)
+                INSERT INTO sys_file_config(id, max_size_mb, image_max_size_mb, video_max_size_mb,
+                                            file_max_size_mb, allowed_extensions, updated_at)
+                VALUES (1, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT (id) DO UPDATE SET
                     max_size_mb = EXCLUDED.max_size_mb,
+                    image_max_size_mb = EXCLUDED.image_max_size_mb,
+                    video_max_size_mb = EXCLUDED.video_max_size_mb,
+                    file_max_size_mb = EXCLUDED.file_max_size_mb,
                     allowed_extensions = EXCLUDED.allowed_extensions,
                     updated_at = EXCLUDED.updated_at
-                """, safeMax, String.join(",", normalized), OffsetDateTime.now());
+                """, safeFileMax, safeImageMax, safeVideoMax, safeFileMax,
+                String.join(",", normalized), OffsetDateTime.now());
         return getAdminConfig();
     }
 
     /** 上传/发送文件前的统一校验：大小上限 + 允许类型，不通过直接抛错。 */
     public void assertFileAllowed(String fileName, String contentType, long size) {
         Config config = load();
-        long maxBytes = (long) config.maxSizeMb() * 1024 * 1024;
+        String type = contentType == null ? "" : contentType.toLowerCase(Locale.ROOT);
+        int maxSizeMb = type.startsWith("image/") ? config.imageMaxSizeMb()
+                : type.startsWith("video/") ? config.videoMaxSizeMb() : config.fileMaxSizeMb();
+        String label = type.startsWith("image/") ? "图片" : type.startsWith("video/") ? "视频" : "文件";
+        long maxBytes = (long) maxSizeMb * 1024 * 1024;
         if (size > maxBytes) {
-            throw new BizException("文件不能超过 " + config.maxSizeMb() + "MB");
+            throw new BizException(label + "不能超过 " + maxSizeMb + "MB");
         }
         List<String> allowed = config.allowedExtensions();
         if (allowed.isEmpty()) return;
@@ -106,7 +124,9 @@ public class FileConfigService {
 
     private static String contentTypeSubtype(String contentType) {
         if (!StringUtils.hasText(contentType)) return null;
-        String subtype = contentType.toLowerCase(Locale.ROOT).split("/", 2)[1].split(";", 2)[0].trim();
+        String[] parts = contentType.toLowerCase(Locale.ROOT).split("/", 2);
+        if (parts.length < 2) return null;
+        String subtype = parts[1].split(";", 2)[0].trim();
         if (subtype.isEmpty() || "octet-stream".equals(subtype)) return null;
         // image/jpeg 的扩展名通常写作 jpg
         return "jpeg".equals(subtype) ? "jpg" : subtype;
@@ -120,13 +140,22 @@ public class FileConfigService {
         return value;
     }
 
+    private static int validateMax(int sizeMb) {
+        if (sizeMb < 1 || sizeMb > MAX_SIZE_LIMIT_MB) {
+            throw new BizException("文件大小上限须在 1-1024MB 之间");
+        }
+        return sizeMb;
+    }
+
     private Config load() {
         List<Map<String, Object>> rows = jdbcTemplate.queryForList("""
-                SELECT max_size_mb, allowed_extensions, updated_at
+                SELECT max_size_mb, image_max_size_mb, video_max_size_mb, file_max_size_mb,
+                       allowed_extensions, updated_at
                 FROM sys_file_config
                 WHERE id = 1
                 """);
-        if (rows.isEmpty()) return new Config(DEFAULT_MAX_SIZE_MB, List.of(), null);
+        if (rows.isEmpty()) return new Config(DEFAULT_MAX_SIZE_MB, DEFAULT_MAX_SIZE_MB,
+                DEFAULT_MAX_SIZE_MB, List.of(), null);
         Map<String, Object> row = rows.get(0);
         int maxSizeMb = row.get("max_size_mb") == null
                 ? DEFAULT_MAX_SIZE_MB
@@ -137,9 +166,16 @@ public class FileConfigService {
             String ext = normalizeExtension(part);
             if (ext != null && !extensions.contains(ext)) extensions.add(ext);
         }
-        return new Config(maxSizeMb, extensions, row.get("updated_at"));
+        return new Config(sizeOrDefault(row.get("image_max_size_mb"), maxSizeMb),
+                sizeOrDefault(row.get("video_max_size_mb"), maxSizeMb),
+                sizeOrDefault(row.get("file_max_size_mb"), maxSizeMb), extensions, row.get("updated_at"));
     }
 
-    private record Config(int maxSizeMb, List<String> allowedExtensions, Object updatedAt) {
+    private static int sizeOrDefault(Object value, int fallback) {
+        return value instanceof Number number ? number.intValue() : fallback;
+    }
+
+    private record Config(int imageMaxSizeMb, int videoMaxSizeMb, int fileMaxSizeMb,
+                          List<String> allowedExtensions, Object updatedAt) {
     }
 }

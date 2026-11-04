@@ -14,7 +14,7 @@ function goBack() {
 
 <template>
   <div class="notify-page">
-    <header class="page-header">
+    <header class="pulse-page-nav page-header">
       <button type="button" class="back-btn" @click="goBack" aria-label="返回">
         <IconBack />
       </button>

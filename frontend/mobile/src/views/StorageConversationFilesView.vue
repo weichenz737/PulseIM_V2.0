@@ -316,22 +316,22 @@ onUnmounted(() => {
 
 <template>
   <div class="files-page" @click="sortVisible = false">
-    <header class="page-header"><button type="button" class="header-btn" aria-label="返回" @click="goBack"><IconBack /></button><h1>{{ title }}</h1><button type="button" class="header-text-btn" @click="selectMode ? finishSelection() : (selectMode = true)">{{ selectMode ? '完成' : '选择' }}</button></header>
+    <header class="pulse-page-nav page-header"><button type="button" class="header-btn" aria-label="返回" @click="goBack"><IconBack /></button><h1>{{ title }}</h1><button type="button" class="header-text-btn" @click="selectMode ? finishSelection() : (selectMode = true)">{{ selectMode ? '完成' : '选择' }}</button></header>
     <main class="files-content">
       <div class="tab-row"><button v-for="tab in tabs" :key="tab.key" type="button" :class="{ active: activeTab === tab.key }" @click="activeTab = tab.key">{{ tab.label }}</button></div>
-      <label class="search-box"><span class="material-symbols-outlined">search</span><input v-model="search" type="search" placeholder="搜索文件名" /><button v-if="search" type="button" class="clear-search" @click="search = ''">×</button></label>
+      <label class="search-box"><AppIcon name="search"  /><input v-model="search" type="search" placeholder="搜索文件名" /><button v-if="search" type="button" class="clear-search" @click="search = ''" aria-label="清空搜索"><AppIcon name="clear" :size="20" /></button></label>
       <div class="list-meta"><span>{{ visibleAssets.length }} 项 · {{ formatStorageSize(visibleAssets.reduce((sum, asset) => sum + asset.size, 0)) }}</span><div class="sort-control"><button type="button" @click.stop="sortVisible = !sortVisible"><span class="material-symbols-outlined">sort</span>排序</button><div v-if="sortVisible" class="sort-menu" @click.stop><button v-for="item in [{ key: 'size-desc', label: '按大小从大到小' }, { key: 'size-asc', label: '按大小从小到大' }, { key: 'date-desc', label: '按时间从新到旧' }, { key: 'date-asc', label: '按时间从旧到新' }]" :key="item.key" type="button" :class="{ active: sortKey === item.key }" @click="sortKey = item.key as SortKey; sortVisible = false">{{ item.label }}</button></div></div></div>
       <div v-if="loading" class="state"><span class="material-symbols-outlined spinning">sync</span>正在加载资源…</div>
       <div v-else-if="errorText" class="state error">{{ errorText }}<button type="button" @click="load(true)">重试</button></div>
       <div v-else-if="!visibleAssets.length" class="state"><span class="material-symbols-outlined">folder_open</span>暂无匹配资源</div>
       <section v-else-if="activeTab === 'media'" class="media-grid">
         <button v-for="asset in visibleAssets" :key="asset.id" type="button" class="media-item" @click="preview(asset)" @contextmenu.prevent="startSelection(asset)">
-          <img v-if="asset.fileId ? localPreviewUrls[asset.id] : (asset.kind === 'image' || asset.thumbUrl)" :src="asset.fileId ? localPreviewUrls[asset.id] : (asset.thumbUrl || asset.url)" alt="" loading="lazy" /><div v-else class="media-placeholder"><span class="material-symbols-outlined">{{ asset.kind === 'video' ? 'movie' : 'image' }}</span></div>
+          <img v-if="asset.fileId ? localPreviewUrls[asset.id] : (asset.kind === 'image' || asset.thumbUrl)" :src="asset.fileId ? localPreviewUrls[asset.id] : (asset.thumbUrl || asset.url)" alt="" loading="lazy" /><div v-else class="media-placeholder"><AppIcon :name="asset.kind === 'video' ? 'movie' : 'image'"  /></div>
           <span class="media-overlay"><span v-if="asset.kind === 'video'" class="material-symbols-outlined">play_circle</span><small>{{ formatStorageSize(asset.size) }}</small></span><span v-if="selectMode" class="asset-check" :class="{ checked: selected.has(asset.id) }"><span v-if="selected.has(asset.id)" class="material-symbols-outlined">check</span></span>
         </button>
       </section>
       <section v-else class="asset-list">
-        <button v-for="asset in visibleAssets" :key="asset.id" type="button" class="asset-row" @click="preview(asset)" @contextmenu.prevent="startSelection(asset)"><span class="file-icon"><span class="material-symbols-outlined">{{ assetIcon(asset) }}</span></span><span class="asset-body"><strong>{{ asset.name }}</strong><small>{{ formatStorageSize(asset.size) }}<template v-if="asset.durationMs"> · {{ formatDuration(asset.durationMs) }}</template> · {{ formatStorageDate(asset.createdAt) }}</small></span><span v-if="selectMode" class="asset-check" :class="{ checked: selected.has(asset.id) }"><span v-if="selected.has(asset.id)" class="material-symbols-outlined">check</span></span><span v-else class="material-symbols-outlined chevron">chevron_right</span></button>
+        <button v-for="asset in visibleAssets" :key="asset.id" type="button" class="asset-row" @click="preview(asset)" @contextmenu.prevent="startSelection(asset)"><span class="file-icon"><AppIcon :name="assetIcon(asset)"  /></span><span class="asset-body"><strong>{{ asset.name }}</strong><small>{{ formatStorageSize(asset.size) }}<template v-if="asset.durationMs"> · {{ formatDuration(asset.durationMs) }}</template> · {{ formatStorageDate(asset.createdAt) }}</small></span><span v-if="selectMode" class="asset-check" :class="{ checked: selected.has(asset.id) }"><span v-if="selected.has(asset.id)" class="material-symbols-outlined">check</span></span><AppIcon name="chevron_right" v-else class="chevron" /></button>
       </section>
     </main>
       <footer v-if="selectMode" class="action-bar" :class="{ 'has-locate': selected.size === 1 }">
@@ -344,11 +344,11 @@ onUnmounted(() => {
           <span>下载</span>
         </button>
         <button type="button" :disabled="!selected.size" @click="openForwardPicker">
-          <span class="material-symbols-outlined">forward</span>
+          <AppIcon name="forward"  />
           <span>转发</span>
         </button>
         <button type="button" :disabled="!selected.size" @click="favoriteSelected">
-          <span class="material-symbols-outlined">star</span>
+          <AppIcon name="star"  />
           <span>收藏</span>
         </button>
         <button v-if="selected.size === 1" type="button" @click="locateSelected">
@@ -356,11 +356,11 @@ onUnmounted(() => {
           <span>定位</span>
         </button>
         <button type="button" class="danger" :disabled="!selected.size" @click="deleteSelected">
-          <span class="material-symbols-outlined">delete</span>
+          <AppIcon name="delete"  />
           <span>删除</span>
         </button>
       </footer>
-    <AppBottomSheet v-model:show="forwardVisible" position="bottom" round safe-area-inset-bottom class="forward-popup"><div class="forward-panel"><div class="forward-head"><strong>选择转发对象</strong><button type="button" @click="forwardVisible = false">关闭</button></div><div class="forward-list"><button v-for="target in targets" :key="target.id" type="button" class="forward-row" :class="{ selected: forwardTargetIds.has(target.id) }" @click="toggleForwardTarget(target.id)"><span class="material-symbols-outlined">{{ forwardTargetIds.has(target.id) ? 'check_circle' : 'radio_button_unchecked' }}</span><img v-if="target.avatar" :src="target.avatar" alt="" /><span v-else class="target-avatar">{{ target.name.slice(0, 1) }}</span><span>{{ target.name }}</span></button></div><AppButton variant="primary" type="button" class="forward-submit" :disabled="!forwardTargetIds.size || forwarding" @click="submitForward">{{ forwarding ? '转发中…' : '确认转发' }}</AppButton></div></AppBottomSheet>
+    <AppBottomSheet v-model:show="forwardVisible" position="bottom" round safe-area-inset-bottom class="forward-popup"><div class="forward-panel"><div class="forward-head"><strong>选择转发对象</strong><button type="button" @click="forwardVisible = false">关闭</button></div><div class="forward-list"><button v-for="target in targets" :key="target.id" type="button" class="forward-row" :class="{ selected: forwardTargetIds.has(target.id) }" @click="toggleForwardTarget(target.id)"><AppIcon :name="forwardTargetIds.has(target.id) ? 'check_circle' : 'radio_button_unchecked'"  /><img v-if="target.avatar" :src="target.avatar" alt="" /><span v-else class="target-avatar">{{ target.name.slice(0, 1) }}</span><span>{{ target.name }}</span></button></div><AppButton variant="primary" type="button" class="forward-submit" :disabled="!forwardTargetIds.size || forwarding" @click="submitForward">{{ forwarding ? '转发中…' : '确认转发' }}</AppButton></div></AppBottomSheet>
   </div>
 </template>
 

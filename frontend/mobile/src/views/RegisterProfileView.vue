@@ -148,7 +148,7 @@ function openLegalText(key: SystemTextKey) {
               placeholder="••••••••"
               class="field-input"
             />
-            <button type="button" class="password-toggle" @click="showPassword = !showPassword"><span class="material-symbols-outlined">{{ showPassword ? 'visibility_off' : 'visibility' }}</span></button>
+            <button type="button" class="password-toggle" @click="showPassword = !showPassword"><AppIcon :name="showPassword ? 'visibility_off' : 'visibility'"  /></button>
           </div>
         </div>
 
@@ -162,7 +162,7 @@ function openLegalText(key: SystemTextKey) {
               placeholder="••••••••"
               class="field-input"
             />
-            <button type="button" class="password-toggle" @click="showConfirmPassword = !showConfirmPassword"><span class="material-symbols-outlined">{{ showConfirmPassword ? 'visibility_off' : 'visibility' }}</span></button>
+            <button type="button" class="password-toggle" @click="showConfirmPassword = !showConfirmPassword"><AppIcon :name="showConfirmPassword ? 'visibility_off' : 'visibility'"  /></button>
           </div>
         </div>
 
@@ -214,9 +214,9 @@ function openLegalText(key: SystemTextKey) {
 
 .title {
   margin: 0 0 4px;
-  font-size: 34px;
+  font-size: calc(34px * var(--pulse-font-scale, 1));
   font-weight: 700;
-  line-height: 41px;
+  line-height: calc(41px * var(--pulse-font-scale, 1));
   letter-spacing: -0.02em;
   color: var(--pulse-text);
 }
@@ -238,7 +238,7 @@ function openLegalText(key: SystemTextKey) {
 .hint-card p {
   margin: 0;
   font-size: var(--pulse-font-body);
-  line-height: 20px;
+  line-height: calc(20px * var(--pulse-font-scale, 1));
   color: var(--pulse-text-secondary);
   text-align: center;
 }

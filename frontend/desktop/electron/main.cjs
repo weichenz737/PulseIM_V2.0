@@ -17,10 +17,10 @@ app.commandLine.appendSwitch('ignore-certificate-errors')
 const isDev = Boolean(process.env.PULSE_DESKTOP_DEV_URL)
 const devUrl = process.env.PULSE_DESKTOP_DEV_URL || ''
 const trustedPulseServer = {
-  protocol: 'https:',
-  hostname: '110.42.238.238',
-  port: 9001,
-  fingerprint256: '847CA5367F2C80DFF268F8FEB106E31B4389BF1060583381C37833DFA521A941',
+  protocol: 'http:',
+  hostname: '127.0.0.1',
+  port: 5173,
+  fingerprint256: '',
 }
 const defaultPulseOrigin = `${trustedPulseServer.protocol}//${trustedPulseServer.hostname}:${trustedPulseServer.port}`
 let activePulseOrigin = defaultPulseOrigin

@@ -7,7 +7,9 @@ const loading = ref(false)
 const saving = ref(false)
 const updatedAt = ref('')
 const form = reactive({
-  maxSizeMb: 100,
+  imageMaxSizeMb: 100,
+  videoMaxSizeMb: 100,
+  fileMaxSizeMb: 100,
   extensionsText: '',
 })
 
@@ -22,7 +24,9 @@ async function load() {
   loading.value = true
   try {
     const data = await fetchFileConfig()
-    form.maxSizeMb = data.maxSizeMb
+    form.imageMaxSizeMb = data.imageMaxSizeMb ?? data.maxSizeMb
+    form.videoMaxSizeMb = data.videoMaxSizeMb ?? data.maxSizeMb
+    form.fileMaxSizeMb = data.fileMaxSizeMb ?? data.maxSizeMb
     form.extensionsText = (data.allowedExtensions || []).join(', ')
     updatedAt.value = data.updatedAt || ''
   } catch (error) {
@@ -36,10 +40,14 @@ async function save() {
   saving.value = true
   try {
     const data = await updateFileConfig({
-      maxSizeMb: form.maxSizeMb,
+      imageMaxSizeMb: form.imageMaxSizeMb,
+      videoMaxSizeMb: form.videoMaxSizeMb,
+      fileMaxSizeMb: form.fileMaxSizeMb,
       allowedExtensions: parseExtensions(form.extensionsText),
     })
-    form.maxSizeMb = data.maxSizeMb
+    form.imageMaxSizeMb = data.imageMaxSizeMb
+    form.videoMaxSizeMb = data.videoMaxSizeMb
+    form.fileMaxSizeMb = data.fileMaxSizeMb
     form.extensionsText = (data.allowedExtensions || []).join(', ')
     updatedAt.value = data.updatedAt || ''
     ElMessage.success('文件参数已保存')
@@ -64,9 +72,15 @@ onMounted(load)
       </div>
 
       <el-form label-position="top">
-        <el-form-item label="单文件大小上限（MB）">
-          <el-input-number v-model="form.maxSizeMb" :min="1" :max="1024" :step="10" />
-          <div class="form-tip">图片、视频、普通文件均受此限制，默认 100MB，最大可设置 1024MB。</div>
+        <el-form-item label="图片大小上限（MB）">
+          <el-input-number v-model="form.imageMaxSizeMb" :min="1" :max="1024" :step="10" />
+        </el-form-item>
+        <el-form-item label="视频大小上限（MB）">
+          <el-input-number v-model="form.videoMaxSizeMb" :min="1" :max="1024" :step="10" />
+        </el-form-item>
+        <el-form-item label="普通文件大小上限（MB）">
+          <el-input-number v-model="form.fileMaxSizeMb" :min="1" :max="1024" :step="10" />
+          <div class="form-tip">音频及其他附件按普通文件上限校验。各项默认沿用原有上限，最大可设置 1024MB。</div>
         </el-form-item>
         <el-form-item label="允许发送的文件类型">
           <el-input

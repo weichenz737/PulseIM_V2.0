@@ -282,11 +282,11 @@ function mediaCount(item: MomentItem) {
 
 <template>
   <div class="album-page" @scroll.passive="onScroll">
-    <header class="page-header" :class="{ solid: headerSolid }">
+    <header class="pulse-page-nav page-header" :class="{ solid: headerSolid }">
       <button type="button" class="icon-btn" @click="goBack" aria-label="返回">
         <IconBack />
       </button>
-      <h1 class="page-title" :class="{ show: headerSolid }">我的朋友圈</h1>
+      <h1 class="page-title show">我的朋友圈</h1>
       <button type="button" class="perm-btn" @click="openPermission">朋友圈权限</button>
     </header>
 
@@ -399,7 +399,7 @@ function mediaCount(item: MomentItem) {
 }
 
 .page-header {
-  position: fixed;
+  position: sticky;
   top: 0;
   left: 0;
   right: 0;
@@ -558,7 +558,7 @@ function mediaCount(item: MomentItem) {
 }
 
 .day {
-  font-size: 28px;
+  font-size: calc(28px * var(--pulse-font-scale, 1));
   font-weight: 700;
   color: #fff;
   letter-spacing: -0.5px;

@@ -329,9 +329,7 @@ onBeforeUnmount(() => {
               :class="{ on: muted }"
               @click="call.toggleMute()"
             >
-              <span class="material-symbols-outlined filled">{{
-                muted ? 'mic_off' : 'mic'
-              }}</span>
+              <AppIcon :name="muted ? 'mic_off' : 'mic'" class="filled" />
               <span class="act-label">{{ muted ? '已静音' : '静音' }}</span>
             </button>
             <button
@@ -341,9 +339,7 @@ onBeforeUnmount(() => {
               :class="{ on: !cameraOn }"
               @click="call.toggleCamera()"
             >
-              <span class="material-symbols-outlined filled">{{
-                cameraOn ? 'videocam' : 'videocam_off'
-              }}</span>
+              <AppIcon :name="cameraOn ? 'videocam' : 'videocam_off'" class="filled" />
               <span class="act-label">{{ cameraOn ? '摄像头' : '已关闭' }}</span>
             </button>
             <button
@@ -363,9 +359,7 @@ onBeforeUnmount(() => {
               :class="{ on: !speakerOn }"
               @click="call.toggleSpeaker()"
             >
-              <span class="material-symbols-outlined filled">{{
-                speakerOn ? 'volume_up' : 'volume_down'
-              }}</span>
+              <AppIcon :name="speakerOn ? 'volume_up' : 'volume_down'" class="filled" />
               <span class="act-label">扬声器</span>
             </button>
             <button type="button" class="act hangup" @click="call.hangup()">
@@ -650,7 +644,7 @@ onBeforeUnmount(() => {
 
 .peer-name {
   margin: 20px 0 8px;
-  font-size: 24px;
+  font-size: calc(24px * var(--pulse-font-scale, 1));
   font-weight: 600;
 }
 

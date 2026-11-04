@@ -160,11 +160,9 @@ async function selectAccount(account: SavedAccount) {
 
 <template>
   <div class="account-switch-page">
-    <header class="page-header">
+    <header class="pulse-page-nav page-header">
       <button type="button" class="back-btn" aria-label="返回" @click="goBack">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M15 18l-6-6 6-6" />
-        </svg>
+        <IconBack />
       </button>
       <h1 class="page-title">切换账号</h1>
       <div class="header-spacer" />
@@ -199,19 +197,19 @@ async function selectAccount(account: SavedAccount) {
           <span class="account-state">
             <span v-if="accountBadgeCount(account)" class="unread-badge">{{ unreadBadge(account) }}</span>
             <span v-if="account.userId === currentUserId" class="current-badge">当前账号</span>
-            <span v-else class="material-symbols-outlined account-arrow">chevron_right</span>
+            <AppIcon name="chevron_right" v-else class="account-arrow" />
           </span>
         </button>
 
         <button type="button" class="add-account-item" @click="addAccount">
           <span class="add-account-icon">
-            <span class="material-symbols-outlined">add</span>
+            <AppIcon name="add"  />
           </span>
           <span class="add-account-text">
             <strong>新增账号</strong>
             <small>登录已有账号或注册新账号</small>
           </span>
-          <span class="material-symbols-outlined account-arrow">chevron_right</span>
+          <AppIcon name="chevron_right" class="account-arrow" />
         </button>
       </section>
 
@@ -351,7 +349,7 @@ async function selectAccount(account: SavedAccount) {
   overflow: hidden;
   color: var(--pulse-text);
   font-size: var(--pulse-font-body);
-  line-height: 20px;
+  line-height: calc(20px * var(--pulse-font-scale, 1));
   white-space: nowrap;
   text-overflow: ellipsis;
 }
@@ -361,7 +359,7 @@ async function selectAccount(account: SavedAccount) {
   overflow: hidden;
   color: var(--pulse-text-secondary);
   font-size: var(--pulse-font-caption);
-  line-height: 16px;
+  line-height: calc(16px * var(--pulse-font-scale, 1));
   white-space: nowrap;
   text-overflow: ellipsis;
 }
@@ -396,7 +394,7 @@ async function selectAccount(account: SavedAccount) {
   justify-content: center;
   font-size: var(--pulse-font-caption);
   font-weight: 600;
-  line-height: 18px;
+  line-height: calc(18px * var(--pulse-font-scale, 1));
 }
 
 .account-arrow {

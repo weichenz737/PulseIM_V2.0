@@ -46,7 +46,7 @@ function goBack() {
 
 <template>
   <div class="add-group-page">
-    <header class="page-header">
+    <header class="pulse-page-nav page-header">
       <button type="button" class="icon-btn" aria-label="返回" @click="goBack">
         <IconBack />
       </button>
@@ -57,7 +57,7 @@ function goBack() {
     <main class="page-main">
       <section class="search-card">
         <div class="search-wrap">
-          <span class="material-symbols-outlined search-icon">search</span>
+          <AppIcon name="search" class="search-icon" />
           <input
             v-model="keyword"
             class="search-input"
@@ -73,7 +73,7 @@ function goBack() {
             aria-label="清除搜索"
             @click="keyword = ''"
           >
-            <span class="material-symbols-outlined">cancel</span>
+            <AppIcon name="cancel"  />
           </button>
           <button type="button" class="search-button" :disabled="loading" @click="search">
             {{ loading ? '搜索中' : '搜索' }}
@@ -83,9 +83,9 @@ function goBack() {
       </section>
 
       <button type="button" class="scan-card" @click="router.push({ path: '/scan', query: { target: 'group' } })">
-        <span class="scan-icon material-symbols-outlined">qr_code_scanner</span>
+        <AppIcon name="qr_code_scanner" class="scan-icon" />
         <span class="scan-copy"><strong>扫一扫</strong><small>扫描群二维码搜索群聊</small></span>
-        <span class="material-symbols-outlined arrow">chevron_right</span>
+        <AppIcon name="chevron_right" class="arrow" />
       </button>
 
       <section v-if="searched" class="result-section">
@@ -96,13 +96,13 @@ function goBack() {
             <strong>{{ group.title }}</strong>
             <small>群号 {{ group.pulseId }} · {{ group.memberCount }} 名成员</small>
           </div>
-          <span class="material-symbols-outlined arrow">chevron_right</span>
+          <AppIcon name="chevron_right" class="arrow" />
         </button>
         <div v-if="!results.length && !loading" class="empty">暂无搜索结果</div>
       </section>
 
       <section v-else class="empty-intro">
-        <span class="material-symbols-outlined">groups</span>
+        <AppIcon name="groups"  />
         <p>通过群号或群名称查找公开群聊</p>
       </section>
     </main>

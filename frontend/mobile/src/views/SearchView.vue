@@ -206,16 +206,15 @@ function openConversationHits(c: SearchConversationHit) {
 
 <template>
   <div class="search-page">
-    <header class="top-row">
-      <button type="button" class="back-link" @click="goBack">
-        <span class="material-symbols-outlined">arrow_back</span>
-        返回
+    <header class="pulse-page-nav top-row">
+      <button type="button" class="back-link" aria-label="返回" @click="goBack">
+        <IconBack />
       </button>
     </header>
 
     <div class="search-bar-wrap">
       <div class="search-bar">
-        <span class="material-symbols-outlined search-ico">search</span>
+        <AppIcon name="search" class="search-ico" />
         <input
           v-model="keyword"
           type="text"
@@ -226,7 +225,7 @@ function openConversationHits(c: SearchConversationHit) {
           @keyup.enter="onSearchKeyup"
         />
         <button v-if="keyword" type="button" class="search-clear-btn" aria-label="清除搜索" @click="clearKeyword">
-          <span class="material-symbols-outlined">cancel</span>
+          <AppIcon name="cancel"  />
         </button>
       </div>
     </div>
@@ -318,7 +317,7 @@ function openConversationHits(c: SearchConversationHit) {
               <div class="name" v-html="highlight(g.title)" />
               <div class="sub">{{ g.memberCount }} 位成员</div>
             </div>
-            <span class="material-symbols-outlined chevron">chevron_right</span>
+            <AppIcon name="chevron_right" class="chevron" />
           </button>
         </section>
 
@@ -359,7 +358,7 @@ function openConversationHits(c: SearchConversationHit) {
                 </p>
                 <p v-if="c.preview" class="conv-preview" v-html="highlight(c.preview)" />
               </div>
-              <span class="material-symbols-outlined chevron">chevron_right</span>
+              <AppIcon name="chevron_right" class="chevron" />
             </button>
           </div>
         </section>

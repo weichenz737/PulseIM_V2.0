@@ -874,7 +874,7 @@ function onForward() {
 
       <div class="fp-chrome">
         <div class="fp-title-wrap">
-          <span class="material-symbols-outlined fp-file-icon">description</span>
+          <AppIcon name="description" class="fp-file-icon" />
           <div class="fp-title-meta">
             <strong class="fp-title">{{ filePreviewState.name }}</strong>
             <small v-if="filePreviewState.size" class="fp-sub">{{ formatFileSize(filePreviewState.size) }}</small>

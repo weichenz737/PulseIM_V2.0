@@ -31,7 +31,7 @@ function goFriendPermissions() {
 
 <template>
   <div class="general-page">
-    <header class="page-header">
+    <header class="pulse-page-nav page-header">
       <button type="button" class="back-btn" @click="goBack" aria-label="返回">
         <IconBack />
       </button>
@@ -43,25 +43,25 @@ function goFriendPermissions() {
       <section class="menu-card">
         <button type="button" class="menu-row" @click="goSecurity">
           <div class="menu-left">
-            <span class="material-symbols-outlined menu-ico">shield</span>
+            <AppIcon name="shield" class="menu-ico" />
             <div class="menu-text">
               <div class="menu-title">账号与安全</div>
             </div>
           </div>
           <div class="menu-right">
-            <span class="material-symbols-outlined chevron">chevron_right</span>
+            <AppIcon name="chevron_right" class="chevron" />
           </div>
         </button>
 
         <button type="button" class="menu-row" @click="goFriendPermissions">
           <div class="menu-left">
-            <span class="material-symbols-outlined menu-ico">group</span>
+            <AppIcon name="group" class="menu-ico" />
             <div class="menu-text">
               <div class="menu-title">朋友权限</div>
             </div>
           </div>
           <div class="menu-right">
-            <span class="material-symbols-outlined chevron">chevron_right</span>
+            <AppIcon name="chevron_right" class="chevron" />
           </div>
         </button>
 
@@ -75,7 +75,7 @@ function goFriendPermissions() {
           </div>
           <div class="menu-right">
             <span class="menu-extra">{{ pref.fontSizeLabel }}px</span>
-            <span class="material-symbols-outlined chevron">chevron_right</span>
+            <AppIcon name="chevron_right" class="chevron" />
           </div>
         </button>
 
@@ -88,7 +88,7 @@ function goFriendPermissions() {
             </div>
           </div>
           <div class="menu-right">
-            <span class="material-symbols-outlined chevron">chevron_right</span>
+            <AppIcon name="chevron_right" class="chevron" />
           </div>
         </button>
 

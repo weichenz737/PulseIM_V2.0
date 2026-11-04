@@ -773,7 +773,7 @@ async function onDissolve() {
 
 <template>
   <div class="manage-page">
-    <header class="page-header">
+    <header class="pulse-page-nav page-header">
       <button type="button" class="icon-btn" @click="goBack" aria-label="返回">
         <IconBack />
       </button>
@@ -790,18 +790,18 @@ async function onDissolve() {
             <div class="menu-label">群公告</div>
             <p class="menu-sub">{{ detail.notice || '暂无公告' }}</p>
           </div>
-          <span v-if="canManage" class="material-symbols-outlined chevron">chevron_right</span>
+          <AppIcon name="chevron_right" v-if="canManage" class="chevron" />
         </button>
         <button v-if="canManage" type="button" class="menu-row" @click="openWelcomeDialog">
           <div>
             <div class="menu-label">群聊欢迎语</div>
             <p class="menu-sub">{{ detail.welcomeMessage || '新成员进群后自动发送' }}</p>
           </div>
-          <span class="material-symbols-outlined chevron">chevron_right</span>
+          <AppIcon name="chevron_right" class="chevron" />
         </button>
         <button type="button" class="menu-row" @click="openAdd">
           <span class="menu-label">添加成员</span>
-          <span class="material-symbols-outlined chevron">chevron_right</span>
+          <AppIcon name="chevron_right" class="chevron" />
         </button>
         <div v-if="canManage" class="menu-row switch-row">
           <div>
@@ -836,7 +836,7 @@ async function onDissolve() {
             <div class="menu-label">群搜索方式</div>
             <p class="menu-sub">{{ searchModeLabel }}</p>
           </div>
-          <span class="material-symbols-outlined chevron">chevron_right</span>
+          <AppIcon name="chevron_right" class="chevron" />
         </button>
         <div v-if="canManage" class="menu-row switch-row">
           <div>
@@ -878,7 +878,7 @@ async function onDissolve() {
               {{ detail.pendingJoinCount > 0 ? `${detail.pendingJoinCount} 条待处理` : '暂无待审核申请' }}
             </p>
           </div>
-          <span class="material-symbols-outlined chevron">chevron_right</span>
+          <AppIcon name="chevron_right" class="chevron" />
         </button>
         <button
           v-if="isOwner"
@@ -887,7 +887,7 @@ async function onDissolve() {
           @click="transferring = !transferring"
         >
           <span class="menu-label">转让群主</span>
-          <span class="material-symbols-outlined chevron">{{ transferring ? 'expand_less' : 'chevron_right' }}</span>
+          <AppIcon :name="transferring ? 'expand_less' : 'chevron_right'" class="chevron" />
         </button>
       </section>
 
@@ -1052,7 +1052,7 @@ async function onDissolve() {
             <strong>{{ scheduledTypeSummary }}</strong>
             <em>可同时选择多种类型，按下方顺序发送</em>
           </span>
-          <span class="material-symbols-outlined dialog-picker-arrow">chevron_right</span>
+          <AppIcon name="chevron_right" class="dialog-picker-arrow" />
         </button>
         <textarea
           v-if="scheduledTypes.includes(0)"
@@ -1086,7 +1086,7 @@ async function onDissolve() {
                 <span v-if="!scheduledVideoReady[type]" class="scheduled-video-loading">视频加载中…</span>
               </template>
               <audio v-else-if="scheduledFileContents[type] && scheduledFileKind(scheduledFileContents[type]!) === 'audio'" :src="scheduledFileUrl(scheduledFileContents[type]!)" controls preload="metadata" />
-              <div v-else class="scheduled-file-icon"><span class="material-symbols-outlined">description</span></div>
+              <div v-else class="scheduled-file-icon"><AppIcon name="description"  /></div>
               <div class="file-picker-name">{{ scheduledFileContents[type] ? scheduledFileName(scheduledFileContents[type]!) : '未选择文件' }}</div>
             </div>
             <AppButton variant="secondary" type="button" class="dialog-btn" :disabled="scheduledUploading" @click="chooseScheduledFile(type)">
@@ -1108,7 +1108,7 @@ async function onDissolve() {
             <strong>{{ scheduledAtDisplay() }}</strong>
             <em>请选择未来时间，发送前仍可修改</em>
           </span>
-          <span class="material-symbols-outlined dialog-picker-arrow">chevron_right</span>
+          <AppIcon name="chevron_right" class="dialog-picker-arrow" />
         </button>
         <div class="dialog-actions">
           <AppButton variant="secondary" type="button" class="dialog-btn" @click="showScheduledDialog = false">取消</AppButton>
@@ -1125,7 +1125,7 @@ async function onDissolve() {
             <small>定时消息</small>
             <h3>选择消息类型</h3>
           </div>
-          <button type="button" aria-label="关闭" @click="finishScheduledTypeSelection"><span class="material-symbols-outlined">close</span></button>
+          <button type="button" aria-label="关闭" @click="finishScheduledTypeSelection"><AppIcon name="close"  /></button>
         </div>
         <p class="scheduled-sheet-tip">可多选，保存后会在同一时间按文字、图片/视频、文件、音频/语音的顺序发送。</p>
         <button
@@ -1136,9 +1136,9 @@ async function onDissolve() {
           :class="{ selected: scheduledTypes.includes(option.value) }"
           @click="toggleScheduledType(option.value)"
         >
-          <span class="scheduled-type-option-icon material-symbols-outlined">{{ option.icon }}</span>
+          <AppIcon :name="option.icon" class="scheduled-type-option-icon" />
           <span class="scheduled-type-option-copy"><strong>{{ option.label }}</strong><small>{{ option.description }}</small></span>
-          <span class="material-symbols-outlined scheduled-type-check">{{ scheduledTypes.includes(option.value) ? 'check_circle' : 'radio_button_unchecked' }}</span>
+          <AppIcon :name="scheduledTypes.includes(option.value) ? 'check_circle' : 'radio_button_unchecked'" class="scheduled-type-check" />
         </button>
         <button type="button" class="scheduled-sheet-done" @click="finishScheduledTypeSelection">完成</button>
       </section>

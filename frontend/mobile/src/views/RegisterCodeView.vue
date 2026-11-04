@@ -108,11 +108,9 @@ function accountFlowQuery(): Record<string, string> {
 
 <template>
   <div class="register-page">
-    <header class="top-bar">
-      <button type="button" class="back-btn" @click="goBack">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M15 18l-6-6 6-6"/>
-        </svg>
+    <header class="pulse-page-nav top-bar">
+      <button type="button" class="back-btn" aria-label="返回" @click="goBack">
+        <IconBack />
       </button>
     </header>
 
@@ -243,16 +241,16 @@ function accountFlowQuery(): Record<string, string> {
 
 .title {
   margin: 0 0 8px;
-  font-size: 28px;
+  font-size: calc(28px * var(--pulse-font-scale, 1));
   font-weight: 700;
-  line-height: 34px;
+  line-height: calc(34px * var(--pulse-font-scale, 1));
   color: var(--pulse-text);
 }
 
 .phone-hint {
   margin: 0;
   font-size: var(--pulse-font-title);
-  line-height: 24px;
+  line-height: calc(24px * var(--pulse-font-scale, 1));
   color: var(--pulse-text-secondary);
 }
 
@@ -276,7 +274,7 @@ function accountFlowQuery(): Record<string, string> {
   border: 2px solid transparent;
   border-radius: var(--pulse-radius);
   text-align: center;
-  font-size: 34px;
+  font-size: calc(34px * var(--pulse-font-scale, 1));
   font-weight: 700;
   color: var(--pulse-primary);
   outline: none;

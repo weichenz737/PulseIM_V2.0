@@ -562,7 +562,7 @@ function normalizeOrigin(value: string): string {
 }
 
 const configuredOrigin = normalizeOrigin(import.meta.env.VITE_SERVER_ORIGIN || '')
-const DEFAULT_BOOTSTRAP_ORIGIN = 'https://110.42.238.238:9001'
+const DEFAULT_BOOTSTRAP_ORIGIN = 'http://127.0.0.1:5173'
 const SERVER_ORIGIN_CACHE_KEY = 'pulse_desktop_server_origin'
 
 function validOrigin(value: unknown): string {
@@ -2289,6 +2289,18 @@ export function sendDesktopTextMessage(payload: {
 
 export function fetchDesktopFileMetadata(fileId: string): Promise<DesktopUploadedFile> {
   return request<DesktopUploadedFile>(`/v1/files/${encodeURIComponent(fileId.trim())}/metadata`)
+}
+
+export interface DesktopFileSendConfig {
+  maxSizeMb: number
+  imageMaxSizeMb: number
+  videoMaxSizeMb: number
+  fileMaxSizeMb: number
+  allowedExtensions: string[]
+}
+
+export function fetchDesktopFileSendConfig(): Promise<DesktopFileSendConfig> {
+  return request<DesktopFileSendConfig>('/v1/files/config')
 }
 
 export async function uploadDesktopFile(file: File, options: {

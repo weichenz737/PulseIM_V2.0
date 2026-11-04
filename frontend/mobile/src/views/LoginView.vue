@@ -50,7 +50,7 @@ function chineseLoginError(error: unknown): string {
   const message = (error as Error)?.message || ''
   if (/SECURITY_CODE_REQUIRED/.test(message)) return '这是新设备，请输入账号安全码'
   if (/timeout|超时/i.test(message)) return '连接服务器超时，请检查服务器地址和网络后重试'
-  if (/network|connect|failed to fetch|无法连接/i.test(message)) return '无法连接服务器，请检查登录页的服务器地址、网络及电脑服务是否已启动'
+  if (/network|connect|failed to fetch|无法连接/i.test(message)) return '无法连接服务器，请稍后重试'
   if (/[\u4e00-\u9fff]/.test(message)) return message
   return '登录失败，请检查账号、密码及服务器地址后重试'
 }
@@ -281,7 +281,7 @@ function safeLocalPath(value: unknown) {
                 :aria-label="showPassword ? '隐藏密码' : '显示密码'"
                 @click="showPassword = !showPassword"
               >
-                <span class="material-symbols-outlined">{{ showPassword ? 'visibility_off' : 'visibility' }}</span>
+                <AppIcon :name="showPassword ? 'visibility_off' : 'visibility'"  />
               </button>
             </div>
             <div class="password-extra-row">
@@ -423,9 +423,9 @@ function safeLocalPath(value: unknown) {
 
 .title {
   margin: 0 0 4px;
-  font-size: 28px;
+  font-size: calc(28px * var(--pulse-font-scale, 1));
   font-weight: 700;
-  line-height: 41px;
+  line-height: calc(41px * var(--pulse-font-scale, 1));
   letter-spacing: -0.02em;
   color: var(--pulse-text);
 }
@@ -433,7 +433,7 @@ function safeLocalPath(value: unknown) {
 .subtitle {
   margin: 0;
   font-size: var(--pulse-font-body);
-  line-height: 20px;
+  line-height: calc(20px * var(--pulse-font-scale, 1));
   color: var(--pulse-text-secondary);
 }
 
@@ -482,7 +482,7 @@ function safeLocalPath(value: unknown) {
   color: var(--pulse-text-secondary);
   font-size: var(--pulse-font-small);
   font-weight: 500;
-  line-height: 18px;
+  line-height: calc(18px * var(--pulse-font-scale, 1));
   cursor: pointer;
   transition: color 0.2s;
 }
@@ -515,7 +515,7 @@ function safeLocalPath(value: unknown) {
 .field-label {
   font-size: var(--pulse-font-caption);
   font-weight: 600;
-  line-height: 13px;
+  line-height: calc(13px * var(--pulse-font-scale, 1));
   color: var(--pulse-text-secondary);
   padding-left: 4px;
 }
@@ -660,7 +660,7 @@ function safeLocalPath(value: unknown) {
   color: #fff;
   font-size: var(--pulse-font-heading);
   font-weight: 600;
-  line-height: 25px;
+  line-height: calc(25px * var(--pulse-font-scale, 1));
   cursor: pointer;
   display: flex;
   align-items: center;

@@ -43,7 +43,7 @@ function select(value: string) {
           :class="{ selected: String(value) === option.value }"
           @click="select(option.value)"
         >
-          <span class="choice-icon"><span class="material-symbols-outlined">{{ option.icon }}</span></span>
+          <span class="choice-icon"><AppIcon :name="option.icon"  /></span>
           <span class="choice-copy"><strong>{{ option.label }}</strong><small>{{ option.description }}</small></span>
           <span class="choice-radio"><span v-if="String(value) === option.value" class="material-symbols-outlined">check</span></span>
         </button>

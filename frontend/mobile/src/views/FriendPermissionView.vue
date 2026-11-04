@@ -1,6 +1,6 @@
 <script setup lang="ts">
 defineOptions({ name: 'FriendPermissionView' })
-import { computed, ref, onMounted, nextTick } from 'vue'
+import { computed, ref, onMounted, onActivated, onDeactivated, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { smartBack } from '@/utils/navBack'
 import { showToast } from 'vant'
@@ -17,6 +17,33 @@ const loading = ref(true)
 const saving = ref(false)
 const showRangePicker = ref(false)
 const momentsSectionRef = ref<HTMLElement | null>(null)
+const momentsHighlighted = ref(false)
+let highlightTimer: ReturnType<typeof setTimeout> | null = null
+let locateFrame = 0
+
+function clearMomentsHighlight() {
+  if (highlightTimer) clearTimeout(highlightTimer)
+  if (locateFrame) cancelAnimationFrame(locateFrame)
+  highlightTimer = null
+  locateFrame = 0
+  momentsHighlighted.value = false
+}
+
+async function locateMomentsPermissions() {
+  if (loading.value || route.path !== '/settings/friends' || route.query.section !== 'moments') return
+  clearMomentsHighlight()
+  await nextTick()
+  locateFrame = requestAnimationFrame(() => {
+    locateFrame = 0
+    momentsSectionRef.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    momentsHighlighted.value = true
+    highlightTimer = setTimeout(() => { momentsHighlighted.value = false; highlightTimer = null }, 2000)
+  })
+}
+onActivated(() => { void locateMomentsPermissions() })
+onDeactivated(clearMomentsHighlight)
+onBeforeUnmount(clearMomentsHighlight)
+watch(() => route.query.section, () => { void locateMomentsPermissions() })
 const settings = ref<PrivacySettings>({
   friendVerifyRequired: true,
   groupInviteVerify: false,
@@ -54,10 +81,7 @@ onMounted(async () => {
     showToast(e instanceof Error ? e.message : '加载失败')
   } finally {
     loading.value = false
-    if (String(route.query.section || '') === 'moments') {
-      await nextTick()
-      momentsSectionRef.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    }
+    await locateMomentsPermissions()
   }
 })
 
@@ -103,7 +127,7 @@ async function selectRange(value: MomentsVisibleRange) {
 
 <template>
   <div class="friends-perm-page">
-    <header class="page-header">
+    <header class="pulse-page-nav page-header">
       <button type="button" class="back-btn" @click="goBack" aria-label="返回">
         <IconBack />
       </button>
@@ -328,28 +352,29 @@ async function selectRange(value: MomentsVisibleRange) {
         </div>
       </section>
 
-      <p ref="momentsSectionRef" class="group-title">朋友圈权限</p>
+      <div ref="momentsSectionRef" class="moments-permission-section" :class="{ 'location-highlight': momentsHighlighted }">
+      <p class="group-title">朋友圈权限</p>
       <section class="group">
         <button type="button" class="item" @click="openMomentsReject">
           <div class="item-text">
             <span class="item-label">不让他（她）看</span>
             <span class="item-sub">不让指定好友查看我的朋友圈</span>
           </div>
-          <span class="material-symbols-outlined chevron">chevron_right</span>
+          <AppIcon name="chevron_right" class="chevron" />
         </button>
         <button type="button" class="item" @click="openMomentsHide">
           <div class="item-text">
             <span class="item-label">不看他（她）</span>
             <span class="item-sub">不看指定好友的朋友圈</span>
           </div>
-          <span class="material-symbols-outlined chevron">chevron_right</span>
+          <AppIcon name="chevron_right" class="chevron" />
         </button>
         <button type="button" class="item" :disabled="saving" @click="showRangePicker = true">
           <div class="item-text">
             <span class="item-label">允许朋友查看朋友圈的范围</span>
             <span class="item-sub">{{ rangeLabel }}</span>
           </div>
-          <span class="material-symbols-outlined chevron">chevron_right</span>
+          <AppIcon name="chevron_right" class="chevron" />
         </button>
         <div class="item switch-item">
           <div class="item-text">
@@ -370,6 +395,7 @@ async function selectRange(value: MomentsVisibleRange) {
         </div>
       </section>
 
+      </div>
       <section class="group">
         <button type="button" class="item" @click="openBlocked">
           <div class="item-left">
@@ -381,7 +407,7 @@ async function selectRange(value: MomentsVisibleRange) {
               <span class="item-sub">已拉黑的用户无法向你发消息</span>
             </div>
           </div>
-          <span class="material-symbols-outlined chevron">chevron_right</span>
+          <AppIcon name="chevron_right" class="chevron" />
         </button>
       </section>
     </main>
@@ -411,6 +437,10 @@ async function selectRange(value: MomentsVisibleRange) {
 </template>
 
 <style scoped>
+.moments-permission-section { position: relative; scroll-margin-top: calc(var(--pulse-header-bar-height) + var(--pulse-header-pad-top) + 12px); }
+.moments-permission-section.location-highlight::after { content: ''; position: absolute; inset: 0; border-radius: 12px; pointer-events: none; background: #000; animation: moments-locate 2s ease-in-out both; }
+@keyframes moments-locate { 0%, 100% { opacity: 0; } 25%, 60% { opacity: .16; } }
+@media (prefers-reduced-motion: reduce) { .moments-permission-section.location-highlight::after { animation: none; opacity: .12; } }
 .friends-perm-page {
   min-height: 100%;
   min-height: 100dvh;

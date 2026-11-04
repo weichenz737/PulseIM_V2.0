@@ -27,9 +27,10 @@ public class AdminFileConfigController {
 
     @PutMapping
     public R<Map<String, Object>> update(@RequestBody Map<String, Object> body) {
-        int maxSizeMb = body.get("maxSizeMb") == null
-                ? 100
-                : ((Number) body.get("maxSizeMb")).intValue();
+        int legacyMax = body.get("maxSizeMb") instanceof Number number ? number.intValue() : 100;
+        int imageMax = body.get("imageMaxSizeMb") instanceof Number number ? number.intValue() : legacyMax;
+        int videoMax = body.get("videoMaxSizeMb") instanceof Number number ? number.intValue() : legacyMax;
+        int fileMax = body.get("fileMaxSizeMb") instanceof Number number ? number.intValue() : legacyMax;
         List<String> allowed = new ArrayList<>();
         Object raw = body.get("allowedExtensions");
         if (raw instanceof List<?> list) {
@@ -41,6 +42,6 @@ public class AdminFileConfigController {
                 if (StringUtils.hasText(part)) allowed.add(part.trim());
             }
         }
-        return R.ok(fileConfigService.update(maxSizeMb, allowed));
+        return R.ok(fileConfigService.update(imageMax, videoMax, fileMax, allowed));
     }
 }

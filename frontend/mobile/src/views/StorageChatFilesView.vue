@@ -90,7 +90,7 @@ onUnmounted(() => {
 
 <template>
   <div class="records-page">
-    <header class="page-header">
+    <header class="pulse-page-nav page-header">
       <button type="button" class="header-btn" aria-label="返回" @click="goBack"><IconBack /></button>
       <h1>清理聊天记录</h1>
       <button type="button" class="header-text-btn" @click="selectMode ? finishSelection() : enterSelection()">{{ selectMode ? '完成' : '选择' }}</button>
@@ -105,7 +105,7 @@ onUnmounted(() => {
            <button type="button" class="check" :class="{ checked: selected.has(stat.conversation.id) }" :aria-checked="selected.has(stat.conversation.id)" role="checkbox" aria-label="选择会话" @click.stop="onCheckClick(stat.conversation.id)"><span v-if="selected.has(stat.conversation.id)" class="material-symbols-outlined">check</span></button>
            <img v-if="stat.conversation.avatar" :src="stat.conversation.avatar" alt="" class="avatar" /><span v-else class="avatar avatar-fallback">{{ stat.conversation.name.slice(0, 1) }}</span>
            <span class="row-body"><strong>{{ stat.conversation.name }}</strong><small>{{ formatBytes(stat.recordsBytes) }} · {{ stat.messageCount }} 条消息</small></span>
-           <span class="row-size">{{ formatBytes(stat.recordsBytes) }}</span><button type="button" class="record-open" :aria-label="`查看${stat.conversation.name}的聊天记录`" @click.stop="openFiles(stat)"><span class="material-symbols-outlined chevron">chevron_right</span></button>
+           <span class="row-size">{{ formatBytes(stat.recordsBytes) }}</span><button type="button" class="record-open" :aria-label="`查看${stat.conversation.name}的聊天记录`" @click.stop="openFiles(stat)"><AppIcon name="chevron_right" class="chevron" /></button>
          </div>
       </section>
       <p class="footnote">聊天记录大小统计消息正文、索引和必要元数据；图片、视频、音频和文件单独计入“聊天文件”，不会重复计算。</p>
@@ -124,11 +124,11 @@ onUnmounted(() => {
           {{ allSelected ? '取消全选' : '全选' }}
         </button>
         <button type="button" class="danger" :disabled="!selected.size || deleting" @click="deleteSelected">
-          <span class="material-symbols-outlined">delete</span>
+          <AppIcon name="delete"  />
           {{ deleting ? '删除中…' : '删除' }}
         </button>
         <button type="button" class="cancel" @click="finishSelection">
-          <span class="material-symbols-outlined">close</span>
+          <AppIcon name="close"  />
           取消
         </button>
       </div>

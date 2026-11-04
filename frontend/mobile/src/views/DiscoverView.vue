@@ -74,7 +74,7 @@ function goCommunities() { void router.push('/communities') }
 
 <template>
   <div class="discover-page">
-    <header class="page-header tab-home-header">
+    <header class="pulse-page-nav page-header tab-home-header home-tab-header">
       <h1 class="page-title">发现</h1>
     </header>
 
@@ -82,11 +82,7 @@ function goCommunities() { void router.push('/communities') }
       <section class="menu-card">
         <button type="button" class="menu-item has-divider" @click="goMoments">
           <div class="menu-icon" style="background: rgba(75, 142, 255, 0.15)">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-              <rect x="3" y="3" width="18" height="18" rx="2" />
-              <circle cx="8.5" cy="8.5" r="1.5" />
-              <path d="M21 15l-5-5L5 21" />
-            </svg>
+            <AppIcon name="image" />
           </div>
           <div class="menu-info">
             <div class="menu-title">朋友圈</div>
@@ -107,28 +103,18 @@ function goCommunities() { void router.push('/communities') }
             <span class="moments-count">{{ momentsUpdate.count }}</span>
           </div>
 
-          <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M9 18l6-6-6-6" />
-          </svg>
+          <AppIcon name="chevronRight" class="chevron" :size="16" />
         </button>
 
         <button type="button" class="menu-item" @click="goScan">
           <div class="menu-icon" style="background: rgba(66, 227, 85, 0.12)">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-              <path d="M3 7V5a2 2 0 0 1 2-2h2" />
-              <path d="M17 3h2a2 2 0 0 1 2 2v2" />
-              <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
-              <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
-              <line x1="7" y1="12" x2="17" y2="12" />
-            </svg>
+            <AppIcon name="scan" />
           </div>
           <div class="menu-info">
             <div class="menu-title">扫一扫</div>
             <div class="menu-desc">扫描二维码</div>
           </div>
-          <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M9 18l6-6-6-6" />
-          </svg>
+          <AppIcon name="chevronRight" class="chevron" :size="16" />
         </button>
         <button type="button" class="menu-item" @click="goCommunities">
           <div class="menu-icon community-menu-icon"><span class="material-symbols-outlined">diversity_3</span></div>
@@ -136,7 +122,7 @@ function goCommunities() { void router.push('/communities') }
           <span v-if="communityUnread > 0" class="community-count" aria-label="圈子未读消息">
             {{ communityUnread > 99 ? '99+' : communityUnread }}
           </span>
-          <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6" /></svg>
+          <AppIcon name="chevronRight" class="chevron" :size="16" />
         </button>
       </section>
     </main>
@@ -221,7 +207,7 @@ function goCommunities() { void router.push('/communities') }
 
 .menu-title {
   font-size: calc(var(--pulse-content-font-size, 15px) + 1px);
-  line-height: 22px;
+  line-height: calc(22px * var(--pulse-font-scale, 1));
   font-weight: 400;
   color: var(--pulse-text);
 }
@@ -281,7 +267,7 @@ function goCommunities() { void router.push('/communities') }
   color: #fff;
   font-size: var(--pulse-font-caption);
   font-weight: 700;
-  line-height: 18px;
+  line-height: calc(18px * var(--pulse-font-scale, 1));
   text-align: center;
 }
 
@@ -295,7 +281,7 @@ function goCommunities() { void router.push('/communities') }
   color: #fff;
   font-size: var(--pulse-font-caption);
   font-weight: 700;
-  line-height: 19px;
+  line-height: calc(19px * var(--pulse-font-scale, 1));
   text-align: center;
   box-shadow: 0 3px 9px color-mix(in srgb, var(--pulse-danger, #ff5447) 28%, transparent);
 }

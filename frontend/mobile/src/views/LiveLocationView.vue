@@ -293,7 +293,7 @@ onBeforeUnmount(() => {
   <main class="live-page">
     <div ref="mapEl" class="live-map" />
     <div v-if="loading || mapError" class="map-state">
-      <span class="material-symbols-outlined">{{ mapError ? 'location_off' : 'progress_activity' }}</span>
+      <AppIcon :name="mapError ? 'location_off' : 'progress_activity'"  />
       <p>{{ mapError || '正在加载实时地图…' }}</p>
     </div>
 
@@ -337,7 +337,7 @@ onBeforeUnmount(() => {
           <span class="material-symbols-outlined">stop_circle</span>结束位置共享
         </button>
         <button type="button" class="stop-action" @click="stopSharing(false)">
-          <span class="material-symbols-outlined">logout</span>{{ isInitiator ? '仅退出共享' : '退出位置共享' }}
+          <AppIcon name="logout" />{{ isInitiator ? '仅退出共享' : '退出位置共享' }}
         </button>
       </template>
       <p v-if="sharing" class="sharing-tip">已持续更新 · 另有 {{ otherCount }} 位成员参与</p>

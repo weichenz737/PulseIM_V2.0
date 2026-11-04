@@ -335,10 +335,14 @@ function isMine(item: MomentItem) {
 function openProfile(userId?: string) {
   const id = String(userId || '')
   if (!id) return
-  if (id === String(userStore.userId || '')) {
-    void router.push('/app/me')
+  void router.push(`/contacts/${id}`)
+}
+
+function openAuthorAvatar(userId?: string) {
+  if (String(userId || '') === String(userStore.userId || '')) {
+    void router.push('/me/moments')
   } else {
-    void router.push(`/contacts/${id}`)
+    openProfile(userId)
   }
 }
 
@@ -448,6 +452,7 @@ function clearMomentLongPress() {
 }
 
 function onMomentPressStart(event: TouchEvent, item: MomentItem) {
+  if ((event.target as HTMLElement)?.closest('button, input, textarea, a, [role="link"], .comment-composer')) return
   if (event.touches.length !== 1) return
   clearMomentLongPress()
   momentLongPressMoved = false
@@ -700,22 +705,22 @@ async function openMediaPreview(item: MomentItem, index: number) {
 
 <template>
   <div class="moments-page">
-    <header class="moments-header">
+    <header class="pulse-page-nav moments-header page-header">
       <div class="header-left">
         <button type="button" class="icon-btn" @click="goBack" aria-label="返回">
           <IconBack />
         </button>
-        <h1 class="header-title">朋友圈</h1>
       </div>
+      <h1 class="header-title">朋友圈</h1>
       <div class="header-right">
-        <button type="button" class="icon-btn notif-btn" @click="goNotifications">
-          <span class="material-symbols-outlined">notifications</span>
+        <button type="button" class="icon-btn notif-btn" aria-label="朋友圈消息通知" @click="goNotifications">
+          <AppIcon name="notifications"  />
           <span v-if="interactionUnread > 0" class="notif-badge">
             {{ interactionUnread > 99 ? '99+' : interactionUnread }}
           </span>
         </button>
-        <button type="button" class="icon-btn" @click="goCompose">
-          <span class="material-symbols-outlined">photo_camera</span>
+        <button type="button" class="icon-btn" aria-label="发布朋友圈" @click="goCompose">
+          <AppIcon name="photo_camera"  />
         </button>
       </div>
     </header>
@@ -735,7 +740,7 @@ async function openMediaPreview(item: MomentItem, index: number) {
         :style="coverUrl ? { backgroundImage: `url(${coverUrl})` } : undefined"
       />
       <div class="cover-hint">
-        <span class="material-symbols-outlined">photo_camera</span>
+        <AppIcon name="photo_camera"  />
         <span>点击更换封面</span>
       </div>
       <div class="cover-profile" @click.stop>
@@ -751,8 +756,8 @@ async function openMediaPreview(item: MomentItem, index: number) {
           class="cover-avatar"
           role="button"
           tabindex="0"
-          @click="router.push('/profile/edit')"
-          @keydown.enter="router.push('/profile/edit')"
+          @click="router.push('/me/moments')"
+          @keydown.enter="router.push('/me/moments')"
         />
       </div>
     </section>
@@ -783,8 +788,8 @@ async function openMediaPreview(item: MomentItem, index: number) {
             class="feed-avatar-wrap profile-link"
             role="link"
             tabindex="0"
-            @click="openProfile(item.userId)"
-            @keydown.enter.prevent="openProfile(item.userId)"
+            @click="openAuthorAvatar(item.userId)"
+            @keydown.enter.prevent="openAuthorAvatar(item.userId)"
           >
             <UserAvatar
               :src="item.avatarUrl"
@@ -796,7 +801,7 @@ async function openMediaPreview(item: MomentItem, index: number) {
           </div>
           <div class="feed-body">
             <h3 class="feed-name">
-              <span class="profile-link" role="link" @click="openProfile(item.userId)">
+              <span>
                 {{ item.nickname }}
               </span>
               <span v-if="visibilityTag(item)" class="private-tag">{{ visibilityTag(item) }}</span>
@@ -828,6 +833,8 @@ async function openMediaPreview(item: MomentItem, index: number) {
                 </span>
               </button>
             </div>
+          </div>
+          <div class="feed-footer">
             <div class="feed-actions">
               <div class="feed-meta">
                 <span class="feed-time">{{ formatTime(item.createdAt) }}</span>
@@ -839,7 +846,7 @@ async function openMediaPreview(item: MomentItem, index: number) {
                 >
                   <span class="material-symbols-outlined">place</span>
                   <span>{{ item.locationName }}</span>
-                  <span class="material-symbols-outlined location-chevron">chevron_right</span>
+                  <AppIcon name="chevron_right" class="location-chevron" />
                 </button>
               </div>
               <div class="action-btns">
@@ -847,9 +854,10 @@ async function openMediaPreview(item: MomentItem, index: number) {
                   v-if="isMine(item)"
                   type="button"
                   class="action-btn"
+                  aria-label="动态操作"
                   @click="onMomentMore(item)"
                 >
-                  <span class="material-symbols-outlined">more_horiz</span>
+                  <IconMore />
                 </button>
                 <button
                   type="button"
@@ -913,7 +921,7 @@ async function openMediaPreview(item: MomentItem, index: number) {
 }
 
 .moments-header {
-  position: fixed;
+  position: sticky;
   top: 0;
   left: 0;
   right: 0;
@@ -924,8 +932,8 @@ async function openMediaPreview(item: MomentItem, index: number) {
   height: 56px;
   padding: 0 8px 0 4px;
   padding-top: var(--pulse-header-pad-top);
-  box-sizing: content-box;
-  background: transparent;
+  box-sizing: border-box;
+  background: var(--pulse-page-bg);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
 }
@@ -939,7 +947,7 @@ async function openMediaPreview(item: MomentItem, index: number) {
 .header-right {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 8px;
 }
 
 .icon-btn {
@@ -980,16 +988,16 @@ async function openMediaPreview(item: MomentItem, index: number) {
   color: #fff;
   font-size: var(--pulse-font-caption);
   font-weight: 600;
-  line-height: 16px;
+  line-height: calc(16px * var(--pulse-font-scale, 1));
   text-align: center;
   box-sizing: border-box;
 }
 
 .header-title {
   margin: 0;
-  font-size: var(--pulse-font-heading);
+  font-size: var(--pulse-font-title);
   font-weight: 600;
-  line-height: 25px;
+  line-height: calc(25px * var(--pulse-font-scale, 1));
   color: var(--pulse-text);
 }
 
@@ -1038,7 +1046,7 @@ async function openMediaPreview(item: MomentItem, index: number) {
 
 .cover-hint {
   position: absolute;
-  top: 72px;
+  top: 16px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 2;
@@ -1077,7 +1085,7 @@ async function openMediaPreview(item: MomentItem, index: number) {
   margin: 0;
   font-size: var(--pulse-font-heading);
   font-weight: 600;
-  line-height: 25px;
+  line-height: calc(25px * var(--pulse-font-scale, 1));
   color: #fff;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
@@ -1123,22 +1131,28 @@ async function openMediaPreview(item: MomentItem, index: number) {
 }
 
 .feed-item {
-  display: flex;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  column-gap: 12px;
+  row-gap: 8px;
   padding: 16px 0;
   border-radius: 8px;
   transition: background 0.35s ease;
 }
 
 .feed-item.mine {
-  flex-direction: row-reverse;
-  justify-content: flex-start;
+  grid-template-columns: minmax(0, 1fr) 44px;
 }
 
+.feed-avatar-wrap { grid-row: 1; grid-column: 1; }
+.feed-body { grid-row: 1; grid-column: 2; }
+.feed-item.mine .feed-avatar-wrap { grid-column: 2; }
+.feed-item.mine .feed-body { grid-column: 1; }
+.feed-footer { grid-column: 1 / -1; min-width: 0; width: 100%; }
+
 .feed-item.mine .feed-body {
-  flex: 0 1 72%;
-  width: 72%;
-  max-width: min(520px, calc(100% - 56px));
+  width: 100%;
+  max-width: 100%;
   margin-left: auto;
   margin-right: 0;
   text-align: right;
@@ -1166,6 +1180,9 @@ async function openMediaPreview(item: MomentItem, index: number) {
 
 .feed-avatar-wrap {
   flex-shrink: 0;
+  align-self: flex-start;
+  width: 44px;
+  height: 44px;
 }
 
 .profile-link {
@@ -1350,7 +1367,7 @@ async function openMediaPreview(item: MomentItem, index: number) {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  width: min(100%, 280px);
+  width: 100%;
   margin-top: 4px;
   gap: 10px;
 }
@@ -1365,7 +1382,6 @@ async function openMediaPreview(item: MomentItem, index: number) {
 .feed-item.mine .feed-actions {
   flex-direction: row;
   align-self: flex-end;
-  transform: translateX(8px);
 }
 
 .feed-item.mine .feed-time {
@@ -1386,7 +1402,7 @@ async function openMediaPreview(item: MomentItem, index: number) {
 }
 
 .feed-item:not(.mine) .action-btns {
-  margin-right: 40px;
+  margin-right: 0;
 }
 
 .action-btn {
@@ -1427,14 +1443,13 @@ async function openMediaPreview(item: MomentItem, index: number) {
 
 .feed-item.mine .like-row,
 .feed-item.mine :deep(.moment-comments) {
-  width: min(100%, 280px);
+  width: 100%;
   max-width: 100%;
   box-sizing: border-box;
   align-self: flex-end;
   margin-left: auto;
   margin-right: 0;
   text-align: left;
-  transform: translateX(8px);
 }
 
 .like-ico {

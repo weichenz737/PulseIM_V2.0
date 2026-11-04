@@ -81,7 +81,7 @@ async function copyMyId() {
   <div class="add-friend-page">
     <div class="bg-glow" />
 
-    <header class="page-header glass-header">
+    <header class="pulse-page-nav page-header glass-header">
       <div class="header-left">
         <button type="button" class="icon-btn" @click="goBack" aria-label="返回">
           <IconBack />
@@ -93,7 +93,7 @@ async function copyMyId() {
     <main class="page-main">
       <section class="search-section">
         <div class="search-wrap">
-          <span class="material-symbols-outlined search-icon">search</span>
+          <AppIcon name="search" class="search-icon" />
           <input
             v-model="phone"
             type="tel"
@@ -103,14 +103,14 @@ async function copyMyId() {
             @keyup.enter="handleSearch"
           />
           <button v-if="phone" type="button" class="search-clear-btn" aria-label="清除搜索" @click="phone = ''">
-            <span class="material-symbols-outlined">cancel</span>
+            <AppIcon name="cancel"  />
           </button>
         </div>
         <div class="my-id-row">
           <span class="my-id-label">我的 PulseID:</span>
           <span class="my-id-value">{{ myId }}</span>
           <button type="button" class="copy-btn" @click="copyMyId">
-            <span class="material-symbols-outlined">content_copy</span>
+            <AppIcon name="content_copy"  />
           </button>
         </div>
         <button
@@ -135,14 +135,14 @@ async function copyMyId() {
               <p class="qr-sub">展示二维码，让对方扫一扫</p>
             </div>
           </div>
-          <span class="material-symbols-outlined qr-arrow">chevron_right</span>
+          <AppIcon name="chevron_right" class="qr-arrow" />
         </div>
       </section>
 
       <section class="bento-grid">
         <div class="scan-card glass-card" @click="router.push('/scan')">
           <div class="scan-icon-wrap">
-            <span class="material-symbols-outlined">center_focus_weak</span>
+            <AppIcon name="center_focus_weak"  />
           </div>
           <div>
             <h3 class="scan-title">扫一扫</h3>
@@ -221,7 +221,7 @@ async function copyMyId() {
 }
 
 .page-header {
-  position: fixed;
+  position: sticky;
   top: 0;
   left: 0;
   right: 0;
@@ -262,14 +262,14 @@ async function copyMyId() {
   margin: 0;
   font-size: var(--pulse-font-heading);
   font-weight: 600;
-  line-height: 25px;
+  line-height: calc(25px * var(--pulse-font-scale, 1));
   color: var(--pulse-text);
 }
 
 .page-main {
   position: relative;
   z-index: 1;
-  padding: 96px 16px 48px;
+  padding: 12px 16px 48px;
   max-width: 672px;
   margin: 0 auto;
 }
@@ -515,7 +515,7 @@ async function copyMyId() {
   padding: 0 24px;
   font-size: var(--pulse-font-small);
   font-weight: 500;
-  line-height: 18px;
+  line-height: calc(18px * var(--pulse-font-scale, 1));
   color: var(--pulse-outline);
 }
 

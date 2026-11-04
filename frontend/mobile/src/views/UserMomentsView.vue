@@ -175,11 +175,7 @@ function goBack() {
 function openProfile(targetUserId?: string) {
   const id = String(targetUserId || '')
   if (!id) return
-  if (id === String(userStore.userId || '')) {
-    void router.push('/app/me')
-  } else {
-    void router.push(`/contacts/${id}`)
-  }
+  void router.push(`/contacts/${id}`)
 }
 
 function formatTime(iso: string): string {
@@ -327,7 +323,7 @@ function suppressMomentClick(event: MouseEvent) {
 
 <template>
   <div class="user-moments-page">
-    <header class="page-header">
+    <header class="pulse-page-nav page-header">
       <button type="button" class="icon-btn" @click="goBack" aria-label="返回">
         <IconBack />
       </button>

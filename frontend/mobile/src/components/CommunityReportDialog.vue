@@ -234,9 +234,7 @@ async function submit() {
             @click="selectedReasonCode = reason.code"
           >
             <span>{{ reason.name }}</span>
-            <span class="material-symbols-outlined">
-              {{ selectedReasonCode === reason.code ? 'radio_button_checked' : 'radio_button_unchecked' }}
-            </span>
+            <AppIcon :name="selectedReasonCode === reason.code ? 'radio_button_checked' : 'radio_button_unchecked'"  />
           </button>
         </div>
       </section>
@@ -268,7 +266,7 @@ async function submit() {
               <span v-if="item.type === 'video'" class="video-mark material-symbols-outlined">play_circle</span>
             </button>
             <button type="button" class="remove-evidence" aria-label="删除凭证" :disabled="busy" @click="removeEvidence(index)">
-              <span class="material-symbols-outlined">close</span>
+              <AppIcon name="close"  />
             </button>
           </div>
           <button
@@ -401,7 +399,7 @@ textarea::placeholder { color: var(--pulse-text-secondary); }
 .add-evidence { width: 100%; height: 100%; padding: 0; overflow: hidden; border: 1px solid var(--pulse-divider); border-radius: 12px; background: var(--pulse-surface-high); }
 .evidence-preview img,
 .evidence-preview video { width: 100%; height: 100%; display: block; object-fit: cover; }
-.video-mark { position: absolute; inset: 0; display: grid; place-items: center; color: var(--pulse-on-primary); font-size: 30px; text-shadow: 0 2px 8px color-mix(in srgb, var(--pulse-text) 62%, transparent); }
+.video-mark { position: absolute; inset: 0; display: grid; place-items: center; color: var(--pulse-on-primary); font-size: calc(30px * var(--pulse-font-scale, 1)); text-shadow: 0 2px 8px color-mix(in srgb, var(--pulse-text) 62%, transparent); }
 .remove-evidence { position: absolute; top: -7px; right: -7px; width: 24px; height: 24px; display: grid; place-items: center; padding: 0; border: 2px solid var(--pulse-surface-container); border-radius: 50%; background: color-mix(in srgb, var(--pulse-text) 82%, transparent); color: var(--pulse-surface-container); }
 .remove-evidence .material-symbols-outlined { font-size: 15px; }
 .add-evidence { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: var(--pulse-text-secondary); }

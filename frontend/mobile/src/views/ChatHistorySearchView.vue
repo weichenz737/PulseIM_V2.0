@@ -30,6 +30,7 @@ import { openFilePreview } from '@/composables/useFilePreview'
 import { cacheChatFile, getStableChatFileUrl } from '@/utils/fileCache'
 import { getToken } from '@/api/http'
 import { smartBack } from '@/utils/navBack'
+import { isNativeApp, nativeKeyboard } from '@/native'
 
 type TabKey = 'all' | 'messages' | 'members'
 type FilterKey = 'date' | 'media' | 'file' | 'contact'
@@ -861,6 +862,8 @@ async function openInChat(msg: ChatMessage): Promise<boolean> {
     showToast('原消息已不存在')
     return false
   }
+  ;(document.activeElement as HTMLElement | null)?.blur?.()
+  if (isNativeApp) await nativeKeyboard.hideKeyboard().catch(() => {})
   await router.push({
     path: `/chat/${conversationId.value}`,
     query: {
@@ -948,8 +951,8 @@ const calendarMinDate = new Date(new Date().getFullYear() - 5, 0, 1)
 
 <template>
   <div class="history-search-page">
-    <header class="page-header" :class="{ 'filter-header': !!activeFilter }">
-      <button type="button" class="icon-btn" @click="goBack" aria-label="返回">
+    <header class="pulse-page-nav page-header unified-back-header" :class="{ 'filter-header': !!activeFilter }">
+      <button type="button" class="icon-btn detail-back-button" @click="goBack" aria-label="返回">
         <IconBack />
       </button>
       <div v-if="activeFilter" class="filter-title-wrap">
@@ -962,7 +965,7 @@ const calendarMinDate = new Date(new Date().getFullYear() - 5, 0, 1)
         >{{ fileSelectionMode ? (allFilesSelected ? '取消全选' : '全选') : '选择' }}</button>
       </div>
       <div v-else class="search-box">
-        <span class="material-symbols-outlined search-ico">search</span>
+        <AppIcon name="search" class="search-ico" />
         <input
           v-model="keyword"
           class="search-input"
@@ -973,7 +976,7 @@ const calendarMinDate = new Date(new Date().getFullYear() - 5, 0, 1)
           @keyup.enter="doKeywordSearch"
         />
         <button v-if="keyword" type="button" class="search-clear-btn" aria-label="清除搜索" @click="keyword = ''">
-          <span class="material-symbols-outlined">cancel</span>
+          <AppIcon name="cancel"  />
         </button>
       </div>
     </header>
@@ -1006,7 +1009,7 @@ const calendarMinDate = new Date(new Date().getFullYear() - 5, 0, 1)
             @click="applyFilter(item.key)"
           >
             <span class="filter-ico-wrap">
-              <span class="material-symbols-outlined">{{ item.icon }}</span>
+              <AppIcon :name="item.icon"  />
             </span>
             <span class="filter-label">{{ item.label }}</span>
           </button>
@@ -1042,9 +1045,7 @@ const calendarMinDate = new Date(new Date().getFullYear() - 5, 0, 1)
               <span class="material-symbols-outlined filled">play_circle</span>
             </span>
             <span v-if="sharedMediaView && fileSelectionMode" class="media-select-indicator">
-              <span class="material-symbols-outlined">
-                {{ selectedFileIds.has(msg.id) ? 'check_circle' : 'radio_button_unchecked' }}
-              </span>
+              <AppIcon :name="selectedFileIds.has(msg.id) ? 'check_circle' : 'radio_button_unchecked'"  />
             </span>
           </button>
         </section>
@@ -1064,7 +1065,7 @@ const calendarMinDate = new Date(new Date().getFullYear() - 5, 0, 1)
             @contextmenu.prevent="showFileActions(msg)"
           >
             <div class="file-ico">
-              <span class="material-symbols-outlined">description</span>
+              <AppIcon name="description"  />
             </div>
             <div class="body">
               <div class="top">
@@ -1077,9 +1078,7 @@ const calendarMinDate = new Date(new Date().getFullYear() - 5, 0, 1)
               </p>
             </div>
             <span v-if="sharedFileView && fileSelectionMode" class="file-select-indicator">
-              <span class="material-symbols-outlined">
-                {{ selectedFileIds.has(msg.id) ? 'check_circle' : 'radio_button_unchecked' }}
-              </span>
+              <AppIcon :name="selectedFileIds.has(msg.id) ? 'check_circle' : 'radio_button_unchecked'"  />
             </span>
           </button>
         </section>
@@ -1196,11 +1195,11 @@ const calendarMinDate = new Date(new Date().getFullYear() - 5, 0, 1)
           下载
         </button>
         <button type="button" :disabled="!selectedFileCount" @click="openFileForwardPicker([...selectedFileIds])">
-          <span class="material-symbols-outlined">forward</span>
+          <AppIcon name="forward"  />
           转发
         </button>
         <button type="button" :disabled="!selectedFileCount" @click="favoriteSelectedFiles">
-          <span class="material-symbols-outlined">bookmark</span>
+          <AppIcon name="bookmark"  />
           收藏
         </button>
         <button type="button" :disabled="!selectedFileCount" @click="locateSelectedFile">
@@ -1208,7 +1207,7 @@ const calendarMinDate = new Date(new Date().getFullYear() - 5, 0, 1)
           定位
         </button>
         <button type="button" class="danger" :disabled="!selectedFileCount" @click="deleteFileMessages([...selectedFileIds])">
-          <span class="material-symbols-outlined">delete</span>
+          <AppIcon name="delete"  />
           删除
         </button>
       </div>
@@ -1251,9 +1250,7 @@ const calendarMinDate = new Date(new Date().getFullYear() - 5, 0, 1)
               :class="{ on: fileForwardSelectedIds.has(item.id) }"
               @click="toggleFileForwardTarget(item.id)"
             >
-              <span class="material-symbols-outlined">
-                {{ fileForwardSelectedIds.has(item.id) ? 'check_circle' : 'radio_button_unchecked' }}
-              </span>
+              <AppIcon :name="fileForwardSelectedIds.has(item.id) ? 'check_circle' : 'radio_button_unchecked'"  />
               <img v-if="item.avatar" :src="item.avatar" alt="" />
               <span v-else class="file-forward-avatar">{{ item.name.slice(0, 1) }}</span>
               <span class="file-forward-name">{{ item.name }}</span>

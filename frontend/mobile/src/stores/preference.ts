@@ -28,7 +28,7 @@ export function chatFontPxFromSlider(value: number): number {
   )
 }
 
-/** 将 0–100 映射为聊天内容视觉参数（不缩放全局 UI 字号，避免标题与正文层级被压扁） */
+/** 将字号映射到全局文字比例，并保留聊天气泡的阅读参数。 */
 export function fontParamsFromSlider(value: number) {
   const t = clamp(value) / 100
   const chatFont = chatFontPxFromSlider(value)
@@ -81,7 +81,14 @@ function applyLightThemeToDom() {
 export function applyFontSizeToDom(value: number) {
   const cfg = fontParamsFromSlider(value)
   const root = document.documentElement
-  // 只改聊天内容相关变量；页面标题、导航、按钮等保持各页固定字号
+  const scale = cfg.chatFontPx / CHAT_FONT_DEFAULT_PX
+  root.style.setProperty('--pulse-font-scale', String(scale))
+  root.style.setProperty('--pulse-font-body', cfg.chatFont)
+  root.style.setProperty('--pulse-font-title', `${(18 * scale).toFixed(2)}px`)
+  root.style.setProperty('--pulse-font-heading', `${(22 * scale).toFixed(2)}px`)
+  root.style.setProperty('--pulse-line-body', `${(22 * scale).toFixed(2)}px`)
+  root.style.setProperty('--pulse-line-caption', `${(22 * scale).toFixed(2)}px`)
+  root.style.setProperty('--pulse-line-title', `${(26 * scale).toFixed(2)}px`)
   root.style.setProperty('--chat-font-size', cfg.chatFont)
   root.style.setProperty('--chat-line-height', cfg.chatLine)
   root.style.setProperty('--chat-bubble-max', cfg.bubbleMax)

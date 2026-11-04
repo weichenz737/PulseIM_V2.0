@@ -8,7 +8,6 @@ import {
   formatGroupPulseId,
   updateGroupTitle,
   updateGroupNotice,
-  updateGroupAvatar,
   leaveGroup,
   updateConversationSettings,
   addGroupMembers,
@@ -18,12 +17,9 @@ import {
 } from '@/api/conversation'
 import { fetchContacts, type ContactItem } from '@/api/contact'
 import { groupQrPayload } from '@/utils/qrcode'
-import QrCodeCard from '@/components/QrCodeCard.vue'
 import QrPreviewModal from '@/components/QrPreviewModal.vue'
-import { uploadChatFile, resolveAvatarUrl } from '@/api/file'
 
 defineOptions({ name: 'GroupInfoView' })
-import { compressAvatarFile } from '@/utils/media'
 import { useUserStore } from '@/stores/user'
 import ShareContactCard from '@/components/ShareContactCard.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
@@ -37,7 +33,6 @@ const loading = ref(true)
 const detail = ref<GroupDetail | null>(null)
 const pinned = ref(false)
 const muted = ref(false)
-const hidden = ref(false)
 const showAllMembers = ref(false)
 const showAdd = ref(false)
 const contacts = ref<ContactItem[]>([])
@@ -55,10 +50,6 @@ const showRemarkDialog = ref(false)
 const nicknameDraft = ref('')
 const remarkDraft = ref('')
 const saving = ref(false)
-const avatarInput = ref<HTMLInputElement | null>(null)
-const showAvatarConfirm = ref(false)
-const avatarPreviewUrl = ref('')
-const pendingAvatarFile = ref<File | null>(null)
 
 const canManage = computed(() => !!detail.value?.admin || !!detail.value?.owner)
 const groupQrData = computed(() => groupQrPayload(conversationId.value))
@@ -78,7 +69,6 @@ onMounted(async () => {
     detail.value = await fetchGroupDetail(conversationId.value)
     pinned.value = detail.value.pinned
     muted.value = detail.value.mute
-    hidden.value = detail.value.hidden
   } catch {
     detail.value = {
       id: conversationId.value,
@@ -172,21 +162,16 @@ async function savePersonalGroupSetting(kind: 'nickname' | 'remark') {
       if (kind === 'nickname') detail.value.myGroupNickname = value
       else detail.value.groupRemark = value
     }
+    if (kind === 'remark') {
+      window.dispatchEvent(new CustomEvent('pulse:group-profile-updated', {
+        detail: { conversationId: conversationId.value, groupRemark: value, title: detail.value?.title },
+      }))
+    }
     showNicknameDialog.value = false
     showRemarkDialog.value = false
     showToast('已保存')
   } catch (e) {
     showToast(e instanceof Error ? e.message : '保存失败')
-  }
-}
-
-async function onHiddenChange() {
-  try {
-    await updateConversationSettings(conversationId.value, { hidden: hidden.value })
-    showToast(hidden.value ? '会话已隐藏，新消息到达时会重新显示' : '会话已恢复显示')
-  } catch (e) {
-    hidden.value = !hidden.value
-    showToast(e instanceof Error ? e.message : '设置失败')
   }
 }
 
@@ -248,66 +233,6 @@ async function confirmNotice() {
   }
 }
 
-function onAvatarClick() {
-  if (!canManage.value) {
-    showToast('仅群主或管理员可修改群头像')
-    return
-  }
-  avatarInput.value?.click()
-}
-
-function revokeAvatarPreview() {
-  if (avatarPreviewUrl.value.startsWith('blob:')) {
-    URL.revokeObjectURL(avatarPreviewUrl.value)
-  }
-  avatarPreviewUrl.value = ''
-  pendingAvatarFile.value = null
-}
-
-function closeAvatarConfirm() {
-  showAvatarConfirm.value = false
-  revokeAvatarPreview()
-}
-
-async function onAvatarSelected(e: Event) {
-  const input = e.target as HTMLInputElement
-  const file = input.files?.[0]
-  input.value = ''
-  if (!file) return
-  if (!file.type.startsWith('image/')) {
-    showToast('请选择图片文件')
-    return
-  }
-  revokeAvatarPreview()
-  pendingAvatarFile.value = file
-  avatarPreviewUrl.value = URL.createObjectURL(file)
-  showAvatarConfirm.value = true
-}
-
-async function confirmAvatarUpload() {
-  const file = pendingAvatarFile.value
-  if (!file || saving.value) return
-  saving.value = true
-  try {
-    const avatarFile = await compressAvatarFile(file)
-    const uploaded = await uploadChatFile(avatarFile)
-    await updateGroupAvatar(conversationId.value, uploaded.url)
-    const avatarUrl = resolveAvatarUrl(uploaded.url)
-    if (detail.value) detail.value.avatarUrl = avatarUrl
-    window.dispatchEvent(
-      new CustomEvent('pulse:group-profile-updated', {
-        detail: { conversationId: conversationId.value, avatarUrl },
-      }),
-    )
-    showAvatarConfirm.value = false
-    revokeAvatarPreview()
-    showToast('群头像已更新')
-  } catch (err) {
-    showToast(err instanceof Error ? err.message : '更新失败')
-  } finally {
-    saving.value = false
-  }
-}
 
 function onAddMember() {
   selected.value = new Set()
@@ -328,17 +253,6 @@ function onManage() {
     return
   }
   router.push(`/group/${conversationId.value}/manage`)
-}
-
-function onSearchAll() {
-  router.push({
-    path: `/chat/${conversationId.value}/search`,
-    query: {
-      title: detail.value?.title || '群聊',
-      type: 'group',
-      scope: 'all',
-    },
-  })
 }
 
 function onSearchHistory() {
@@ -430,17 +344,14 @@ async function onLeave() {
 
 <template>
   <div class="group-info-page">
-    <header class="page-header glass-header">
-      <div class="header-left" @click="goBack">
-        <span class="material-symbols-outlined back-ico">arrow_back_ios</span>
-      </div>
+    <header class="pulse-page-nav page-header glass-header unified-back-header">
+      <button type="button" class="icon-btn detail-back-button" aria-label="返回" @click="goBack">
+        <IconBack />
+      </button>
       <h1 class="page-title">群聊信息</h1>
       <div class="header-right">
         <button type="button" class="icon-btn" aria-label="分享群名片" @click="shareVisible = true">
-          <span class="material-symbols-outlined">share</span>
-        </button>
-        <button type="button" class="icon-btn" @click="onSearchAll">
-          <span class="material-symbols-outlined">search</span>
+          <AppIcon name="share"  />
         </button>
       </div>
     </header>
@@ -470,13 +381,13 @@ async function onLeave() {
 
           <button type="button" class="member-cell" @click="onAddMember">
             <div class="member-avatar dashed">
-              <span class="material-symbols-outlined">add</span>
+              <AppIcon name="add"  />
             </div>
             <span class="member-name">添加</span>
           </button>
           <button v-if="canManage" type="button" class="member-cell" @click="onRemoveMember">
             <div class="member-avatar dashed">
-              <span class="material-symbols-outlined">remove</span>
+              <AppIcon name="remove"  />
             </div>
             <span class="member-name">删除</span>
           </button>
@@ -498,24 +409,31 @@ async function onLeave() {
       </div>
 
       <section class="card menu-card">
-        <button type="button" class="menu-row" @click="copyGroupPulseId">
-          <span class="menu-label">群 PulseID</span>
+        <button type="button" class="menu-row" @click="groupQrPreview = true">
+          <span class="menu-label">群二维码</span>
           <span class="menu-right">
-            <span class="menu-value">{{ detail.pulseId || formatGroupPulseId(detail.id) }}</span>
-            <span class="material-symbols-outlined copy-icon">content_copy</span>
+            <span class="material-symbols-outlined">qr_code_2</span>
+            <AppIcon name="chevron_right" class="chevron" />
           </span>
         </button>
         <button type="button" class="menu-row" @click="openTitleDialog">
           <span class="menu-label">群聊名称</span>
           <span class="menu-right">
             <span class="menu-value">{{ detail.title }}</span>
-            <span v-if="canManage" class="material-symbols-outlined chevron">chevron_right</span>
+            <AppIcon name="chevron_right" v-if="canManage" class="chevron" />
+          </span>
+        </button>
+        <button type="button" class="menu-row" @click="remarkDraft = detail.groupRemark; showRemarkDialog = true">
+          <span class="menu-label">群备注</span>
+          <span class="menu-right">
+            <span class="menu-value">{{ detail.groupRemark || '未设置' }}</span>
+            <AppIcon name="chevron_right" class="chevron" />
           </span>
         </button>
         <button type="button" class="menu-row notice-row" @click="openNoticeDialog">
           <div class="notice-top">
             <span class="menu-label">群公告</span>
-            <span v-if="canManage" class="material-symbols-outlined chevron">chevron_right</span>
+            <AppIcon name="chevron_right" v-if="canManage" class="chevron" />
           </div>
           <p class="notice-text">{{ detail.notice || '暂无公告' }}</p>
         </button>
@@ -525,67 +443,23 @@ async function onLeave() {
             <span v-if="canManage && detail.pendingJoinCount > 0" class="menu-value">
               {{ detail.pendingJoinCount }} 待审
             </span>
-            <span class="material-symbols-outlined chevron">chevron_right</span>
+            <AppIcon name="chevron_right" class="chevron" />
           </span>
         </button>
       </section>
 
-      <section class="card qr-section-card">
-        <div class="qr-section-title">群二维码</div>
-        <QrCodeCard
-          :payload="groupQrData"
-          :title="detail.title"
-          subtitle="扫一扫加入或打开本群"
-          :filename="`pulse-group-${conversationId}.png`"
-          @preview="groupQrPreview = true"
-        />
-      </section>
-
-      <section class="card avatar-card">
-        <button type="button" class="avatar-row" @click="onAvatarClick">
-          <div class="avatar-meta">
-            <span class="menu-label">群聊头像</span>
-            <span class="avatar-hint">{{ canManage ? '点击更换' : '仅群主/管理员可修改' }}</span>
-          </div>
-          <div class="group-avatar-wrap">
-            <UserAvatar
-              :src="detail.avatarUrl"
-              :user-id="conversationId"
-              kind="group"
-              :name="detail.title"
-              :size="64"
-              class="group-avatar"
-            />
-            <span v-if="canManage" class="material-symbols-outlined chevron">chevron_right</span>
-          </div>
-        </button>
-        <input
-          ref="avatarInput"
-          type="file"
-          accept="image/*"
-          class="hidden-input"
-          @change="onAvatarSelected"
-        />
-      </section>
 
       <section class="card menu-card">
         <button type="button" class="menu-row" @click="nicknameDraft = detail.myGroupNickname; showNicknameDialog = true">
           <span class="menu-label">我在本群的昵称</span>
           <span class="menu-right">
             <span class="menu-value">{{ detail.myGroupNickname || '未设置' }}</span>
-            <span class="material-symbols-outlined chevron">chevron_right</span>
-          </span>
-        </button>
-        <button type="button" class="menu-row" @click="remarkDraft = detail.groupRemark; showRemarkDialog = true">
-          <span class="menu-label">群备注</span>
-          <span class="menu-right">
-            <span class="menu-value">{{ detail.groupRemark || '未设置' }}</span>
-            <span class="material-symbols-outlined chevron">chevron_right</span>
+            <AppIcon name="chevron_right" class="chevron" />
           </span>
         </button>
         <button type="button" class="menu-row" @click="onSearchHistory">
           <span class="menu-label">查找聊天记录</span>
-          <span class="material-symbols-outlined chevron">chevron_right</span>
+          <AppIcon name="chevron_right" class="chevron" />
         </button>
         <div class="menu-row">
           <span class="menu-label">置顶聊天</span>
@@ -603,15 +477,8 @@ async function onLeave() {
         </div>
         <button type="button" class="menu-row" @click="openImportantMessageSettings">
           <span class="menu-label">重要消息仍然通知</span>
-          <span class="material-symbols-outlined chevron">chevron_right</span>
+          <AppIcon name="chevron_right" class="chevron" />
         </button>
-        <div class="menu-row">
-          <span class="menu-label">隐藏会话</span>
-          <label class="switch">
-            <input v-model="hidden" type="checkbox" @change="onHiddenChange" />
-            <span class="slider" />
-          </label>
-        </div>
       </section>
 
       <section class="card menu-card">
@@ -691,21 +558,6 @@ async function onLeave() {
       </div>
     </div>
 
-    <div v-if="showAvatarConfirm" class="dialog-mask" @click="closeAvatarConfirm">
-      <div class="dialog avatar-confirm-dialog" @click.stop>
-        <h3>确认群头像</h3>
-        <div class="avatar-preview-wrap">
-          <img v-if="avatarPreviewUrl" :src="avatarPreviewUrl" alt="预览" class="avatar-preview" />
-        </div>
-        <p class="avatar-confirm-tip">确认后将上传并替换当前群头像</p>
-        <div class="dialog-actions">
-          <AppButton variant="secondary" type="button" class="dialog-btn" :disabled="saving" @click="closeAvatarConfirm">取消</AppButton>
-          <AppButton variant="primary" type="button" class="dialog-btn primary" :disabled="saving" @click="confirmAvatarUpload">
-            {{ saving ? '上传中...' : '确认使用' }}
-          </AppButton>
-        </div>
-      </div>
-    </div>
 
     <div v-if="showTitleDialog" class="dialog-mask" @click="showTitleDialog = false">
       <div class="dialog" @click.stop>
@@ -746,7 +598,14 @@ async function onLeave() {
       :filename="`pulse-group-${conversationId}.png`"
       hint="扫一扫上面的二维码，打开本群"
       @close="groupQrPreview = false"
-    />
+    >
+      <template #identity>
+        <button type="button" class="qr-group-id" aria-label="复制群 PulseID" @click="copyGroupPulseId">
+          <span>群 PulseID：{{ detail?.pulseId || formatGroupPulseId(conversationId) }}</span>
+          <AppIcon name="content_copy"  aria-hidden="true" />
+        </button>
+      </template>
+    </QrPreviewModal>
   </div>
 </template>
 
@@ -799,7 +658,7 @@ async function onLeave() {
   min-width: 0;
   font-size: var(--pulse-font-title);
   font-weight: 600;
-  line-height: 22px;
+  line-height: calc(22px * var(--pulse-font-scale, 1));
   color: var(--pulse-primary);
   text-align: center;
 }
@@ -837,17 +696,8 @@ async function onLeave() {
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
-.qr-section-card {
-  padding: 20px 16px;
-}
-
-.qr-section-title {
-  margin-bottom: 14px;
-  font-size: var(--pulse-font-body);
-  font-weight: 600;
-  color: var(--pulse-text);
-  text-align: center;
-}
+.qr-group-id { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; margin: 8px auto 0; padding: 8px; border: 0; background: transparent; color: var(--pulse-text-secondary); font-size: var(--pulse-font-small); overflow-wrap: anywhere; }
+.qr-group-id .material-symbols-outlined { font-size: 18px; flex: none; }
 
 .member-card {
   padding: 24px 16px 16px;
@@ -908,7 +758,7 @@ async function onLeave() {
   text-align: center;
   font-size: var(--pulse-font-caption);
   font-weight: 600;
-  line-height: 13px;
+  line-height: calc(13px * var(--pulse-font-scale, 1));
   color: var(--pulse-text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -943,7 +793,7 @@ async function onLeave() {
   color: var(--pulse-primary);
   font-size: var(--pulse-font-small);
   font-weight: 500;
-  line-height: 18px;
+  line-height: calc(18px * var(--pulse-font-scale, 1));
   cursor: pointer;
 }
 
@@ -992,7 +842,7 @@ async function onLeave() {
 
 .menu-label {
   font-size: var(--pulse-font-body);
-  line-height: 20px;
+  line-height: calc(20px * var(--pulse-font-scale, 1));
   color: var(--pulse-text);
 }
 
@@ -1032,7 +882,7 @@ async function onLeave() {
 .notice-text {
   margin: 0;
   font-size: var(--pulse-font-small);
-  line-height: 18px;
+  line-height: calc(18px * var(--pulse-font-scale, 1));
   color: var(--pulse-text-secondary);
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -1040,61 +890,6 @@ async function onLeave() {
   overflow: hidden;
 }
 
-.avatar-card {
-  padding: 0;
-}
-
-.avatar-row {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 16px;
-  border: none;
-  background: transparent;
-  color: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.avatar-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.avatar-hint {
-  font-size: 12px;
-  color: var(--pulse-outline);
-}
-
-.group-avatar-wrap {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.group-avatar {
-  width: 56px;
-  height: 56px;
-  border-radius: 12px;
-  object-fit: cover;
-  background: var(--pulse-surface-highest);
-}
-
-.group-avatar.initials {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--pulse-primary);
-  font-weight: 700;
-  font-size: 20px;
-}
-
-.hidden-input {
-  display: none;
-}
 
 .switch {
   position: relative;
@@ -1153,7 +948,7 @@ async function onLeave() {
   color: #ffdad6;
   font-size: var(--pulse-font-heading);
   font-weight: 600;
-  line-height: 25px;
+  line-height: calc(25px * var(--pulse-font-scale, 1));
   cursor: pointer;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
 }
@@ -1329,31 +1124,4 @@ async function onLeave() {
   opacity: 0.6;
 }
 
-.avatar-confirm-dialog {
-  text-align: center;
-}
-
-.avatar-preview-wrap {
-  width: 148px;
-  height: 148px;
-  margin: 4px auto 12px;
-  border-radius: 20px;
-  overflow: hidden;
-  background: var(--pulse-page-bg, var(--pulse-bg));
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.avatar-preview {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.avatar-confirm-tip {
-  margin: 0 0 4px;
-  font-size: 13px;
-  color: var(--pulse-text-secondary);
-  line-height: 1.4;
-}
 </style>

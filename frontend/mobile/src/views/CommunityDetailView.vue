@@ -546,14 +546,14 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="community-detail-page">
-    <header class="page-header">
+    <header class="pulse-page-nav page-header">
       <button type="button" class="header-icon" aria-label="返回" @click="goBack">
-        <span class="material-symbols-outlined">arrow_back_ios_new</span>
+        <IconBack />
       </button>
       <h1>{{ item && item.status !== 'APPROVED' ? '审核状态' : '圈子详情' }}</h1>
       <div v-if="!item || item.status === 'APPROVED'" class="header-actions">
         <button type="button" class="header-icon share-button" aria-label="分享圈子" @click="shareVisible = true">
-          <span class="material-symbols-outlined">share</span>
+          <AppIcon name="share"  />
         </button>
         <button v-if="canManage" type="button" class="header-icon" aria-label="管理中心" @click="openManage">
           <span class="material-symbols-outlined">settings</span>
@@ -569,9 +569,7 @@ onBeforeUnmount(() => {
 
       <template v-else-if="item">
       <section v-if="item.status !== 'APPROVED'" class="review-state-card">
-        <span class="review-state-icon material-symbols-outlined">
-          {{ item.status === 'PENDING' ? 'hourglass_top' : item.status === 'REJECTED' ? 'error' : item.status === 'DISSOLVED' ? 'delete_forever' : 'lock' }}
-        </span>
+        <AppIcon :name="item.status === 'PENDING' ? 'hourglass_top' : item.status === 'REJECTED' ? 'error' : item.status === 'DISSOLVED' ? 'delete_forever' : 'lock'" class="review-state-icon" />
         <h2>{{ item.status === 'PENDING' ? '圈子正在审核中' : item.status === 'REJECTED' ? '圈子审核未通过' : item.status === 'DISSOLVED' ? '圈子已解散' : '圈子已被关闭' }}</h2>
         <p v-if="item.status === 'PENDING'">后台正在审核“{{ item.name }}”，通过后才能进入圈子详情。</p>
         <p v-else-if="item.status === 'REJECTED'">{{ item.reject_reason || '圈子资料暂未通过审核，请修改后重新提交。' }}</p>
@@ -609,7 +607,7 @@ onBeforeUnmount(() => {
         <div class="hero-actions">
           <AppButton variant="primary" v-if="!item.joined" type="button" class="primary-action" :disabled="joining || item.join_request_status === 'PENDING'" @click="join">
             <van-loading v-if="joining" size="19px" />
-            <span v-else class="material-symbols-outlined">group_add</span>
+            <AppIcon name="group_add" v-else  />
             {{ item.join_request_status === 'PENDING' ? '等待审核' : item.join_request_status === 'APPROVED' ? (item.type === 'PAID' ? `${(item.price / 100).toFixed(2)} PLU 完成加入` : '审核已通过，加入圈子') : item.join_review_required ? '申请加入圈子' : item.type === 'PAID' ? `${(item.price / 100).toFixed(2)} PLU 加入` : '加入圈子' }}
           </AppButton>
           <AppButton variant="primary" v-else type="button" class="primary-action" @click="openCompose">
@@ -617,12 +615,12 @@ onBeforeUnmount(() => {
             发布动态
           </AppButton>
           <button v-if="canManage" type="button" class="secondary-action" @click="openManage">
-            <span class="material-symbols-outlined">tune</span>
+            <AppIcon name="tune"  />
             管理中心
             <sup v-if="item.pending_post_count || item.profile_review_unread_count" class="inline-manage-badge">{{ Math.min(99, Number(item.pending_post_count || 0) + Number(item.profile_review_unread_count || 0)) }}</sup>
           </button>
           <button v-if="item.joined && item.my_role !== 'OWNER'" type="button" class="secondary-action leave-action" :disabled="item.leave_request_status === 'PENDING'" @click="leave">
-            <span class="material-symbols-outlined">logout</span>
+            <AppIcon name="logout" />
             {{ item.leave_request_status === 'PENDING' ? '等待退出审核' : '退出圈子' }}
           </button>
         </div>
@@ -635,12 +633,12 @@ onBeforeUnmount(() => {
           <summary>
             <span class="rules-icon material-symbols-outlined">gavel</span>
             <span><strong>圈子规则</strong><small>共同维护友善、真实的交流空间</small></span>
-            <span class="rules-arrow material-symbols-outlined">expand_more</span>
+            <AppIcon name="expand_more" class="rules-arrow" />
           </summary>
           <p>{{ item.rules || '圈主暂未设置其他规则，请遵守社区规范并友善交流。' }}</p>
         </details>
         <div v-if="!item.canViewContent" class="locked-card">
-          <span class="material-symbols-outlined">lock</span>
+          <AppIcon name="lock"  />
           <div><strong>加入后查看全部内容</strong><p>圈子动态、评论和成员互动仅对成员开放</p></div>
         </div>
       </section>
@@ -649,7 +647,7 @@ onBeforeUnmount(() => {
         <div class="feed-heading">
           <div><h3>圈子动态</h3><span>共 {{ item.post_count }} 条</span></div>
           <button type="button" aria-label="发布动态" @click="openCompose">
-            <span class="material-symbols-outlined">add</span>
+            <AppIcon name="add"  />
           </button>
         </div>
 
@@ -684,14 +682,14 @@ onBeforeUnmount(() => {
                 aria-label="动态操作"
                 @click.stop="openPostMenu(post)"
               >
-                <span class="material-symbols-outlined">more_horiz</span>
+                <IconMore />
               </button>
             </header>
 
             <p v-if="post.content" class="post-content">{{ post.content }}</p>
 
             <button v-if="post.quotedPost" type="button" class="quoted-post-card" @click.stop="router.push(`/communities/${id}/posts/${post.quotedPost.id}`)">
-              <span class="quoted-label"><span class="material-symbols-outlined">format_quote</span>引用 {{ post.quotedPost.nickname }} 的动态</span>
+              <span class="quoted-label"><AppIcon name="format_quote"  />引用 {{ post.quotedPost.nickname }} 的动态</span>
               <span v-if="post.quotedPost.content" class="quoted-content">{{ post.quotedPost.content }}</span>
               <img v-if="quotedMediaSource(post.quotedPost, 0)" :src="quotedMediaSource(post.quotedPost, 0)" alt="" class="quoted-image" />
             </button>
@@ -725,7 +723,7 @@ onBeforeUnmount(() => {
                 <span class="material-symbols-outlined">chat_bubble</span><span>{{ post.commentCount || '评论' }}</span>
               </button>
               <button type="button" class="action-button" :class="{ active: post.favoritedByMe }" @click="onFavorite(post)">
-                <span class="material-symbols-outlined">bookmark</span><span>{{ post.favoritedByMe ? '已收藏' : '收藏' }}</span>
+                <AppIcon name="bookmark"  /><span>{{ post.favoritedByMe ? '已收藏' : '收藏' }}</span>
               </button>
               <button type="button" class="action-button" @click="forwardPost(post)">
                 <span class="material-symbols-outlined">repeat</span><span>转发</span>
@@ -954,7 +952,7 @@ onBeforeUnmount(() => {
 .media-thumb video { width: 100%; height: 100%; display: block; object-fit: cover; }
 .video-badge,
 .media-more { position: absolute; inset: 0; display: grid; place-items: center; color: var(--pulse-on-primary); text-shadow: 0 2px 8px color-mix(in srgb, var(--pulse-text) 60%, transparent); }
-.video-badge { font-size: 38px; }
+.video-badge { font-size: calc(38px * var(--pulse-font-scale, 1)); }
 .media-more { background: color-mix(in srgb, var(--pulse-text) 58%, transparent); font-size: var(--pulse-font-heading); font-weight: 700; }
 .location-row { display: flex; align-items: center; gap: 7px; width: fit-content; max-width: 100%; margin-top: 11px; padding: 7px 10px; border: 0; border-radius: 11px; background: color-mix(in srgb, var(--pulse-primary) 9%, var(--pulse-surface-high)); color: var(--pulse-primary); text-align: left; }
 .location-row > .material-symbols-outlined { flex: 0 0 auto; font-size: 17px; }
@@ -978,7 +976,7 @@ onBeforeUnmount(() => {
 
 .empty-state { margin: 0 14px; padding: 48px 24px; border: 1px dashed var(--pulse-divider); border-radius: 22px; background: var(--pulse-surface-container); text-align: center; }
 .empty-visual { position: relative; width: 92px; height: 72px; display: grid; place-items: center; margin: 0 auto; border-radius: 24px; background: color-mix(in srgb, var(--pulse-primary) 10%, var(--pulse-surface-high)); color: var(--pulse-primary); }
-.empty-visual > span { font-size: 39px; }
+.empty-visual > span { font-size: calc(39px * var(--pulse-font-scale, 1)); }
 .empty-visual i { position: absolute; width: 7px; height: 7px; border-radius: 50%; background: var(--pulse-primary); opacity: .35; }
 .empty-visual i:nth-child(2) { top: 13px; left: 14px; }
 .empty-visual i:nth-child(3) { top: 10px; right: 17px; }

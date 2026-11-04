@@ -237,7 +237,7 @@ onMounted(load)
 
 <template>
   <div class="wallet-page">
-    <header class="wallet-header">
+    <header class="pulse-page-nav wallet-header">
       <button type="button" class="back" aria-label="返回" @click="router.back()"><IconBack /></button>
       <h1 class="page-title">我的钱包</h1>
       <button type="button" class="setting" @click="passwordVisible = true">支付设置</button>
@@ -253,7 +253,7 @@ onMounted(load)
             aria-label="刷新余额"
             @click="load"
           >
-            <span class="material-symbols-outlined">refresh</span>
+            <AppIcon name="refresh"  />
           </button>
         </div>
         <strong class="balance-amount">{{ yuan(wallet.balance) }}</strong>
@@ -263,12 +263,12 @@ onMounted(load)
         <div class="filter-row">
           <span class="filter-label">类型</span>
           <button type="button" class="wallet-type-button" @click="openWalletTypePicker">
-            <span class="material-symbols-outlined wallet-type-leading-icon">account_balance_wallet</span>
+            <AppIcon name="account_balance_wallet" class="wallet-type-leading-icon" />
             <span class="wallet-type-copy">
               <small>交易类型</small>
               <strong>{{ selectedWalletType.label }}</strong>
             </span>
-            <span class="material-symbols-outlined wallet-type-chevron">expand_more</span>
+            <AppIcon name="expand_more" class="wallet-type-chevron" />
           </button>
           <button v-if="hasFilters" type="button" class="reset-filter" @click="resetFilters">
             重置
@@ -305,7 +305,7 @@ onMounted(load)
         <div class="list-head">
           <h2>收支明细</h2>
           <button type="button" class="refresh-btn" :disabled="loading" @click="load">
-            <span class="material-symbols-outlined">refresh</span>
+            <AppIcon name="refresh"  />
           </button>
         </div>
         <div v-if="loading" class="empty">加载中…</div>
@@ -318,7 +318,7 @@ onMounted(load)
           @keydown.enter.prevent="router.push(`/wallet/transactions/${row.id}`)"
         >
           <span class="row-icon" :class="row.direction === 'IN' ? 'in' : 'out'">
-            <span class="material-symbols-outlined">{{ tradeIcon(row.trade_type) }}</span>
+            <AppIcon :name="tradeIcon(row.trade_type)"  />
           </span>
           <div class="row-main">
             <b>{{ tradeLabel(row.trade_type) }}</b>
@@ -328,7 +328,7 @@ onMounted(load)
           <div class="money" :class="{ income: row.direction === 'IN' }">
             {{ row.direction === 'IN' ? '+' : '-' }}{{ yuan(row.amount) }}
           </div>
-          <span class="row-arrow material-symbols-outlined">chevron_right</span>
+          <AppIcon name="chevron_right" class="row-arrow" />
         </article>
         <div v-if="!loading && !rows.length" class="empty">暂无收支记录</div>
       </section>
@@ -350,7 +350,7 @@ onMounted(load)
             @click="selectWalletType(item.value)"
           >
             <span class="wallet-type-option-icon" :class="{ selected: type === item.value }">
-              <span class="material-symbols-outlined">{{ item.icon }}</span>
+              <AppIcon :name="item.icon"  />
             </span>
             <span class="wallet-type-option-copy"><strong>{{ item.label }}</strong><small>{{ item.description }}</small></span>
             <span v-if="type === item.value" class="material-symbols-outlined wallet-type-check">check_circle</span>
@@ -428,7 +428,7 @@ onMounted(load)
 
 .back {
   width: 40px;
-  font-size: 29px;
+  font-size: calc(29px * var(--pulse-font-scale, 1));
   color: var(--pulse-primary);
 }
 
@@ -461,7 +461,7 @@ main {
 }
 
 .balance-head span {
-  font-size: 13px;
+  font-size: calc(13px * var(--pulse-font-scale, 1));
   opacity: 0.88;
 }
 
@@ -486,14 +486,14 @@ main {
 }
 
 .balance-amount {
-  font-size: 40px;
+  font-size: calc(40px * var(--pulse-font-scale, 1));
   letter-spacing: -1px;
   line-height: 1.2;
   font-weight: 700;
 }
 
 .balance-status {
-  font-size: 12px;
+  font-size: calc(12px * var(--pulse-font-scale, 1));
   opacity: 0.82;
 }
 
@@ -532,7 +532,7 @@ main {
   padding: 8px 10px;
   min-height: 42px;
   font-size: var(--pulse-font-body);
-  line-height: 24px;
+  line-height: calc(24px * var(--pulse-font-scale, 1));
   color-scheme: light dark;
 }
 

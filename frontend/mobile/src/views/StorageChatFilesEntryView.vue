@@ -19,15 +19,15 @@ onMounted(async () => {
 
 <template>
   <div class="entry-page">
-    <header class="page-header"><button type="button" class="header-btn" aria-label="返回" @click="smartBack(router)"><IconBack /></button><h1>聊天与文件</h1><span class="header-spacer" /></header>
+    <header class="pulse-page-nav page-header"><button type="button" class="header-btn" aria-label="返回" @click="smartBack(router)"><IconBack /></button><h1>聊天与文件</h1><span class="header-spacer" /></header>
     <main class="entry-content">
       <div class="intro"><strong>管理当前账号的聊天资源</strong><span>聊天记录与聊天文件分别统计，清理只作用于本设备。</span></div>
       <div v-if="errorText" class="state error">{{ errorText }}</div>
       <section v-else class="entry-list">
-        <button type="button" class="entry-row" @click="router.push('/settings/storage/chat-records')"><span class="entry-icon"><span class="material-symbols-outlined">chat_bubble</span></span><span class="entry-body"><strong>清理聊天记录</strong><small>消息正文、索引和必要元数据</small></span><b>{{ loading ? '--' : formatBytes(overview?.inventory.chatRecordsBytes || 0) }}</b><span class="material-symbols-outlined">chevron_right</span></button>
-        <button type="button" class="entry-row" @click="router.push('/settings/storage/all-files')"><span class="entry-icon files"><span class="material-symbols-outlined">perm_media</span></span><span class="entry-body"><strong>清理聊天文件</strong><small>图片、视频、文件和音频，可按分类筛选</small></span><b>{{ loading ? '--' : formatBytes(overview?.inventory.chatFilesBytes || 0) }}</b><span class="material-symbols-outlined">chevron_right</span></button>
+        <button type="button" class="entry-row" @click="router.push('/settings/storage/chat-records')"><span class="entry-icon"><span class="material-symbols-outlined">chat_bubble</span></span><span class="entry-body"><strong>清理聊天记录</strong><small>消息正文、索引和必要元数据</small></span><b>{{ loading ? '--' : formatBytes(overview?.inventory.chatRecordsBytes || 0) }}</b><AppIcon name="chevron_right"  /></button>
+        <button type="button" class="entry-row" @click="router.push('/settings/storage/all-files')"><span class="entry-icon files"><span class="material-symbols-outlined">perm_media</span></span><span class="entry-body"><strong>清理聊天文件</strong><small>图片、视频、文件和音频，可按分类筛选</small></span><b>{{ loading ? '--' : formatBytes(overview?.inventory.chatFilesBytes || 0) }}</b><AppIcon name="chevron_right"  /></button>
       </section>
-      <p class="note"><span class="material-symbols-outlined">lock</span>当前账号严格隔离。清理聊天文件只删除本机的图片、视频、文件和音频缓存，不修改消息、fileId、收藏/转发引用或服务端对象；原消息仍可重新下载。</p>
+      <p class="note"><AppIcon name="lock"  />当前账号严格隔离。清理聊天文件只删除本机的图片、视频、文件和音频缓存，不修改消息、fileId、收藏/转发引用或服务端对象；原消息仍可重新下载。</p>
     </main>
   </div>
 </template>

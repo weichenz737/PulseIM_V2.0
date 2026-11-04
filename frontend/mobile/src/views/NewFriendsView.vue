@@ -152,13 +152,13 @@ function statusText(item: FriendRequestItem) {
 
 <template>
   <div class="new-friends-page">
-    <header class="page-header glass-header">
+    <header class="pulse-page-nav page-header glass-header">
       <button type="button" class="icon-btn" @click="goBack" aria-label="返回">
         <IconBack />
       </button>
       <h1 class="page-title">新的朋友</h1>
       <button type="button" class="icon-btn" @click="router.push('/contacts/add')">
-        <span class="material-symbols-outlined">person_add</span>
+        <AppIcon name="person_add"  />
       </button>
     </header>
 
@@ -217,7 +217,7 @@ function statusText(item: FriendRequestItem) {
                 :disabled="deletingId === item.id"
                 @click.stop="onDelete(item)"
               >
-                <span class="material-symbols-outlined">delete</span>
+                <AppIcon name="delete"  />
                 <span>删除</span>
               </button>
             </template>

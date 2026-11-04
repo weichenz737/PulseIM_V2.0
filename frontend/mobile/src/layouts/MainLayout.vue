@@ -258,7 +258,15 @@ onMounted(() => {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
-  /* 与底部导航拉开间距，避免列表贴边 */
+  /* The page owns its bottom clearance, so scrolling cannot lift its header. */
+  padding-bottom: 0;
+}
+
+.page-slot:has(> .messages-page) { overflow: hidden; }
+.page-slot > :deep(:is(.contacts-page, .discover-page, .me-page)) {
+  padding-bottom: calc(72px + var(--pulse-safe-bottom, 0px));
+}
+.page-slot > :deep(.messages-page .scroll-body) {
   padding-bottom: calc(72px + var(--pulse-safe-bottom, 0px));
 }
 
@@ -382,13 +390,13 @@ onMounted(() => {
   color: #fff;
   font-size: var(--pulse-font-caption);
   font-weight: 700;
-  line-height: 16px;
+  line-height: calc(16px * var(--pulse-font-scale, 1));
   text-align: center;
 }
 
 .tab-label {
   font-size: var(--pulse-font-caption);
-  line-height: 15px;
+  line-height: calc(15px * var(--pulse-font-scale, 1));
   font-weight: 600;
   letter-spacing: 0.01em;
   white-space: nowrap;

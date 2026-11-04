@@ -40,7 +40,7 @@
   --pulse-icon-control-size: 40px;
   /* 聊天内容字号（通用设置可调）；界面标题/导航等用各自固定 px，保持层级 */
   --chat-font-size: 15px;
-  --pulse-content-font-size: clamp(13px, var(--chat-font-size), 20px);
+  --pulse-content-font-size: var(--pulse-font-body, 15px);
   --chat-line-height: 22px;
   --chat-bubble-max: 78%;
   --chat-bubble-pad-y: 10px;
@@ -387,7 +387,7 @@ button:disabled {
 }
 
 :root[data-theme='light'] :is(.page-header, .header, .moments-header, .compose-header, .pay-header, .chat-header)
-  :is(.icon-btn, .back-btn, button):first-child,
+  > :is(.icon-btn, .back-btn, button):first-child,
 :root[data-theme='light'] :is(.page-header, .header) .header-left :is(.icon-btn, .back-ico),
 :root[data-theme='light'] .wallet-header .back,
 :root[data-theme='light'] .pay-page .back-btn,
@@ -690,14 +690,6 @@ button:disabled {
   box-shadow: none !important;
 }
 
-/* 白色模式朋友圈顶栏使用浅色主题背景，避免系统栏/导航栏仍呈黑色。 */
-:root[data-theme='light'] .moments-page .moments-header {
-  background: linear-gradient(180deg, #bfe8ff 0%, rgba(225, 247, 255, 0.96) 100%) !important;
-  border-bottom-color: rgba(137, 196, 228, 0.28) !important;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-}
-
 /* 朋友圈消息页导航栏与页面背景保持一致。 */
 :root[data-theme='light'] .notif-page > .page-header {
   background: var(--pulse-list-page-bg) !important;
@@ -812,7 +804,7 @@ button:disabled {
 
 /* 消息/联系人列表区透出页面蓝白渐变 */
 :root[data-theme='light'] .messages-page :is(.scroll-body, .page-pull, .pull-inner),
-:root[data-theme='light'] .messages-page .page-pull :deep(.van-pull-refresh__track),
+:root[data-theme='light'] .messages-page .page-pull .van-pull-refresh__track,
 :root[data-theme='light'] .contacts-page :is(.contacts-pull, .list-pull),
 :root[data-theme='light'] .contacts-page .van-pull-refresh,
 :root[data-theme='light'] .contacts-page .van-pull-refresh__track,
@@ -1213,7 +1205,7 @@ button:disabled {
 
 /* 安卓：消息页会话行保持紧凑（苹果端用默认较大尺寸） */
 :root[data-platform='android'] .messages-page .select-all-btn {
-  font-size: 12px;
+  font-size: var(--pulse-font-body);
   padding: 4px 2px;
 }
 
@@ -1240,13 +1232,11 @@ button:disabled {
 }
 
 :root[data-platform='android'] .messages-page .conv-name {
-  font-size: var(--pulse-content-font-size, 15px);
-  line-height: 20px;
+  line-height: calc(20px * var(--pulse-font-scale, 1));
 }
 
 :root[data-platform='android'] .messages-page .conv-preview {
-  font-size: calc(var(--pulse-content-font-size, 15px) - 2px);
-  line-height: 18px;
+  line-height: calc(18px * var(--pulse-font-scale, 1));
 }
 
 /* 用户资料页：返回 / 更多 */
@@ -1380,7 +1370,7 @@ button:disabled {
 }
 
 /* Keep the icon slot stable while the bundled font is being decoded. */
-html:not(.material-symbols-ready) .material-symbols-outlined {
+html:not(.material-symbols-ready) .material-symbols-outlined:not(.pulse-icon) {
   visibility: hidden !important;
 }
 
@@ -1428,23 +1418,24 @@ html:not(.material-symbols-ready) .material-symbols-outlined {
 }
 
 .van-pull-refresh {
-  background: var(--pulse-page-bg, var(--pulse-bg)) !important;
+  /* Refresh wrappers are layout layers; only pages and cards paint surfaces. */
+  background: transparent !important;
   overflow: hidden;
 }
 
 .van-pull-refresh__track {
   position: relative;
-  background: var(--pulse-page-bg, var(--pulse-bg)) !important;
+  background: transparent !important;
   min-height: 100%;
 }
 
 .van-pull-refresh__head {
-  background: var(--pulse-page-bg, var(--pulse-bg)) !important;
+  background: transparent !important;
   color: var(--pulse-outline) !important;
 }
 
 .list-pull {
-  background: var(--pulse-page-bg, var(--pulse-bg));
+  background: transparent;
   min-height: 100%;
 }
 
@@ -1556,14 +1547,6 @@ input[type='search']::-ms-clear {
   box-shadow: none !important;
 }
 
-/* 朋友圈为沉浸式固定顶栏，浅色模式也必须保持透明，让封面延伸到顶栏下方。 */
-:root[data-theme='light'] .moments-page > .moments-header {
-  background: transparent !important;
-  background-image: none !important;
-  border-bottom-color: transparent !important;
-  box-shadow: none !important;
-}
-
 /* 浅色模式：好友/群聊相关子页的顶栏与页面底色保持一致。 */
 :root[data-theme='light'] :is(
   .add-friend-page,
@@ -1599,15 +1582,19 @@ input[type='search']::-ms-clear {
   box-shadow: none !important;
 }
 
-/* 朋友圈采用沉浸式封面：封面延伸到状态栏和顶栏，顶栏不能再铺不透明底色。 */
-:root .moments-page > .moments-header {
-  position: fixed !important;
+/* 朋友圈使用普通详情页导航，照片从导航下方开始。 */
+:root[data-theme] .moments-page > .moments-header {
+  position: sticky !important;
   top: 0 !important;
   right: 0 !important;
   left: 0 !important;
   z-index: 50 !important;
-  background: transparent !important;
-  background-image: none !important;
+  display: grid !important;
+  grid-template-columns: 88px minmax(0, 1fr) 88px;
+  padding-left: 12px !important;
+  padding-right: 12px !important;
+  background: var(--pulse-list-page-bg, var(--pulse-page-bg)) !important;
+  background-image: var(--pulse-list-page-bg, none) !important;
   border-bottom-color: transparent !important;
   box-shadow: none !important;
   backdrop-filter: none !important;
@@ -1615,12 +1602,16 @@ input[type='search']::-ms-clear {
 }
 
 :root .moments-page > .moments-header :is(.icon-btn, .header-title) {
-  color: #fff !important;
-  text-shadow: 0 1px 5px rgba(0, 0, 0, 0.55);
+  color: var(--pulse-primary) !important;
+  text-shadow: none;
 }
 
+:root .moments-page > .moments-header .header-title { min-width: 0; text-align: center; font-size: var(--pulse-font-title) !important; line-height: var(--pulse-line-title); }
+:root .moments-page > .moments-header .header-right { justify-content: flex-end; }
+:root .moments-page > .moments-header .header-right .icon-btn { background: var(--pulse-surface-high); border-radius: var(--pulse-control-radius); }
+
 :root .moments-page > .moments-header .icon-btn:active {
-  background: rgba(0, 0, 0, 0.18) !important;
+  background: var(--pulse-pressed) !important;
 }
 
 :root .moments-page .cover-name {

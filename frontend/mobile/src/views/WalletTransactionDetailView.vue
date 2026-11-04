@@ -48,7 +48,7 @@ onMounted(async () => {
 
 <template>
   <div class="transaction-detail-page">
-    <header class="page-header">
+    <header class="pulse-page-nav page-header">
       <button type="button" class="icon-btn" aria-label="返回" @click="smartBack(router, '/wallet')">
         <IconBack />
       </button>
@@ -90,7 +90,7 @@ onMounted(async () => {
 .page-title{flex:1;margin:0;text-align:center;font-size:var(--pulse-font-title)}.state{padding:60px 20px;text-align:center;color:var(--pulse-text-secondary)}
 main{padding:16px}.amount-card,.detail-card{border:1px solid var(--pulse-border);border-radius:14px;background:var(--pulse-surface-container)}
 .amount-card{display:flex;flex-direction:column;align-items:center;padding:30px 16px;gap:9px}.amount-card span,.amount-card small{color:var(--pulse-text-secondary)}
-.amount-card strong{font-size:36px}.amount-card strong.income{color:#07c160}
+.amount-card strong{font-size:calc(36px * var(--pulse-font-scale, 1))}.amount-card strong.income{color:#07c160}
 .detail-card{margin-top:14px;padding:0 16px}.detail-card>div{display:flex;justify-content:space-between;gap:20px;padding:15px 0;border-bottom:1px solid var(--pulse-divider)}
 .detail-card>div:last-child{border-bottom:0}.detail-card span{flex:none;color:var(--pulse-text-secondary)}.detail-card b{min-width:0;text-align:right;font-size:var(--pulse-font-body);font-weight:500;overflow-wrap:anywhere}
 .trade-no{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:var(--pulse-font-caption)!important}

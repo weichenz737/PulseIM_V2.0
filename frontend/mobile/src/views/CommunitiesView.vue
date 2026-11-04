@@ -124,7 +124,7 @@ function reviewStatusTitle(status: string): string {
 
 <template>
   <div class="page communities-page">
-    <header class="page-header">
+    <header class="pulse-page-nav page-header">
       <div class="header-side header-left">
         <button type="button" class="icon-btn" aria-label="返回" @click="router.back()"><IconBack /></button>
       </div>
@@ -136,12 +136,12 @@ function reviewStatusTitle(status: string): string {
           :aria-label="notificationUnread > 0 ? `圈子消息，${notificationUnread} 条未读` : '圈子消息'"
           @click="router.push('/communities/notifications')"
         >
-          <span class="material-symbols-outlined">notifications</span>
+          <AppIcon name="notifications"  />
           <span v-if="notificationUnread > 0" class="notification-badge">
             {{ notificationUnread > 99 ? '99+' : notificationUnread }}
           </span>
         </button>
-        <button type="button" class="icon-btn" aria-label="创建圈子" @click="router.push('/communities/create')"><span class="material-symbols-outlined">add</span></button>
+        <button type="button" class="icon-btn" aria-label="创建圈子" @click="router.push('/communities/create')"><AppIcon name="add"  /></button>
       </div>
     </header>
     <van-pull-refresh v-model="refreshing" class="community-pull" success-text="刷新成功" @refresh="onPullRefresh">
@@ -152,7 +152,7 @@ function reviewStatusTitle(status: string): string {
       </nav>
       <div v-if="activeTab === 'discover'" class="search">
         <input v-model="keyword" placeholder="搜索圈子、主题或圈主" @keyup.enter="load()">
-        <button v-if="keyword" type="button" class="search-clear-btn" aria-label="清除搜索" @click="keyword = ''; load()"><span class="material-symbols-outlined">cancel</span></button>
+        <button v-if="keyword" type="button" class="search-clear-btn" aria-label="清除搜索" @click="keyword = ''; load()"><AppIcon name="cancel"  /></button>
         <button @click="load()">搜索</button>
       </div>
       <div v-if="activeTab === 'discover'" class="chips"><button :class="{ on: !topicId }" @click="topicId = undefined; load()">全部</button><button v-for="topic in topics" :key="topic.id" :class="{ on: topicId === topic.id }" @click="topicId = topic.id; load()">{{ topic.name }}</button></div>
@@ -167,9 +167,7 @@ function reviewStatusTitle(status: string): string {
     </van-pull-refresh>
     <AppBottomSheet :show="!!reviewCommunity" position="bottom" round closeable @update:show="reviewCommunity = undefined">
       <section v-if="reviewCommunity" class="review-popup">
-        <span class="review-icon material-symbols-outlined">
-          {{ reviewCommunity.status === 'PENDING' ? 'hourglass_top' : reviewCommunity.status === 'REJECTED' ? 'error' : 'lock' }}
-        </span>
+        <AppIcon :name="reviewCommunity.status === 'PENDING' ? 'hourglass_top' : reviewCommunity.status === 'REJECTED' ? 'error' : 'lock'" class="review-icon" />
         <h2>{{ reviewStatusTitle(reviewCommunity.status) }}</h2>
         <p v-if="reviewCommunity.status === 'PENDING'">后台正在审核圈子资料，审核通过后才能进入圈子详情和发布内容。</p>
         <p v-else-if="reviewCommunity.status === 'REJECTED'">{{ reviewCommunity.reject_reason || '圈子资料暂未通过审核，请修改后重新提交。' }}</p>
@@ -187,7 +185,7 @@ button{border:0;background:none;color:inherit;font:inherit}
 .header-side{display:flex;width:80px;align-items:center}.header-left{grid-column:1;justify-content:flex-start}.header-actions{grid-column:3;justify-content:flex-end}
 .icon-btn,.header-spacer{width:40px;height:40px;flex:none}.icon-btn{display:grid;place-items:center;border-radius:50%;color:var(--pulse-primary)}.icon-btn .material-symbols-outlined{font-size:22px}
 .page-title{grid-column:2;min-width:0;margin:0;text-align:center;font-size:var(--pulse-font-title);font-weight:600;color:var(--pulse-primary)}
-.notification-btn{position:relative}.notification-badge{position:absolute;top:1px;right:0;min-width:17px;height:17px;padding:0 4px;border:2px solid var(--pulse-page-bg,var(--pulse-bg));border-radius:999px;background:var(--pulse-danger,#ff5447);color:#fff;font-size:var(--pulse-font-caption);font-weight: 700;line-height:13px;text-align:center;box-sizing:border-box}
+.notification-btn{position:relative}.notification-badge{position:absolute;top:1px;right:0;min-width:17px;height:17px;padding:0 4px;border:2px solid var(--pulse-page-bg,var(--pulse-bg));border-radius:999px;background:var(--pulse-danger,#ff5447);color:#fff;font-size:var(--pulse-font-caption);font-weight: 700;line-height:calc(13px * var(--pulse-font-scale, 1));text-align:center;box-sizing:border-box}
 .community-tabs{display:flex;height:48px;background:var(--pulse-page-bg,var(--pulse-bg));border-bottom:1px solid var(--pulse-outline-variant)}.community-tabs button{position:relative;flex:1;padding:0;font-size:var(--pulse-font-body);color:var(--pulse-text-secondary)}.community-tabs button.on{color:var(--pulse-primary);font-weight:600}.community-tabs button.on::after{content:"";position:absolute;left:25%;right:25%;bottom:0;height:2px;border-radius:2px;background:var(--pulse-primary)}
 .community-pull{min-height:calc(100dvh - 56px - var(--pulse-header-pad-top))}
 .search{display:flex;gap:8px;padding:12px 16px}.search input{flex:1;border:0;border-radius:12px;padding:11px;background:var(--pulse-surface-high);color:var(--pulse-text)}.search button{color:var(--pulse-primary)}.chips{display:flex;gap:8px;overflow:auto;padding:0 16px 12px}.chips button{white-space:nowrap;padding:6px 12px;border-radius:16px;background:var(--pulse-surface-high)}.chips .on{background:var(--pulse-primary);color:var(--pulse-on-primary)}

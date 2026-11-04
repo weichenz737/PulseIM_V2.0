@@ -14,7 +14,7 @@ RUN mvn -q -DskipTests -pl pulse-api -am package
 FROM eclipse-temurin:21-jre
 WORKDIR /app
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends libreoffice \
+    && apt-get install -y --no-install-recommends ffmpeg curl libreoffice \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=build /build/pulse-api/target/pulse-api-1.0.0-SNAPSHOT.jar app.jar
 EXPOSE 8080

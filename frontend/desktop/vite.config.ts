@@ -54,9 +54,14 @@ export default defineConfig({
       'pdfjs-dist': `${sharedModules}/pdfjs-dist`,
     },
   },
+  // PDF.js worker imports use Vite's ?url/?worker transforms. Prebundling
+  // those query variants leaves missing optimized files on Windows reloads.
+  optimizeDeps: {
+    exclude: ['pdfjs-dist', 'pdfjs-dist/build/pdf.worker.min.mjs'],
+  },
   server: {
     host: '127.0.0.1',
-    port: 5173,
+    port: 5175,
     strictPort: true,
     // Electron/Chrome profiles may live under this folder during local
     // preview. Watching their locked cache files makes Vite crash on Windows

@@ -26,6 +26,9 @@ const handles: PluginListenerHandle[] = []
 let themeObserver: MutationObserver | null = null
 let removeRouteStatusHook: (() => void) | null = null
 let lastRootBackAt = 0
+let lastStatusBarKey = ''
+let desiredStatusBarKey = ''
+let statusBarUpdate = Promise.resolve()
 
 function isVisibleModalLayer(element: HTMLElement): boolean {
   const style = window.getComputedStyle(element)
@@ -117,24 +120,37 @@ async function syncStatusBarTheme() {
   if (!isNativeApp) return
   const lightTheme = document.documentElement.dataset.theme === 'light'
   const locationOverlay = Boolean(document.querySelector('.location-page'))
-  const immersiveMoments = Boolean(document.querySelector('.moments-page'))
   // 直接读取当前页面顶部导航栏的背景色，让系统状态栏与其保持同色，
   // 渐变背景取顶部第一个色标；半透明背景回退到页面底色。
   // 地图选择页是全屏覆盖层，状态栏必须透明，才能让地图继续绘制到系统图标下方。
   const pageTopColor = resolvePageTopColor(lightTheme)
-  const color = locationOverlay || immersiveMoments ? '#00000000' : pageTopColor
+  const color = locationOverlay ? '#00000000' : pageTopColor
   // Android 15/16 ignores opaque status-bar colors and shows whatever is
   // behind the transparent bar. Keep that fallback themed as well, otherwise
   // the launch Window background can appear as a black strip above the page.
   const backgroundColor = lightTheme ? '#f7faff' : '#121317'
-  // The Moments cover continues behind the system icons in both app themes,
-  // so keep the icons white while that route is visible.
-  const statusBarTheme = locationOverlay || immersiveMoments ? 'dark' : (lightTheme ? 'light' : 'dark')
+  const statusBarTheme = locationOverlay ? 'dark' : (lightTheme ? 'light' : 'dark')
   document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')?.setAttribute('content', color)
   document.documentElement.style.backgroundColor = color === '#00000000' ? backgroundColor : color
-  await setStatusBarTheme(statusBarTheme).catch(() => {})
-  await setStatusBarColor(color).catch(() => {})
-  await applyNativeStatusBar(color, statusBarTheme, backgroundColor).catch(() => {})
+  const key = JSON.stringify([color, statusBarTheme, backgroundColor])
+  desiredStatusBarKey = key
+  statusBarUpdate = statusBarUpdate.then(async () => {
+    if (key !== desiredStatusBarKey || key === lastStatusBarKey) return
+    try {
+      if (isAndroid) {
+        // Apply color and icon appearance together. Calling Capacitor first
+        // briefly applies the opposite icon appearance on older Android skins.
+        await applyNativeStatusBar(color, statusBarTheme, backgroundColor)
+      } else {
+        await setStatusBarTheme(statusBarTheme)
+        await setStatusBarColor(color)
+      }
+      lastStatusBarKey = key
+    } catch {
+      // A failed update must remain retryable on the next route/theme change.
+    }
+  })
+  await statusBarUpdate
 }
 
 function rgbToHex(parts: number[]): string {
@@ -305,6 +321,9 @@ export async function destroyNativeShell() {
   themeObserver = null
   removeRouteStatusHook?.()
   removeRouteStatusHook = null
+  desiredStatusBarKey = ''
+  await statusBarUpdate
+  lastStatusBarKey = ''
   const current = handles.splice(0)
   await Promise.all(current.map((handle) => handle.remove().catch(() => {})))
 }

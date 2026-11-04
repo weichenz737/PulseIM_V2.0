@@ -327,13 +327,13 @@ onUnmounted(() => {
 
 <template>
   <div class="scan-page">
-    <header class="page-header">
+    <header class="pulse-page-nav page-header">
       <button type="button" class="icon-btn" @click="goBack" aria-label="返回">
         <IconBack />
       </button>
       <h1 class="page-title">扫一扫</h1>
       <button type="button" class="icon-btn" @click="openAlbum">
-        <span class="material-symbols-outlined">photo_library</span>
+        <AppIcon name="photo_library"  />
       </button>
     </header>
 
@@ -363,11 +363,11 @@ onUnmounted(() => {
 
     <div class="actions">
       <button type="button" class="action-btn primary" @click="openAlbum">
-        <span class="material-symbols-outlined">photo_library</span>
+        <AppIcon name="photo_library"  />
         从相册选择图片识别
       </button>
       <button type="button" class="action-btn" @click="startCamera">
-        <span class="material-symbols-outlined">photo_camera</span>
+        <AppIcon name="photo_camera"  />
         重试摄像头
       </button>
     </div>

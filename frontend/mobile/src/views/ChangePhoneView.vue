@@ -65,7 +65,7 @@ async function submit() {
 
 <template>
   <div class="page change-phone-page">
-    <header class="header">
+    <header class="pulse-page-nav header">
       <button type="button" class="icon-btn" aria-label="返回" @click="smartBack(router)"><IconBack /></button>
       <h1>修改手机号</h1><span class="header-space" />
     </header>

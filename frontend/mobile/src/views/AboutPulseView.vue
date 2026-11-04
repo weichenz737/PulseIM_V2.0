@@ -111,7 +111,7 @@ onUnmounted(() => {
 
 <template>
   <div class="about-page">
-    <header class="page-header">
+    <header class="pulse-page-nav page-header">
       <button class="icon-btn" type="button" @click="smartBack(router, '/app/me')" aria-label="返回"><IconBack /></button>
       <h1>关于 Pulse</h1><span class="space" />
     </header>
@@ -150,7 +150,7 @@ onUnmounted(() => {
 .about-page{display:flex;box-sizing:border-box;min-height:100%;min-height:100dvh;flex-direction:column;background:var(--pulse-page-bg,var(--pulse-bg));color:var(--pulse-text)}
 .page-header{position:sticky;top:0;z-index:10;display:flex;align-items:center;height:56px;padding:var(--pulse-header-pad-top) 12px 0;margin-bottom:0 !important;background:var(--pulse-page-bg,var(--pulse-bg))}
 .page-header h1{flex:1;margin:0;text-align:center;font-size:var(--pulse-font-title)}.icon-btn,.space{width:40px;height:40px}.icon-btn{border:0;background:transparent;color:var(--pulse-primary);font-size:32px}
-.content{display:flex;box-sizing:border-box;min-height:0;flex:1;flex-direction:column;padding:42px 20px calc(72px + var(--pulse-safe-bottom, 0px));text-align:center}.logo{display:grid;place-items:center;width:78px;height:78px;margin:0 auto;border-radius:22px;background:var(--pulse-primary-gradient);color:#fff;font-size:40px;font-weight:700}
+.content{display:flex;box-sizing:border-box;min-height:0;flex:1;flex-direction:column;padding:42px 20px calc(72px + var(--pulse-safe-bottom, 0px));text-align:center}.logo{display:grid;place-items:center;width:78px;height:78px;margin:0 auto;border-radius:22px;background:var(--pulse-primary-gradient);color:#fff;font-size:calc(40px * var(--pulse-font-scale, 1));font-weight:700}
 .content h2{margin:16px 0 6px}.content>p{color:var(--pulse-text-secondary)}.version-card{margin-top:30px;padding:22px;border-radius:16px;background:var(--pulse-surface-container)}
 .version-card h3{margin:0 0 10px}.notes{white-space:pre-wrap;text-align:left;line-height:1.6;color:var(--pulse-text-secondary)}
 .version-card button,.check-btn{width:100%;height:46px;margin-top:18px;border:0;border-radius:12px;background:var(--pulse-primary);color:var(--pulse-on-primary);font-weight:600}.check-btn{background:transparent;color:var(--pulse-primary);border:1px solid var(--pulse-primary)}

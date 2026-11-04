@@ -480,7 +480,7 @@ async function onRemove() {
 
 <template>
   <div class="fav-detail-page">
-    <header class="page-header">
+    <header class="pulse-page-nav page-header">
       <button type="button" class="icon-btn" @click="goBack" aria-label="返回">
         <IconBack />
       </button>
@@ -492,10 +492,10 @@ async function onRemove() {
           :disabled="!item || item.msgType === 10"
           @click="openForwardPicker"
         >
-          <span class="material-symbols-outlined">forward</span>
+          <AppIcon name="forward"  />
         </button>
         <button type="button" class="icon-btn danger" :disabled="!item" @click="onRemove">
-          <span class="material-symbols-outlined">delete</span>
+          <AppIcon name="delete"  />
         </button>
       </div>
     </header>
@@ -549,12 +549,12 @@ async function onRemove() {
             class="file-card"
             @click="openImage"
           >
-            <span class="material-symbols-outlined file-icon">image</span>
+            <AppIcon name="image" class="file-icon" />
             <div class="file-meta">
               <div class="file-name">{{ filePayload.name || '图片' }}</div>
               <div class="file-sub">点击加载图片</div>
             </div>
-            <span class="material-symbols-outlined">chevron_right</span>
+            <AppIcon name="chevron_right"  />
           </button>
 
           <button
@@ -563,16 +563,16 @@ async function onRemove() {
             class="file-card"
             @click="openFile"
           >
-            <span class="material-symbols-outlined file-icon">{{ isVideo ? 'movie' : 'description' }}</span>
+            <AppIcon :name="isVideo ? 'movie' : 'description'" class="file-icon" />
             <div class="file-meta">
               <div class="file-name">{{ filePayload.name || (isVideo ? '视频' : '文件') }}</div>
               <div class="file-sub">{{ formatFileSize(filePayload.size) || '点击打开预览' }}</div>
             </div>
-            <span class="material-symbols-outlined">chevron_right</span>
+            <AppIcon name="chevron_right"  />
           </button>
 
           <div v-else-if="item.msgType === 3 && filePayload" class="voice-card">
-            <span class="material-symbols-outlined">mic</span>
+            <AppIcon name="mic"  />
             <span>{{
               filePayload.durationMs
                 ? `语音 ${formatVoiceDuration(filePayload.durationMs)}`
@@ -677,9 +677,7 @@ async function onRemove() {
             :class="{ on: isForwardSelected(c.id) }"
             @click="toggleForwardTarget(c.id)"
           >
-            <span class="material-symbols-outlined forward-check">{{
-              isForwardSelected(c.id) ? 'check_circle' : 'radio_button_unchecked'
-            }}</span>
+            <AppIcon :name="isForwardSelected(c.id) ? 'check_circle' : 'radio_button_unchecked'" class="forward-check" />
             <img v-if="c.avatar" :src="c.avatar" :alt="c.name" class="forward-avatar" />
             <div v-else class="forward-avatar initials">{{ c.name.slice(0, 1) }}</div>
             <div class="forward-meta">
@@ -739,7 +737,7 @@ async function onRemove() {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  font-size: 44px;
+  font-size: calc(44px * var(--pulse-font-scale, 1));
   color: rgba(255, 255, 255, 0.92);
   pointer-events: none;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);

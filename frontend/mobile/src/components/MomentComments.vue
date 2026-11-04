@@ -53,6 +53,54 @@ const sending = ref(false)
 const uploading = ref(false)
 const likingCommentIds = ref<Set<string>>(new Set())
 const imageInputRef = ref<HTMLInputElement | null>(null)
+const commentInputRef = ref<HTMLInputElement | null>(null)
+const composerRef = ref<HTMLElement | null>(null)
+let focusUntil = 0
+
+function focusCommentInput() {
+  if (!props.open) return
+  showEmoji.value = false
+  focusUntil = Date.now() + 700
+  commentInputRef.value?.focus({ preventScroll: true })
+}
+
+function onInputPointerDown(event: PointerEvent) {
+  if (event.pointerType === 'touch') {
+    commentInputRef.value?.setPointerCapture(event.pointerId)
+  }
+  focusCommentInput()
+}
+
+function onInputPointerUp(event: PointerEvent) {
+  event.preventDefault()
+  focusCommentInput()
+}
+
+function onInputBlur() {
+  if (Date.now() >= focusUntil || !props.open) return
+  requestAnimationFrame(() => {
+    if (Date.now() < focusUntil && props.open && document.activeElement === document.body) {
+      commentInputRef.value?.focus({ preventScroll: true })
+    }
+  })
+}
+
+function guardKeyboardGesture(event: Event) {
+  if (!props.open || Date.now() >= focusUntil || composerRef.value?.contains(event.target as Node)) return
+  event.preventDefault()
+  event.stopImmediatePropagation()
+}
+
+function toggleEmoji() {
+  focusUntil = 0
+  commentInputRef.value?.blur()
+  showEmoji.value = !showEmoji.value
+}
+
+function onCommentKeyboardSettled(event: Event) {
+  if ((event as CustomEvent<{ visible: boolean }>).detail?.visible === false) focusUntil = 0
+  else onInputBlur()
+}
 const sheetVisible = ref(false)
 const sheetActions = ref<ActionSheetAction[]>([])
 let sheetTarget: MomentCommentItem | null = null
@@ -65,6 +113,7 @@ watch(
   () => props.open,
   (v) => {
     if (!v) {
+      focusUntil = 0
       showEmoji.value = false
       replyTo.value = null
       draft.value = ''
@@ -116,11 +165,7 @@ function startReply(c: MomentCommentItem) {
 function openProfile(userId?: string) {
   const id = String(userId || '')
   if (!id) return
-  if (id === String(props.myUserId || '')) {
-    void router.push('/app/me')
-  } else {
-    void router.push(`/contacts/${id}`)
-  }
+  void router.push(`/contacts/${id}`)
 }
 
 function onCommentTap(c: MomentCommentItem) {
@@ -349,8 +394,17 @@ watch(
   { immediate: true },
 )
 
-onMounted(() => window.addEventListener('pulse:chat-cache-cleared', onChatCacheCleared))
+onMounted(() => {
+  window.addEventListener('pulse:chat-cache-cleared', onChatCacheCleared)
+  document.addEventListener('pointerdown', guardKeyboardGesture, true)
+  document.addEventListener('click', guardKeyboardGesture, true)
+  window.addEventListener('pulse:native-keyboard-settled', onCommentKeyboardSettled)
+})
 onUnmounted(() => {
+  focusUntil = 0
+  document.removeEventListener('pointerdown', guardKeyboardGesture, true)
+  document.removeEventListener('click', guardKeyboardGesture, true)
+  window.removeEventListener('pulse:native-keyboard-settled', onCommentKeyboardSettled)
   window.removeEventListener('pulse:chat-cache-cleared', onChatCacheCleared)
   clearCommentImageMemory()
 })
@@ -438,11 +492,11 @@ async function submit() {
       </div>
     </div>
 
-    <div v-if="open" class="comment-composer">
+    <div v-if="open" ref="composerRef" class="comment-composer" @touchstart.stop @pointerdown.stop @click.stop>
       <div v-if="replyTo" class="reply-tip">
         <span>回复 {{ replyTo.nickname }}</span>
         <button type="button" class="tip-close" @click="clearReply">
-          <span class="material-symbols-outlined">close</span>
+          <AppIcon name="close"  />
         </button>
       </div>
       <div v-if="hasPendingImage" class="pending-img-row">
@@ -454,7 +508,7 @@ async function submit() {
             @click="previewImageUrl(pendingImageLocal || pendingImageUrl)"
           />
           <button type="button" class="tip-close on-img" @click="clearPendingImage">
-            <span class="material-symbols-outlined">close</span>
+            <AppIcon name="close"  />
           </button>
         </div>
         <div class="pending-hint">
@@ -463,20 +517,25 @@ async function submit() {
         </div>
       </div>
       <div class="composer-row">
-        <button type="button" class="tool-btn" @click="showEmoji = !showEmoji">
+        <button type="button" class="tool-btn" @pointerdown.prevent @click="toggleEmoji">
           <span class="material-symbols-outlined">mood</span>
         </button>
         <button v-if="supportsImages" type="button" class="tool-btn" :disabled="uploading" @click="pickImage">
-          <span class="material-symbols-outlined">image</span>
+          <AppIcon name="image"  />
         </button>
         <input
+          ref="commentInputRef"
           v-model="draft"
           type="text"
           class="comment-input"
           maxlength="500"
           :placeholder="placeholder"
           @keydown.enter.prevent="submit"
-          @focus="showEmoji = false"
+          @focus="focusCommentInput"
+          @pointerdown.stop="onInputPointerDown"
+          @pointerup.stop="onInputPointerUp"
+          @click.stop="focusCommentInput"
+          @blur="onInputBlur"
         />
         <button
           type="button"
@@ -636,7 +695,7 @@ async function submit() {
   background: var(--pulse-surface-high);
   color: var(--pulse-text-secondary);
   font-size: var(--pulse-font-caption);
-  line-height: 56px;
+  line-height: calc(56px * var(--pulse-font-scale, 1));
   text-align: center;
   white-space: nowrap;
 }

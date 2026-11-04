@@ -714,9 +714,9 @@ async function handlePublish() {
         : undefined
     "
   >
-    <header class="compose-header glass-header">
+    <header class="pulse-page-nav compose-header glass-header">
       <button type="button" class="icon-btn" @click="goBack">
-        <span class="material-symbols-outlined">close</span>
+        <AppIcon name="close"  />
       </button>
       <h1 class="title">发布动态</h1>
       <button
@@ -761,7 +761,7 @@ async function handlePublish() {
               <span class="material-symbols-outlined">play_circle</span>
             </span>
             <button type="button" class="thumb-remove" @click.stop="removeMedia(item.id)">
-              <span class="material-symbols-outlined">close</span>
+              <AppIcon name="close"  />
             </button>
           </div>
           <button
@@ -770,7 +770,7 @@ async function handlePublish() {
             class="add-image-btn"
             @click="openFilePicker"
           >
-            <span class="material-symbols-outlined add-icon">add</span>
+            <AppIcon name="add" class="add-icon" />
             <span class="add-label">图片/视频</span>
           </button>
         </div>
@@ -797,21 +797,21 @@ async function handlePublish() {
               </p>
             </div>
           </div>
-          <span class="material-symbols-outlined option-arrow">chevron_right</span>
+          <AppIcon name="chevron_right" class="option-arrow" />
         </div>
 
         <template v-if="!isCommunity">
           <div class="option-item" @click="openVisibility">
             <div class="option-left">
               <div class="option-icon-wrap">
-                <span class="material-symbols-outlined">{{ visibilityIcon }}</span>
+                <AppIcon :name="visibilityIcon"  />
               </div>
               <div>
                 <p class="option-title">{{ visibilityLabel }}</p>
                 <p class="option-sub">{{ visibilitySub }}</p>
               </div>
             </div>
-            <span class="material-symbols-outlined option-arrow">keyboard_arrow_down</span>
+            <AppIcon name="keyboard_arrow_down" class="option-arrow" />
           </div>
 
           <div
@@ -821,14 +821,14 @@ async function handlePublish() {
           >
             <div class="option-left">
               <div class="option-icon-wrap">
-                <span class="material-symbols-outlined">group_add</span>
+                <AppIcon name="group_add"  />
               </div>
               <div>
                 <p class="option-title">选择可见好友</p>
                 <p class="option-sub">{{ visibilitySub }}</p>
               </div>
             </div>
-            <span class="material-symbols-outlined option-arrow">chevron_right</span>
+            <AppIcon name="chevron_right" class="option-arrow" />
           </div>
 
           <div class="option-item" @click="showMentionPopup = true">
@@ -841,7 +841,7 @@ async function handlePublish() {
                 <p v-if="mentionLabel" class="option-sub">{{ mentionLabel }}</p>
               </div>
             </div>
-            <span class="material-symbols-outlined option-arrow">chevron_right</span>
+            <AppIcon name="chevron_right" class="option-arrow" />
           </div>
         </template>
       </section>
@@ -887,12 +887,10 @@ async function handlePublish() {
             <img v-if="c.avatarUrl" :src="c.avatarUrl" alt="" class="mention-avatar" />
             <div v-else class="mention-avatar initials">{{ initials(c.nickname) }}</div>
             <span class="mention-name">{{ c.nickname }}</span>
-            <span
-              class="material-symbols-outlined mention-check"
+            <AppIcon :name="isVisibleFriend(c.userId) ? 'check_circle' : 'radio_button_unchecked'"
+              class="mention-check"
               :class="{ on: isVisibleFriend(c.userId) }"
-            >
-              {{ isVisibleFriend(c.userId) ? 'check_circle' : 'radio_button_unchecked' }}
-            </span>
+             />
           </button>
           <p v-if="!contacts.length" class="mention-empty">暂无好友可选</p>
         </div>
@@ -924,12 +922,10 @@ async function handlePublish() {
             <img v-if="c.avatarUrl" :src="c.avatarUrl" alt="" class="mention-avatar" />
             <div v-else class="mention-avatar initials">{{ initials(c.nickname) }}</div>
             <span class="mention-name">{{ c.nickname }}</span>
-            <span
-              class="material-symbols-outlined mention-check"
+            <AppIcon :name="isMentioned(c.userId) ? 'check_circle' : 'radio_button_unchecked'"
+              class="mention-check"
               :class="{ on: isMentioned(c.userId) }"
-            >
-              {{ isMentioned(c.userId) ? 'check_circle' : 'radio_button_unchecked' }}
-            </span>
+             />
           </button>
           <p v-if="!contacts.length" class="mention-empty">暂无好友可提醒</p>
         </div>
@@ -962,7 +958,7 @@ async function handlePublish() {
             aria-label="清除搜索"
             @click="locationKeyword = ''"
           >
-            <span class="material-symbols-outlined">cancel</span>
+            <AppIcon name="cancel"  />
           </button>
           <button type="button" :disabled="locating" @click="locateNearby">
             {{ locating ? '定位中...' : '搜索' }}
@@ -1045,7 +1041,7 @@ async function handlePublish() {
   margin: 0;
   font-size: var(--pulse-font-heading);
   font-weight: 600;
-  line-height: 25px;
+  line-height: calc(25px * var(--pulse-font-scale, 1));
   color: var(--pulse-text);
 }
 
@@ -1101,7 +1097,7 @@ async function handlePublish() {
   background: transparent;
   color: var(--pulse-text);
   font-size: var(--pulse-font-title);
-  line-height: 24px;
+  line-height: calc(24px * var(--pulse-font-scale, 1));
   resize: none;
   outline: none;
 }
@@ -1302,7 +1298,7 @@ async function handlePublish() {
 .tip-text {
   margin: 0;
   font-size: var(--pulse-font-body);
-  line-height: 20px;
+  line-height: calc(20px * var(--pulse-font-scale, 1));
   color: var(--pulse-text-secondary);
 }
 
@@ -1400,7 +1396,7 @@ async function handlePublish() {
 }
 
 .mention-check {
-  font-size: 24px;
+  font-size: calc(24px * var(--pulse-font-scale, 1));
   color: var(--pulse-outline);
 }
 

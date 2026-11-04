@@ -136,11 +136,7 @@ function goBack() {
 function openProfile(targetUserId?: string) {
   const id = String(targetUserId || '')
   if (!id) return
-  if (id === String(userStore.userId || '')) {
-    void router.push('/app/me')
-  } else {
-    void router.push(`/contacts/${id}`)
-  }
+  void router.push(`/contacts/${id}`)
 }
 
 function formatTime(iso: string): string {
@@ -281,13 +277,13 @@ async function onMore() {
 
 <template>
   <div class="detail-page">
-    <header class="page-header">
+    <header class="pulse-page-nav page-header">
       <button type="button" class="icon-btn" @click="goBack" aria-label="返回">
         <IconBack />
       </button>
       <h1 class="page-title">动态详情</h1>
-      <button type="button" class="icon-btn" @click="onMore">
-        <span class="material-symbols-outlined">more_horiz</span>
+      <button type="button" class="icon-btn" aria-label="更多" @click="onMore">
+        <IconMore />
       </button>
     </header>
 

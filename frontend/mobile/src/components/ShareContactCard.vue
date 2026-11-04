@@ -81,7 +81,7 @@ async function submit() {
   <AppBottomSheet :show="show" position="bottom" round :duration="0.18" :lazy-render="false" @update:show="emit('update:show', $event)">
     <div class="share-card-sheet">
       <div class="share-head">
-        <span class="share-head-icon material-symbols-outlined">ios_share</span>
+        <AppIcon name="ios_share" class="share-head-icon" />
         <div><h3>分享{{ cardLabel }}</h3><p>选择好友或群聊，可同时发送给多人</p></div>
       </div>
       <div class="target-list">

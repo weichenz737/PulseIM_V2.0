@@ -60,6 +60,7 @@ onMounted(() => {
       <div class="qr-wrap">
         <img v-if="dataUrl" :src="dataUrl" alt="二维码预览" class="qr" />
       </div>
+      <slot name="identity" />
       <p class="hint">{{ hint || '扫一扫上面的二维码，加我为好友' }}</p>
       <div class="actions">
         <button type="button" class="btn ghost" @click="emit('close')">关闭</button>

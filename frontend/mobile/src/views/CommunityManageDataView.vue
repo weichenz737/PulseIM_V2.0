@@ -53,7 +53,7 @@ function openRow(row: CommunityDashboardDetail) {
 
 <template>
   <div class="data-page">
-    <header class="page-header"><button type="button" class="icon-btn" aria-label="返回" @click="goBack"><IconBack /></button><h1>{{ title }}</h1><span class="header-spacer" /></header>
+    <header class="pulse-page-nav page-header"><button type="button" class="icon-btn" aria-label="返回" @click="goBack"><IconBack /></button><h1>{{ title }}</h1><span class="header-spacer" /></header>
     <van-pull-refresh v-model="refreshing" class="data-pull" success-text="刷新成功" @refresh="onPullRefresh">
       <div v-if="loading" class="state">加载中…</div>
       <main v-else class="data-list">
@@ -63,7 +63,7 @@ function openRow(row: CommunityDashboardDetail) {
             <div class="card-copy"><strong>{{ row.nickname || '用户' }}</strong><small>{{ roleLabel(row.role) }} · {{ statusLabel(row.status) }}</small><time>{{ row.operation_label }}：{{ formatDate(row.operation_date) }}</time></div>
           </template>
           <template v-else-if="row.item_type === 'POST'">
-            <span class="type-icon material-symbols-outlined">article</span><div class="card-copy"><strong>{{ row.nickname || '用户' }} · {{ statusLabel(row.status) }}</strong><p>{{ row.content || '媒体动态' }}</p><time>发布时间：{{ formatDate(row.operation_date) }}</time><small>{{ row.like_count || 0 }} 赞 · {{ row.comment_count || 0 }} 评论</small></div><span class="arrow material-symbols-outlined">chevron_right</span>
+            <span class="type-icon material-symbols-outlined">article</span><div class="card-copy"><strong>{{ row.nickname || '用户' }} · {{ statusLabel(row.status) }}</strong><p>{{ row.content || '媒体动态' }}</p><time>发布时间：{{ formatDate(row.operation_date) }}</time><small>{{ row.like_count || 0 }} 赞 · {{ row.comment_count || 0 }} 评论</small></div><AppIcon name="chevron_right" class="arrow" />
           </template>
           <template v-else>
             <span class="type-icon money material-symbols-outlined">receipt_long</span><div class="card-copy"><strong>{{ row.nickname || '用户' }} · {{ ((row.owner_income || 0) / 100).toFixed(2) }} PLU</strong><small>订单金额 {{ ((row.amount || 0) / 100).toFixed(2) }} PLU</small><p>订单号：{{ row.order_no }}</p><time>支付时间：{{ formatDate(row.operation_date) }}</time></div>

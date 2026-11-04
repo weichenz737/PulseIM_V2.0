@@ -102,7 +102,7 @@ async function onRemove(item: ContactItem) {
 
 <template>
   <div class="perm-list-page">
-    <header class="page-header">
+    <header class="pulse-page-nav page-header">
       <button type="button" class="icon-btn" @click="goBack" aria-label="返回">
         <IconBack />
       </button>

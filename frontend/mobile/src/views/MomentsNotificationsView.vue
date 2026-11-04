@@ -90,7 +90,7 @@ async function openItem(item: MomentInteractionItem) {
 
 <template>
   <div class="notif-page">
-    <header class="page-header glass-header">
+    <header class="pulse-page-nav page-header glass-header">
       <button type="button" class="icon-btn" @click="goBack" aria-label="返回">
         <IconBack />
       </button>
@@ -128,7 +128,7 @@ async function openItem(item: MomentInteractionItem) {
                 <span class="time">{{ formatTime(item.createdAt) }}</span>
               </div>
               <div class="notif-summary">
-                <span class="material-symbols-outlined type-ico">{{ typeIcon(item.type) }}</span>
+                <AppIcon :name="typeIcon(item.type)" class="type-ico" />
                 <span class="summary-text">{{ item.summary }}</span>
               </div>
               <div v-if="item.postPreview" class="post-preview">{{ item.postPreview }}</div>

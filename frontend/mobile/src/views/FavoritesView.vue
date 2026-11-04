@@ -382,7 +382,7 @@ async function removeSelected() {
 
 <template>
   <div class="favorites-page">
-    <header class="page-header">
+    <header class="pulse-page-nav page-header">
       <button type="button" class="icon-btn" @click="goBack" aria-label="返回">
         <IconBack />
       </button>
@@ -467,12 +467,10 @@ async function removeSelected() {
                   <span class="material-symbols-outlined play-badge">play_circle</span>
                 </div>
                 <div v-else-if="item.kind === 'message' && item.favorite.msgType === 2" class="fav-file-chip">
-                  <span class="material-symbols-outlined">{{
-                    isVideoItem(item.favorite) ? 'movie' : 'description'
-                  }}</span>
+                  <AppIcon :name="isVideoItem(item.favorite) ? 'movie' : 'description'"  />
                 </div>
                 <div v-else-if="item.kind === 'message' && item.favorite.msgType === 3" class="fav-file-chip">
-                  <span class="material-symbols-outlined">mic</span>
+                  <AppIcon name="mic"  />
                 </div>
 
                 <p class="fav-content">{{ previewText(item) }}</p>
@@ -592,7 +590,7 @@ async function removeSelected() {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
-  background: var(--pulse-page-bg, var(--pulse-bg));
+  background: transparent;
   display: flex;
   flex-direction: column;
 }
@@ -601,7 +599,7 @@ async function removeSelected() {
   flex: 1 0 auto;
   width: 100%;
   min-height: 100%;
-  background: var(--pulse-page-bg, var(--pulse-bg));
+  background: transparent;
   display: flex;
   flex-direction: column;
 }
@@ -611,7 +609,7 @@ async function removeSelected() {
   display: flex;
   flex-direction: column;
   min-height: 100%;
-  background: var(--pulse-page-bg, var(--pulse-bg));
+  background: transparent;
 }
 
 .pull-inner {
@@ -621,7 +619,7 @@ async function removeSelected() {
   flex-direction: column;
   padding: 8px 0 32px;
   box-sizing: border-box;
-  background: var(--pulse-page-bg, var(--pulse-bg));
+  background: transparent;
 }
 
 .pull-filler {
@@ -643,7 +641,7 @@ async function removeSelected() {
 .main :deep(.list-pull) {
   flex: 1;
   min-height: calc(100dvh - 120px);
-  background: var(--pulse-page-bg, var(--pulse-bg));
+  background: transparent;
 }
 
 .hint {
@@ -763,7 +761,7 @@ async function removeSelected() {
   margin: auto;
   width: 28px;
   height: 28px;
-  font-size: 28px;
+  font-size: calc(28px * var(--pulse-font-scale, 1));
   color: rgba(255, 255, 255, 0.92);
   filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.45));
 }

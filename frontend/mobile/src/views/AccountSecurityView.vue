@@ -300,13 +300,13 @@ async function continueAccountDeletion() {
 
 <template>
   <div class="page account-security-page">
-    <header class="header">
+    <header class="pulse-page-nav header">
       <button type="button" class="icon-btn" aria-label="返回" @click="smartBack(router)">
         <IconBack />
       </button>
       <h1>账号与安全</h1>
       <button type="button" class="icon-btn" aria-label="刷新" :disabled="loading || devicesLoading" @click="refreshSecurity">
-        <span class="material-symbols-outlined" :class="{ spinning: loading || devicesLoading }">refresh</span>
+        <AppIcon name="refresh"  :class="{ spinning: loading || devicesLoading }" />
       </button>
     </header>
     <main class="content">
@@ -333,19 +333,19 @@ async function continueAccountDeletion() {
         <button type="button" aria-label="修改手机号" @click="router.push('/settings/security/phone')">
           <span class="material-symbols-outlined">mobile</span>
           <span>修改手机号</span>
-          <span class="material-symbols-outlined arrow">chevron_right</span>
+          <AppIcon name="chevron_right" class="arrow" />
         </button>
         <button type="button" aria-label="修改密码" @click="router.push('/settings/security/password')">
           <span class="material-symbols-outlined">password</span>
           <span>修改密码</span>
-          <span class="material-symbols-outlined arrow">chevron_right</span>
+          <AppIcon name="chevron_right" class="arrow" />
         </button>
       </section>
       <section class="devices-card">
         <div class="devices-heading">
           <div><strong>已登录设备 <span class="heading-count">{{ displayDevices.length }}</span></strong><p>{{ otherDeviceCount ? `还有 ${otherDeviceCount} 台设备登录` : '当前仅此设备登录' }}</p></div>
           <button type="button" class="refresh-devices" :disabled="devicesLoading" @click="loadDevices">
-            <span class="material-symbols-outlined" :class="{ spinning: devicesLoading }">refresh</span>
+            <AppIcon name="refresh"  :class="{ spinning: devicesLoading }" />
             刷新
           </button>
         </div>
@@ -358,10 +358,10 @@ async function continueAccountDeletion() {
         <div v-else class="device-list">
           <div v-for="device in displayDevices" :key="device.deviceKey" class="device-item">
             <div class="device-info">
-              <span class="device-icon material-symbols-outlined">{{ ['windows', 'windows_web'].includes(String(device.platform || '').toLowerCase()) ? (device.platform === 'windows_web' ? 'language' : 'grid_view') : device.platform === 'web' ? 'language' : 'mobile' }}</span>
+              <AppIcon :name="['windows', 'windows_web'].includes(String(device.platform || '').toLowerCase()) ? (device.platform === 'windows_web' ? 'language' : 'grid_view') : device.platform === 'web' ? 'language' : 'mobile'" class="device-icon" />
               <div class="device-copy"><strong>{{ deviceLabel(device) }}<em v-if="device.current">当前设备</em></strong><small>{{ deviceLoginTime(device.loginAt) }}<span v-if="device.trusted"> · 已验证</span></small></div>
             </div>
-            <button type="button" class="device-more" :aria-label="device.current ? '当前设备' : `退出${deviceLabel(device)}`" @click="handleDevice(device)"><span class="material-symbols-outlined">more_horiz</span></button>
+            <button type="button" class="device-more" :aria-label="device.current ? '当前设备' : `退出${deviceLabel(device)}`" @click="handleDevice(device)"><IconMore /></button>
           </div>
         </div>
         <button v-if="displayDevices.some((device) => !device.current)" type="button" class="logout-other-devices" @click="handleLogoutOtherDevices">退出其他设备</button>
@@ -382,7 +382,7 @@ async function continueAccountDeletion() {
           <div class="security-code-toolbar">
             <div class="security-code-value">{{ securityCodeDisplay }}</div>
             <button type="button" class="code-visibility" :aria-label="securityCodeVisible ? '隐藏安全码' : '显示安全码'" @click="securityCodeVisible = !securityCodeVisible">
-              <span class="material-symbols-outlined">{{ securityCodeVisible ? 'visibility_off' : 'visibility' }}</span>
+              <AppIcon :name="securityCodeVisible ? 'visibility_off' : 'visibility'"  />
             </button>
           </div>
           <div class="security-code-actions">
@@ -478,7 +478,7 @@ async function continueAccountDeletion() {
 .switch input:checked + span::after { transform: translateX(20px); }
 .security-code-off, .security-code-tip { margin: 14px 0 0; color: var(--pulse-outline); font-size: var(--pulse-font-caption); line-height: 1.5; }
 .security-code-toolbar { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 18px; }
-.security-code-value { color: var(--pulse-primary); font-size: 30px; font-weight: 700; letter-spacing: 8px; }
+.security-code-value { color: var(--pulse-primary); font-size: calc(30px * var(--pulse-font-scale, 1)); font-weight: 700; letter-spacing: 8px; }
 .code-visibility { display: grid; width: 32px; height: 32px; place-items: center; padding: 0; border: 0; border-radius: 50%; background: color-mix(in srgb, var(--pulse-primary) 10%, transparent); color: var(--pulse-primary); }
 .code-visibility .material-symbols-outlined { font-size: 18px; }
 .security-code-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
@@ -495,7 +495,7 @@ async function continueAccountDeletion() {
 .deletion-popup-header h2 { margin: 0; font-size: var(--pulse-font-title); }
 .deletion-popup-content { height: calc(100% - 56px); padding: 18px 20px calc(20px + var(--pulse-safe-bottom, 0px)); overflow-y: auto; }
 .deletion-agreement-body { min-height: 180px; padding: 14px; border-radius: 8px; background: var(--pulse-surface-container); white-space: pre-wrap; overflow-wrap: anywhere; color: var(--pulse-text-secondary, var(--pulse-outline)); font-size: var(--pulse-font-body); line-height: 1.75; }
-.deletion-balance-warning { margin-top: 14px; padding: 11px 12px; border-radius: 8px; background: rgba(238, 10, 36, .1); color: #ee0a24; font-size: 13px; line-height: 1.55; }
+.deletion-balance-warning { margin-top: 14px; padding: 11px 12px; border-radius: 8px; background: rgba(238, 10, 36, .1); color: #ee0a24; font-size: calc(13px * var(--pulse-font-scale, 1)); line-height: 1.55; }
 .deletion-agree { display: flex; align-items: flex-start; gap: 8px; margin-top: 16px; color: var(--pulse-text); font-size: var(--pulse-font-small); line-height: 1.5; }
 .deletion-agree input { margin-top: 2px; accent-color: var(--pulse-primary); }
 .deletion-agree.disabled { opacity: .5; }

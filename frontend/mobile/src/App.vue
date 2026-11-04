@@ -116,6 +116,13 @@ let routeLoadingTimer: number | null = null
 
 function routeComponentKey(route: any) {
   if (route.path.startsWith('/app/')) return 'MainLayout'
+  if (/^\/chat\/[^/]+$/.test(route.path)) {
+    // Consuming a one-shot locate command must not recreate the chat and
+    // replace the located history window with the latest messages.
+    const query = { ...route.query }
+    delete query.highlightMsgId
+    return JSON.stringify([route.path, query])
+  }
   if (route.meta.keepAlive) {
     return `${String(route.name || route.path)}:${String(route.params.id || '')}`
   }
@@ -617,7 +624,7 @@ router.afterEach(() => {
 .forced-update-cancel{width:100%;height:38px;margin-top:4px;border:0;background:transparent;color:var(--pulse-text-secondary);font-weight:600}
 .forced-update-cancel:disabled{opacity:.55}
 .forced-update-later{width:100%;height:38px;border:0;background:transparent;color:var(--pulse-text-secondary);font-weight:600}
-.forced-update-close{position:absolute;top:12px;right:14px;width:34px;height:34px;border:0;border-radius:50%;background:color-mix(in srgb,var(--pulse-text) 7%,transparent);color:var(--pulse-text-secondary);font-size:24px;line-height:1}
+.forced-update-close{position:absolute;top:12px;right:14px;width:34px;height:34px;border:0;border-radius:50%;background:color-mix(in srgb,var(--pulse-text) 7%,transparent);color:var(--pulse-text-secondary);font-size:calc(24px * var(--pulse-font-scale, 1));line-height:1}
 
 .page-forward-enter-active,
 .page-forward-leave-active,

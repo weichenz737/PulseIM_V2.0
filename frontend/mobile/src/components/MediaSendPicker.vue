@@ -767,7 +767,7 @@ defineExpose({ handleBack })
 .media-filter-menu button { display: flex; align-items: center; justify-content: space-between; gap: 18px; min-height: 38px; padding: 0 10px 0 12px; border: 0; border-radius: 9px; background: transparent; color: rgba(255,255,255,.82); font: inherit; font-size: var(--pulse-font-body); text-align: left; cursor: pointer; }
 .media-filter-menu button.active { background: #5a5a5a; color: #fff; }
 .media-filter-option-check { display: none; }
-.media-picker-back { width: 36px; font-size: 44px; line-height: .7; text-align: left; }
+.media-picker-back { width: 36px; font-size: calc(44px * var(--pulse-font-scale, 1)); line-height: .7; text-align: left; }
 .media-picker-select { min-width: 48px; text-align: right; font-size: var(--pulse-font-body); }
 .media-grid { --media-tile-size: calc((100vw - 6px) / 4); flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: var(--media-tile-size); gap: 2px; overflow-y: auto; align-content: start; background: #202020; }
 .media-grid { position: relative; }

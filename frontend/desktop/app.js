@@ -113,6 +113,7 @@ import {
   sendDesktopFriendRequest,
   sendDesktopTextMessage,
   fetchDesktopFileMetadata,
+  fetchDesktopFileSendConfig,
   uploadDesktopFile,
   forwardDesktopFavorite,
   sendDesktopRedPacket,
@@ -616,6 +617,12 @@ const state = {
   globalRefreshing: false,
   globalSearchQuery: '',
   groupQuery: '',
+  groupAppliedQuery: '',
+  conversationFilter: 'all',
+  ownProfileQr: '',
+  favoriteQuery: '',
+  momentComposeOpen: false,
+  ownMomentsView: false,
   fileSection: 'all',
   fileCategory: 'all',
   fileQuery: '',
@@ -667,6 +674,10 @@ const state = {
   groupInfoScrollTop: 0,
   contactProfileScrollTop: 0,
   groupInfoFocusMembers: false,
+  groupInfoTab: 'overview',
+  groupInfoMemberQuery: '',
+  groupInfoAddQuery: '',
+  groupInfoQr: '',
   groupInfoAddOpen: false,
   groupInfoAddSelected: new Set(),
   groupSearchQuery: '',
@@ -973,6 +984,7 @@ const desktopMediaBlobCategories = new Map()
 const desktopMediaBlobLoading = new Map()
 const desktopMemoryClearPending = new Set()
 const desktopFileMetadataLoading = new Map()
+const desktopVideoPreviewRetryCounts = new Map()
 const desktopMomentPreviewUrls = new WeakMap()
 let desktopFilePreviewRequestId = 0
 let desktopFilePreviewObjectUrl = ''
@@ -1624,7 +1636,11 @@ function desktopFileMetadataIsComplete(messageType, file) {
   // Images and videos are not complete until their lightweight rendition is
   // present. The original object is uploaded first, while thumbnails/video
   // previews are generated asynchronously in the background.
-  if (type === 1 || type === 2) return desktopFileHasRendition(file)
+  if (type === 1) return desktopFileHasRendition(file)
+  if (type === 2 && (String(file?.contentType || '').startsWith('video/')
+    || desktopFileLooksLikeVideo(file?.name || ''))) {
+    return Boolean(file?.previewUrl || file?.previewObjectKey)
+  }
   return Boolean(file?.objectKey || file?.sha256)
 }
 
@@ -1693,7 +1709,6 @@ function mapRemoteMessage(item) {
   const file = fileId ? normalizeDesktopFilePayload(fileId, filePayload) : null
   const content = fileId ? JSON.stringify(file) : rawContent
   const msgType = hasExplicitType ? explicitMsgType : inferDesktopMessageType(rawContent, file)
-  const explicitlyLoaded = Boolean(item.fileMetadataLoaded || item.file_metadata_loaded)
   const hasFileDescriptor = Boolean(
     file?.objectKey
       || file?.sha256
@@ -1704,10 +1719,8 @@ function mapRemoteMessage(item) {
       || item.objectKey
       || item.sha256,
   )
-  const fileMetadataLoaded = Boolean(
-    fileId
-      && (explicitlyLoaded || (hasFileDescriptor && desktopFileMetadataIsComplete(msgType, file))),
-  )
+  const fileMetadataLoaded = Boolean(fileId && hasFileDescriptor
+    && desktopFileMetadataIsComplete(msgType, file))
   const fromUserId = item.fromUserId ?? item.from_user_id ?? item.senderId ?? item.sender_id ?? ''
   return {
     id: String(rawId),
@@ -1816,11 +1829,21 @@ function scheduleDesktopFileMetadataHydration(conversationId, message) {
         file: metadata,
         content: JSON.stringify(metadata),
       })
-      mergeMessage(conversationId, { ...enriched, fileMetadataLoaded: true })
+      mergeMessage(conversationId, enriched)
       // File metadata arrives after the message row has already been painted.
       // Update only that bubble so hydration never rebuilds the whole desktop
       // shell while the user is typing or looking at the chat stream.
       refreshDesktopHydratedMessageDom(conversationId, enriched.id)
+      if (!enriched.fileMetadataLoaded
+        && (String(metadata.contentType || '').startsWith('video/') || desktopFileLooksLikeVideo(metadata.name || ''))) {
+        const attempts = desktopVideoPreviewRetryCounts.get(fileId) || 0
+        if (attempts < 60) {
+          desktopVideoPreviewRetryCounts.set(fileId, attempts + 1)
+          window.setTimeout(() => scheduleDesktopFileMetadataHydration(conversationId, enriched), 5000)
+        }
+      } else {
+        desktopVideoPreviewRetryCounts.delete(fileId)
+      }
     })
     .catch(() => {
       // The message bubble remains usable with fileId-only metadata; a later
@@ -2029,14 +2052,23 @@ async function openDesktopGroupInfo({ focusMembers = false } = {}) {
   state.modal = 'group-info'
   state.groupInfoLoading = true
   state.groupInfoError = ''
+  state.groupInfoQr = ''
   if (!(existingGroupInfoModal instanceof HTMLElement)) state.groupInfoScrollTop = 0
   state.groupInfoFocusMembers = Boolean(focusMembers)
+  if (!existingGroupInfoModal || focusMembers) {
+    state.groupInfoTab = focusMembers ? 'members' : 'overview'
+    state.groupInfoMemberQuery = ''
+    state.groupInfoAddQuery = ''
+  }
   state.groupInfoAddOpen = false
   state.groupInfoAddSelected = new Set()
   render()
   try {
     const detail = await fetchDesktopGroupDetail(String(selected.id))
     state.groupDetailsByConversation[String(selected.id)] = detail
+    try {
+      state.groupInfoQr = await QRCode.toDataURL(`pulse://group/${selected.id}`, { width: 160, margin: 2, color: { dark: '#17231d', light: '#ffffff' } })
+    } catch { state.groupInfoQr = '' }
     selected.name = detail.groupRemark || detail.title || selected.name
     selected.initials = selected.name.slice(0, 1)
     selected.pinned = Boolean(detail.pinned)
@@ -2182,6 +2214,8 @@ async function handleDesktopScheduledFileChange(event) {
   state.scheduledDialog.error = ''
   render()
   try {
+    const fileError = await desktopFileSendError(file)
+    if (fileError) throw new Error(fileError)
     const uploaded = await uploadDesktopFile(file)
     const contentType = String(uploaded.contentType || file.type || 'application/octet-stream').toLowerCase()
     if (state.scheduledDialog.msgType === 1 && !contentType.startsWith('image/') && !contentType.startsWith('video/')) throw new Error('图片或视频消息只能选择图片、视频文件')
@@ -3720,12 +3754,12 @@ function openDesktopFilePreview(file) {
   // native <video>. When a server-side rendition exists, use that small
   // preview for playback so clicking a video does not download the whole
   // original before the player can start.
-  const videoSource = kind === 'video' && renditionSource
+  const mediaSource = (kind === 'video' || kind === 'image') && renditionSource
     ? renditionSource
     : rawSource
   const source = kind === 'pdf' && !isOriginalPdf
     ? (fileId ? desktopFileDocumentPreviewUrl(fileId) : desktopDocumentPreviewUrl(rawSource))
-    : videoSource
+    : mediaSource
   if (!source) {
     showToast('当前文件没有可预览的地址')
     return
@@ -3739,7 +3773,8 @@ function openDesktopFilePreview(file) {
     size: Number(file?.size || 0),
     contentType: String(file?.contentType || ''),
     fileId,
-    cacheVariant: kind === 'pdf' && !isOriginalPdf || kind === 'video' && renditionSource ? 'preview' : 'original',
+    cacheVariant: kind === 'pdf' && !isOriginalPdf
+      || (kind === 'video' || kind === 'image') && renditionSource ? 'preview' : 'original',
     kind,
     loading: true,
     error: '',
@@ -4251,7 +4286,26 @@ function desktopMomentInteractionBadgeLabel(count) {
   return value > 0 ? (value > 99 ? '99+' : String(value)) : ''
 }
 
+function updateDesktopTopNavigationBadge(page, count) {
+  const nav = document.querySelector(`.desktop-top-nav-item[data-page="${page}"]`)
+  const value = Math.max(0, Number(count || 0))
+  if (nav instanceof HTMLElement) {
+    const badge = nav.querySelector('.desktop-top-nav-badge')
+    if (!value) badge?.remove()
+    else if (badge) badge.textContent = value > 99 ? '99+' : String(value)
+    else nav.insertAdjacentHTML('beforeend', `<i class="desktop-top-nav-badge">${value > 99 ? '99+' : value}</i>`)
+  }
+  const rail = document.querySelector(`.pulse-rail-item[data-page="${page}"]`)
+  if (rail instanceof HTMLElement) {
+    const badge = rail.querySelector('.pulse-rail-badge')
+    if (!value) badge?.remove()
+    else if (badge) badge.textContent = value > 99 ? '99+' : String(value)
+    else rail.insertAdjacentHTML('beforeend', `<i class="pulse-rail-badge">${value > 99 ? '99+' : value}</i>`)
+  }
+}
+
 function updateDesktopMomentsBadgeDom() {
+  updateDesktopTopNavigationBadge('moments', state.momentInteractionUnreadCount)
   const nav = document.querySelector('.sidebar .nav-item[data-page="moments"]')
   if (!(nav instanceof HTMLElement)) return
   const label = desktopMomentInteractionBadgeLabel(state.momentInteractionUnreadCount)
@@ -4267,6 +4321,7 @@ function updateDesktopMomentsBadgeDom() {
 function updateDesktopContactsBadgeDom() {
   const nav = document.querySelector('.sidebar .nav-item[data-page="contacts"]')
   const contactBadgeCount = Math.max(0, Number(state.friendPendingCount || 0) + Number(state.groupPendingCount || 0))
+  updateDesktopTopNavigationBadge('contacts', contactBadgeCount)
   if (nav instanceof HTMLElement) {
     const badge = nav.querySelector('.nav-badge')
     if (contactBadgeCount <= 0) badge?.remove()
@@ -5895,7 +5950,7 @@ function render(force = false) {
       roots.messageContextRoot = messageRegions.contextRoot
       const selected = desktopSelectedConversation()
       messageRegions.workspaceRoot.className = `message-workspace${selected.fileTransferAssistant ? ' is-file-transfer-assistant' : ''}`
-      messageHeadingChanged = writeDesktopRegion(messageRegions.headingRoot, renderMessagesHeading(), 'messageHeading')
+      messageHeadingChanged = writeDesktopRegion(messageRegions.headingRoot, '', 'messageHeading')
       messageConversationChanged = writeDesktopRegion(messageRegions.conversationRoot, renderConversationPanel(), 'messageConversation')
       messageChatChanged = writeDesktopRegion(messageRegions.chatRoot, renderChatPanel(selected), 'messageChat')
       messageContextChanged = writeDesktopRegion(
@@ -6567,9 +6622,10 @@ async function loadMoments(force = false) {
   }
 }
 
-async function openFriendMomentsPage(profile) {
+async function openFriendMomentsPage(profile, ownView = false) {
   const userId = String(profile?.userId || '')
   if (!userId) return
+  state.ownMomentsView = ownView
   state.friendMomentsProfile = { ...profile, userId }
   state.modal = ''
   state.modalError = ''
@@ -6595,6 +6651,23 @@ async function openFriendMomentsPage(profile) {
     state.momentsLoading = false
     if (state.page === 'moments' && String(state.friendMomentsProfile?.userId || '') === userId) render()
   }
+}
+
+async function openOwnMomentsPage() {
+  const userId = String(state.profile?.userId || '')
+  if (!userId) return showToast('账号资料尚未加载')
+  await openFriendMomentsPage({ userId, nickname: state.profile?.nickname || '我', avatarUrl: state.profile?.avatarUrl || '' }, true)
+}
+
+function showAllDesktopMoments() {
+  state.ownMomentsView = false
+  state.friendMomentsProfile = null
+  state.moments = []
+  state.momentsLoaded = false
+  state.momentsError = ''
+  state.page = 'moments'
+  render()
+  void loadMoments(true)
 }
 
 async function publishMoment() {
@@ -6635,6 +6708,7 @@ async function publishMoment() {
     state.momentMentionOpen = false
     state.momentMentionTokenStart = -1
     state.momentFiles = []
+    state.momentComposeOpen = false
     clearDesktopMomentDraft()
     state.momentFileNames = []
     showToast('动态已发布')
@@ -8806,16 +8880,33 @@ function formatDesktopFileSize(value) {
 function desktopFileTransferMeta(file) {
   const name = String(file?.name || '')
   const type = String(file?.type || '').toLowerCase()
-  const isImage = type.startsWith('image/') || desktopFileLooksLikeImage(name)
-  const isVideo = type.startsWith('video/') || desktopFileLooksLikeVideo(name)
+  const isImage = type.startsWith('image/') || (!type.startsWith('video/') && desktopFileLooksLikeImage(name))
+  const isVideo = type.startsWith('video/') || (!type.startsWith('image/') && desktopFileLooksLikeVideo(name))
   return {
     isImage,
     isVideo,
     msgType: isImage ? 1 : 2,
-    max: isVideo ? 80 * 1024 * 1024 : 20 * 1024 * 1024,
     label: isVideo ? '视频' : isImage ? '图片' : '文件',
     icon: isVideo ? 'video' : isImage ? 'image' : 'folder',
   }
+}
+
+async function desktopFileSendError(file) {
+  const config = await fetchDesktopFileSendConfig()
+  const meta = desktopFileTransferMeta(file)
+  const limitMb = Number((meta.isImage ? config.imageMaxSizeMb
+    : meta.isVideo ? config.videoMaxSizeMb : config.fileMaxSizeMb) || config.maxSizeMb || 100)
+  if (Number(file.size || 0) > limitMb * 1024 * 1024) {
+    return `${meta.label}不能超过 ${limitMb}MB`
+  }
+  const allowed = Array.isArray(config.allowedExtensions) ? config.allowedExtensions : []
+  if (!allowed.length) return ''
+  const name = String(file.name || '').toLowerCase()
+  const extension = name.includes('.') ? name.split('.').pop() : ''
+  if (extension) return allowed.includes(extension) ? '' : `仅支持发送 ${allowed.join('、')} 类型的文件`
+  const subtype = String(file.type || '').toLowerCase().split('/')[1]?.split(';')[0]
+  if (subtype && allowed.includes(subtype === 'jpeg' ? 'jpg' : subtype)) return ''
+  return `仅支持发送 ${allowed.join('、')} 类型的文件`
 }
 
 function desktopLocalImageSourceCandidates(fileId, file = {}) {
@@ -8855,6 +8946,7 @@ function unregisterDesktopLocalImagePreview(sources, previewUrl) {
 }
 
 function clearPendingDesktopFile(options = {}) {
+  desktopPendingSelectionRevision += 1
   state.pendingDroppedFile = null
   state.pendingDroppedFileConversationId = ''
   desktopPendingFilePreviewRevision += 1
@@ -8886,14 +8978,25 @@ function desktopClipboardMediaFile(event) {
   return new File([mediaFile], filename, { type })
 }
 
-function setPendingDesktopFile(file) {
+let desktopPendingSelectionRevision = 0
+
+async function setPendingDesktopFile(file) {
   const selected = conversations[state.selectedConversation]
-  if (!file || !selected?.id) return
+  if (!file || !selected?.id) return false
+  const revision = ++desktopPendingSelectionRevision
   const meta = desktopFileTransferMeta(file)
-  if (Number(file.size || 0) > meta.max) {
-    showToast(`${meta.label}不能超过 ${meta.isVideo ? '80MB' : '20MB'}`)
-    return
+  try {
+    const error = await desktopFileSendError(file)
+    if (revision !== desktopPendingSelectionRevision) return false
+    if (error) {
+      showToast(error)
+      return false
+    }
+  } catch (error) {
+    if (revision === desktopPendingSelectionRevision) showToast(error instanceof Error ? error.message : '读取文件参数失败')
+    return false
   }
+  if (String(conversations[state.selectedConversation]?.id || '') !== String(selected.id)) return false
   desktopPendingFilePreviewRevision += 1
   const previewRevision = desktopPendingFilePreviewRevision
   releasePendingDesktopFilePreview()
@@ -8909,7 +9012,7 @@ function setPendingDesktopFile(file) {
   render()
 
   const previewUrl = state.pendingDroppedFilePreviewUrl
-  if (!meta.isImage || !previewUrl || typeof Image === 'undefined') return
+  if (!meta.isImage || !previewUrl || typeof Image === 'undefined') return true
   const image = new Image()
   image.onload = () => {
     if (previewRevision !== desktopPendingFilePreviewRevision || state.pendingDroppedFile !== file) return
@@ -8920,6 +9023,7 @@ function setPendingDesktopFile(file) {
     requestDesktopRender()
   }
   image.src = previewUrl
+  return true
 }
 
 function insertDesktopComposerText(value) {
@@ -8962,8 +9066,7 @@ async function pasteDesktopClipboardAttachment(payload) {
     const filename = String(attachment.filename || attachment.name || `pulse_${label}`)
     const file = new File([blob], filename, { type: contentType })
     clearPendingDesktopFile()
-    setPendingDesktopFile(file)
-    showToast(`${label}已粘贴，请点击发送`)
+    if (await setPendingDesktopFile(file)) showToast(`${label}已粘贴，请点击发送`)
   } catch {
     const fallback = String(payload.plainText || attachment.name || `[${label}]`)
     insertDesktopComposerText(fallback)
@@ -8979,8 +9082,9 @@ function handleDesktopComposerPaste(event) {
     event.preventDefault()
     event.stopPropagation()
     clearPendingDesktopFile()
-    setPendingDesktopFile(file)
-    showToast(`${desktopFileTransferMeta(file).label}已粘贴，请点击发送`)
+    void setPendingDesktopFile(file).then((accepted) => {
+      if (accepted) showToast(`${desktopFileTransferMeta(file).label}已粘贴，请点击发送`)
+    })
     return
   }
 
@@ -9240,24 +9344,23 @@ function renderDesktopMessageContent(message) {
     if (!file?.url) return escapeHtml(desktopMessagePreview(message))
     const fileId = String(file.fileId || '').trim()
     const originalUrl = resolveDesktopFileUrl(file.originalUrl || file.url || (fileId ? desktopFileDownloadUrl(fileId) : ''))
-    // The send ack and WebSocket push can contain only fileId. Use a rendition
-    // when it exists, but fall back to the protected original so a missing
-    // asynchronous thumbnail cannot become a 1x1 horizontal placeholder.
+    // The send ack and WebSocket push can contain only fileId. Until a
+    // rendition exists, show a waiting card with an explicit original action.
     const hasThumb = Boolean(file.thumbUrl || file.thumbObjectKey)
     const hasPreview = Boolean(file.previewUrl || file.previewObjectKey)
     const imageSource = file.thumbUrl
       || (hasThumb && fileId ? desktopFileDownloadUrl(fileId, 'thumb') : '')
       || file.previewUrl
       || (hasPreview && fileId ? desktopFileDownloadUrl(fileId, 'preview') : '')
-      || originalUrl
     if (!imageSource) {
-      return `<a class="typed-file typed-image-file" data-desktop-file-preview data-file-url="${escapeHtml(originalUrl)}" data-file-original-url="${escapeHtml(originalUrl)}" data-file-id="${escapeHtml(fileId)}" data-file-name="${escapeHtml(file.name || '图片')}" data-file-size="${escapeHtml(String(file.size || ''))}" data-file-type="${escapeHtml(file.contentType || 'image/*')}"${desktopBurnMediaAttribute(message)} href="${escapeHtml(originalUrl)}" target="_blank" rel="noreferrer"><span class="typed-message-icon">${icon('image')}</span><span><strong>${escapeHtml(file.name || '图片')}</strong><small>${file.size ? formatDesktopFileSize(file.size) : '点击查看图片'}</small></span></a>`
+      return `<div class="typed-file typed-image-file"><span class="typed-message-icon">${icon('image')}</span><span><strong>${escapeHtml(file.name || '图片')}</strong><small>图片预览生成中</small></span><a data-desktop-file-preview data-file-url="${escapeHtml(originalUrl)}" data-file-original-url="${escapeHtml(originalUrl)}" data-file-id="${escapeHtml(fileId)}" data-file-name="${escapeHtml(file.name || '图片')}" data-file-size="${escapeHtml(String(file.size || ''))}" data-file-type="${escapeHtml(file.contentType || 'image/*')}"${desktopBurnMediaAttribute(message)} href="${escapeHtml(originalUrl)}" target="_blank" rel="noreferrer">查看原图</a></div>`
     }
     const imageVariant = file.thumbUrl || hasThumb ? 'thumb' : file.previewUrl || hasPreview ? 'preview' : 'original'
     const imageUrl = resolveDesktopFileUrl(imageSource)
-    const previewUrl = resolveDesktopFileUrl(file.previewUrl || imageUrl)
+    const previewUrl = resolveDesktopFileUrl(file.previewUrl
+      || (hasPreview && fileId ? desktopFileDownloadUrl(fileId, 'preview') : imageUrl))
     const originalAttribute = originalUrl && originalUrl !== imageUrl ? ` data-chat-media-original-url="${escapeHtml(originalUrl)}"` : ''
-    const fallbackAttribute = originalUrl && originalUrl !== imageUrl ? ` data-protected-media-fallback-src="${escapeHtml(originalUrl)}" data-protected-media-fallback-variant="original"` : ''
+    const fallbackAttribute = previewUrl && previewUrl !== imageUrl ? ` data-protected-media-fallback-src="${escapeHtml(previewUrl)}" data-protected-media-fallback-variant="preview"` : ''
     const fileIdAttribute = fileId ? ` data-file-id="${escapeHtml(fileId)}"` : ''
     const placeholder = desktopMediaRenderSource(imageUrl)
     scheduleDesktopInlineImagePreload(fileId, imageUrl, imageVariant)
@@ -9283,27 +9386,26 @@ function renderDesktopMessageContent(message) {
         || (hasThumb && fileId ? desktopFileDownloadUrl(fileId, 'thumb') : '')
         || file.previewUrl
         || (hasPreview && fileId ? desktopFileDownloadUrl(fileId, 'preview') : '')
-        || fileUrl
       if (!imageSource) {
-        return `<a class="typed-file typed-image-file" data-desktop-file-preview data-file-url="${escapeHtml(fileUrl)}" data-file-original-url="${escapeHtml(fileUrl)}" data-file-id="${escapeHtml(fileId)}" data-file-name="${escapeHtml(file.name || '图片')}" data-file-size="${escapeHtml(String(file.size || ''))}" data-file-type="${escapeHtml(file.contentType || 'image/*')}"${desktopBurnMediaAttribute(message)} href="${escapeHtml(fileUrl)}" target="_blank" rel="noreferrer"><span class="typed-message-icon">${icon('image')}</span><span><strong>${escapeHtml(file.name || '图片')}</strong><small>${file.size ? formatDesktopFileSize(file.size) : '点击查看图片'}</small></span></a>`
+        return `<div class="typed-file typed-image-file"><span class="typed-message-icon">${icon('image')}</span><span><strong>${escapeHtml(file.name || '图片')}</strong><small>图片预览生成中</small></span><a data-desktop-file-preview data-file-url="${escapeHtml(fileUrl)}" data-file-original-url="${escapeHtml(fileUrl)}" data-file-id="${escapeHtml(fileId)}" data-file-name="${escapeHtml(file.name || '图片')}" data-file-size="${escapeHtml(String(file.size || ''))}" data-file-type="${escapeHtml(file.contentType || 'image/*')}"${desktopBurnMediaAttribute(message)} href="${escapeHtml(fileUrl)}" target="_blank" rel="noreferrer">查看原图</a></div>`
       }
       const imageVariant = file.thumbUrl || hasThumb ? 'thumb' : file.previewUrl || hasPreview ? 'preview' : 'original'
       const imageUrl = resolveDesktopFileUrl(imageSource)
       const imagePreviewUrl = previewUrl || imageUrl
       const imageOriginalUrl = originalUrl || fileUrl
       const imageOriginalAttribute = imageOriginalUrl && imageOriginalUrl !== imageUrl ? ` data-chat-media-original-url="${escapeHtml(imageOriginalUrl)}"` : ''
-      const imageFallbackAttribute = imageOriginalUrl && imageOriginalUrl !== imageUrl ? ` data-protected-media-fallback-src="${escapeHtml(imageOriginalUrl)}" data-protected-media-fallback-variant="original"` : ''
+      const imageFallbackAttribute = imagePreviewUrl && imagePreviewUrl !== imageUrl ? ` data-protected-media-fallback-src="${escapeHtml(imagePreviewUrl)}" data-protected-media-fallback-variant="preview"` : ''
       const placeholder = desktopMediaRenderSource(imageUrl)
       scheduleDesktopInlineImagePreload(fileId, imageUrl, imageVariant)
       return `<a class="typed-image-link" data-chat-media-preview data-chat-media-type="image" data-chat-media-url="${escapeHtml(imageUrl)}" data-chat-media-preview-url="${escapeHtml(imagePreviewUrl)}"${imageOriginalAttribute}${fileIdAttribute} data-chat-media-name="${escapeHtml(file.name || '图片')}"${desktopBurnMediaAttribute(message)} data-protected-media-link href="${escapeHtml(imageUrl)}" target="_blank" rel="noreferrer"><img class="typed-image" src="${placeholder}" data-protected-media-src="${escapeHtml(imageUrl)}"${imageFallbackAttribute} data-file-id="${escapeHtml(fileId)}" data-file-category="image" data-file-variant="${imageVariant}" alt="${escapeHtml(file.name || '图片')}" decoding="async" loading="eager" /></a>`
     }
     const isVideo = String(file.contentType || '').startsWith('video/') || desktopFileLooksLikeVideo(`${fileUrl} ${originalUrl} ${String(file.name || '')}`)
-    if (isVideo && previewUrl) {
+    if (isVideo && !previewUrl) {
       // The web page cannot attach Authorization to Chromium's native video
       // element. Use the same authenticated Blob-preview action as the blue
       // filename link for the large red player area, so a click never gets
       // stuck on a 0:00/1x1 placeholder.
-      return `<div class="typed-video-preview-wrap"><a class="typed-video-preview-link" data-desktop-file-preview data-file-url="${escapeHtml(fileUrl)}" data-file-preview-url="${escapeHtml(previewUrl)}" data-file-original-url="${escapeHtml(originalUrl || fileUrl)}" data-file-id="${escapeHtml(fileId)}" data-file-name="${escapeHtml(file.name || '视频')}" data-file-size="${escapeHtml(String(file.size || ''))}" data-file-type="${escapeHtml(file.contentType || 'video/mp4')}"${desktopBurnMediaAttribute(message)} href="${escapeHtml(fileUrl)}" target="_blank" rel="noreferrer" aria-label="点击播放视频"><span class="typed-video-preview-mark">▶</span><span class="typed-video-preview-hint">点击播放</span></a><a class="typed-file-name" data-desktop-file-preview data-file-url="${escapeHtml(fileUrl)}" data-file-preview-url="${escapeHtml(previewUrl)}" data-file-original-url="${escapeHtml(originalUrl || fileUrl)}" data-file-id="${escapeHtml(fileId)}" data-file-name="${escapeHtml(file.name || '视频')}" data-file-type="${escapeHtml(file.contentType || 'video/mp4')}"${desktopBurnMediaAttribute(message)} href="${escapeHtml(fileUrl)}" target="_blank" rel="noreferrer">${escapeHtml(file.name || '视频')}</a></div>`
+      return `<div class="typed-video-preview-wrap"><a class="typed-video-preview-link" data-desktop-file-preview data-file-url="${escapeHtml(fileUrl)}" data-file-original-url="${escapeHtml(originalUrl || fileUrl)}" data-file-id="${escapeHtml(fileId)}" data-file-name="${escapeHtml(file.name || '视频')}" data-file-size="${escapeHtml(String(file.size || ''))}" data-file-type="${escapeHtml(file.contentType || 'video/mp4')}"${desktopBurnMediaAttribute(message)} href="${escapeHtml(fileUrl)}" target="_blank" rel="noreferrer" aria-label="预览生成中，查看原视频"><span class="typed-video-preview-mark">▶</span><span class="typed-video-preview-hint">预览生成中 · 查看原视频</span></a><span class="typed-file-name">${escapeHtml(file.name || '视频')}</span></div>`
     }
     if (isVideo) {
       return `<div class="typed-video-preview-wrap"><a class="typed-video-preview-link" data-desktop-file-preview data-file-url="${escapeHtml(fileUrl)}" data-file-preview-url="${escapeHtml(previewUrl)}" data-file-original-url="${escapeHtml(originalUrl || fileUrl)}" data-file-id="${escapeHtml(fileId)}" data-file-name="${escapeHtml(file.name || '视频')}" data-file-size="${escapeHtml(String(file.size || ''))}" data-file-type="${escapeHtml(file.contentType || 'video/mp4')}"${desktopBurnMediaAttribute(message)} href="${escapeHtml(fileUrl)}" target="_blank" rel="noreferrer" aria-label="点击播放视频"><span class="typed-video-preview-mark">▶</span><span class="typed-video-preview-hint">点击播放</span></a><a class="typed-file-name" data-desktop-file-preview data-file-url="${escapeHtml(fileUrl)}" data-file-preview-url="${escapeHtml(previewUrl)}" data-file-original-url="${escapeHtml(originalUrl || fileUrl)}" data-file-id="${escapeHtml(fileId)}" data-file-name="${escapeHtml(file.name || '视频')}" data-file-type="${escapeHtml(file.contentType || 'video/mp4')}"${desktopBurnMediaAttribute(message)} href="${escapeHtml(fileUrl)}" target="_blank" rel="noreferrer">${escapeHtml(file.name || '视频')}</a></div>`
@@ -9859,8 +9961,14 @@ async function sendDesktopFile(file, options = {}) {
     return false
   }
   const meta = desktopFileTransferMeta(file)
-  if (file.size > meta.max) {
-    showToast(`${meta.label}不能超过 ${meta.isVideo ? '80MB' : '20MB'}`)
+  try {
+    const fileError = await desktopFileSendError(file)
+    if (fileError) {
+      showToast(fileError)
+      return false
+    }
+  } catch (error) {
+    showToast(error instanceof Error ? error.message : '读取文件参数失败')
     return false
   }
   const msgType = meta.msgType
@@ -10959,40 +11067,22 @@ function renderFiles() {
 }
 
 function renderSidebar() {
-  return `<div class="brand-lockup">
-    <button type="button" class="sidebar-collapse-toggle" data-action="toggle-sidebar" aria-expanded="${state.sidebarCollapsed ? 'false' : 'true'}" aria-label="${state.sidebarCollapsed ? '展开侧栏' : '收起侧栏'}" title="${state.sidebarCollapsed ? '展开侧栏' : '收起侧栏'}">${icon('sidebar-toggle')}</button>
-    <div class="brand-mark"><span></span><span></span><span></span></div>
-    <div class="brand-copy"><strong>Pulse</strong><small>同步每一刻</small></div>
-  </div>
-  <div class="sidebar-nav-stack">
-  <div class="sidebar-label">主空间</div>
-  <nav class="main-nav">
-    ${navItem('messages', '消息', 'chat', String(conversations.reduce((sum, item) => sum + Number(item.unread || 0), 0) || ''))}
-    ${navItem('contacts', '联系人', 'contacts', String((Number(state.friendPendingCount || 0) + Number(state.groupPendingCount || 0)) || ''))}
-    ${navItem('moments', '朋友圈', 'discover', desktopMomentInteractionBadgeLabel(state.momentInteractionUnreadCount))}
-  </nav>
-  <div class="sidebar-label sidebar-label-spaced">快捷入口</div>
-  <nav class="main-nav secondary-nav">
-    <button class="nav-item ${state.page === 'favorites' ? 'active' : ''}" data-page="favorites"><span class="nav-icon">${icon('bookmark')}</span><span class="nav-text">收藏</span></button>
-    ${isDesktopWalletEnabled() ? `<button class="nav-item ${state.page === 'wallet' ? 'active' : ''}" data-page="wallet"><span class="nav-icon">${icon('money')}</span><span class="nav-text">钱包</span></button>` : ''}
-    <button class="nav-item ${state.page === 'files' ? 'active' : ''}" data-page="files"><span class="nav-icon">${icon('folder')}</span><span class="nav-text">文件</span></button>
-    <button class="nav-item ${state.page === 'settings' ? 'active' : ''}" data-page="settings"><span class="nav-icon">${icon('settings')}</span><span class="nav-text">设置</span></button>
-  </nav>
-  </div>
-  <div class="sidebar-grow"></div>
-  <div class="windows-card">
-    <div class="windows-card-icon">${icon('download')}</div>
-    <div><strong>Pulse for Windows</strong><span>${dataSourceLabel()}</span></div>
-    <button data-action="download" aria-label="下载 Pulse for Windows" title="下载 Pulse for Windows">${icon('arrow', 'windows-card-arrow')}<span class="windows-card-download-icon">${icon('download')}</span></button>
-  </div>
-  <button class="sidebar-profile" data-page="settings">
-    ${avatar({ initials: state.profile.nickname?.slice(0, 1) || '我', tone: 'blue', avatarUrl: state.profile.avatarUrl }, 'avatar-small')}<span><strong>${escapeHtml(state.profile.nickname || '当前账户')}</strong><small>在线</small></span>${icon('more')}
-  </button>`
+  const railItem = (page, label, iconName, badge = '') => `<button type="button" class="pulse-rail-item${state.page === page || (page === 'moments' && state.page === 'discover') ? ' active' : ''}" data-page="${page}" aria-label="${label}" title="${label}">${icon(iconName)}${badge ? `<i class="pulse-rail-badge">${badge}</i>` : ''}</button>`
+  return `<div class="pulse-rail-top"><button type="button" class="pulse-rail-profile" data-action="open-own-profile" aria-label="个人信息" title="个人信息">${avatar({ initials: state.profile.nickname?.slice(0, 1) || '我', tone: 'blue', avatarUrl: state.profile.avatarUrl }, 'avatar-small')}<i></i></button></div>
+    <nav class="pulse-rail-nav" aria-label="主导航">
+      ${railItem('messages', '消息', 'chat', desktopMomentInteractionBadgeLabel(conversations.reduce((sum, item) => sum + Number(item.unread || 0), 0)))}
+      ${railItem('contacts', '联系人', 'contacts', desktopMomentInteractionBadgeLabel(Number(state.friendPendingCount || 0) + Number(state.groupPendingCount || 0)))}
+      ${railItem('favorites', '收藏', 'bookmark')}
+      ${railItem('moments', '朋友圈', 'discover', desktopMomentInteractionBadgeLabel(state.momentInteractionUnreadCount))}
+    </nav>
+    <div class="pulse-rail-bottom"><button type="button" class="pulse-rail-item" data-action="global-search-dialog" aria-label="全局搜索" title="全局搜索">${icon('search')}</button><button type="button" class="pulse-rail-item" data-action="notifications" aria-label="通知" title="通知">${icon('bell')}${state.notificationCount ? '<i class="pulse-rail-dot"></i>' : ''}</button>${railItem('settings', '设置', 'settings')}</div>`
 }
 
 function renderTopbar() {
-  const titles = { messages: '消息', contacts: '联系人', groups: '\u7fa4\u804a', moments: '朋友圈', discover: '发现', settings: '个人中心', favorites: '收藏', wallet: '钱包', files: '文件' }
   const notificationCount = Number(state.notificationCount || 0)
+  const messageUnread = conversations.filter((item) => !item.mute).reduce((sum, item) => sum + Number(item.unread || 0), 0)
+  const contactPending = Number(state.friendPendingCount || 0) + Number(state.groupPendingCount || 0)
+  const topNavItem = (key, label, iconName, badge = 0, active = state.page === key) => `<button type="button" class="desktop-top-nav-item${active ? ' active' : ''}" data-page="${key}" ${active ? 'aria-current="page"' : ''}>${icon(iconName)}<span>${label}</span>${badge ? `<i class="desktop-top-nav-badge">${badge > 99 ? '99+' : badge}</i>` : ''}</button>`
   const initials = state.profile.nickname?.slice(0, 1) || '我'
   // Keep the top-right avatar on the same protected-media path as the
   // conversation list. A plain img cannot attach the bearer token in the web
@@ -11007,7 +11097,16 @@ function renderTopbar() {
   const isMessageHome = state.page === 'messages'
   return `<div class="topbar-leading${isMessageHome ? ' is-message-home' : ''}">
        <button type="button" class="top-back-btn" data-action="navigate-back" ${canGoBack ? '' : 'disabled'} aria-label="返回上一页" title="返回上一页">${icon('arrow', 'back-icon')}</button>
-    <div class="breadcrumb"><span>Pulse</span><b>/</b><strong>${titles[state.page] || '消息'}</strong></div>
+       <span class="desktop-top-brand" aria-label="Pulse">Pulse</span>
+       <nav class="desktop-top-navigation" aria-label="主导航">
+         ${topNavItem('messages', '消息', 'chat', messageUnread)}
+         ${topNavItem('contacts', '联系人', 'contacts', contactPending, state.page === 'contacts' || state.page === 'groups')}
+         ${topNavItem('moments', '朋友圈', 'discover', Number(state.momentInteractionUnreadCount || 0), state.page === 'moments' || state.page === 'discover')}
+         ${topNavItem('favorites', '收藏', 'bookmark')}
+         ${topNavItem('files', '文件', 'folder')}
+         ${isDesktopWalletEnabled() ? topNavItem('wallet', '钱包', 'money') : ''}
+         ${topNavItem('settings', '设置', 'settings')}
+       </nav>
     </div>
     <div class="topbar-actions">
       <label class="global-search">${icon('search')}<input id="global-search" value="${escapeHtml(state.globalSearchQuery || '')}" placeholder="搜索联系人、群聊、聊天记录" /><kbd>⌘ K</kbd></label>
@@ -11082,7 +11181,7 @@ function positionDesktopConversationPlusMenu() {
   const menuWidth = menu.offsetWidth
   const menuHeight = menu.offsetHeight
   const gap = 8
-  const preferredLeft = triggerRect.left
+  const preferredLeft = triggerRect.right - menuWidth
   const left = Math.min(Math.max(8, preferredLeft), Math.max(8, window.innerWidth - menuWidth - 8))
   const preferredTop = triggerRect.bottom + gap
   const top = preferredTop + menuHeight <= window.innerHeight - 8
@@ -11094,7 +11193,7 @@ function positionDesktopConversationPlusMenu() {
 
 function renderDesktopHomePlusMenu(placement = '') {
   const placementClass = placement === 'conversation' ? ' desktop-conversation-home-plus-menu' : ''
-  return `<div class="desktop-home-plus-menu${placementClass}" data-home-plus-menu><button type="button" data-action="add-contact"><span>${icon('person')}</span><small>添加好友</small></button><button type="button" data-action="new-message"><span>${icon('chat')}</span><small>创建聊天</small></button><button type="button" data-action="new-group"><span>${icon('group')}</span><small>发起群聊</small></button><button type="button" data-action="add-group"><span>${icon('group')}</span><small>添加群聊</small></button></div>`
+  return `<div class="desktop-home-plus-menu${placementClass}" data-home-plus-menu role="menu"><button type="button" data-action="new-group" role="menuitem"><span>${icon('group')}</span><small>发起群聊</small></button><button type="button" data-action="add-contact" role="menuitem"><span>${icon('person')}</span><small>添加好友</small></button></div>`
 }
 
 function renderGroups() {
@@ -11127,6 +11226,38 @@ function renderGroups() {
       }).join('')}</div>` : `<div class="groups-empty"><span class="groups-empty-icon">${icon('group')}</span><strong>${emptyText}</strong><small>${groups.length ? '换个关键词试试' : '加入或创建群聊后，它们会显示在这里'}</small></div>`}
     </section>
   </section>`
+}
+
+function renderContactGroupListModal() {
+  const groups = conversations.filter(isGroupConversation)
+  const keyword = String(state.groupAppliedQuery || '').trim().toLowerCase()
+  const visible = groups.filter((item) => !keyword || `${item.name || ''} ${item.preview || ''}`.toLowerCase().includes(keyword))
+  const rows = visible.map((item) => `<button type="button" class="desktop-result-row" data-group-conversation="${conversations.indexOf(item)}"><span class="result-avatar">${avatar(item, 'avatar-small')}</span><span><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.preview || '暂无消息')}</small></span>${icon('arrow')}</button>`).join('')
+  return modalFrame('群聊', `已加入 ${groups.length} 个群聊`, `<div class="pulse-group-list-actions"><form data-contact-group-list-search><label>${icon('search')}<input data-contact-group-list-query value="${escapeHtml(state.groupQuery)}" placeholder="搜索群聊名称" /></label><button type="submit" class="btn btn-primary">搜索</button></form><button type="button" class="btn" data-action="add-group">添加群聊</button><button type="button" class="btn" data-action="new-group">创建群聊</button></div><div class="desktop-modal-results">${rows || '<div class="desktop-modal-empty">没有找到群聊</div>'}</div>`, 'pulse-group-list-modal')
+}
+
+function renderOwnProfileModal() {
+  const profile = state.profile || {}
+  const pulseId = String(profile.pulseId || profile.userId || '')
+  const body = `<div class="pulse-own-profile">${avatar({ initials: profile.nickname?.slice(0, 1) || '我', name: profile.nickname, avatarUrl: profile.avatarUrl, tone: 'blue' }, 'avatar-xl')}<h2>${escapeHtml(profile.nickname || '当前账户')}</h2><p>${escapeHtml(profile.signature || '')}</p><div class="pulse-own-profile-id"><span>Pulse ID</span><strong>${escapeHtml(pulseId)}</strong><button type="button" data-own-profile-copy="${escapeHtml(pulseId)}">复制</button></div><div class="pulse-own-profile-qr">${state.ownProfileQr ? `<img src="${escapeHtml(state.ownProfileQr)}" alt="我的 Pulse 二维码" />` : '<span>正在生成二维码…</span>'}</div><small>使用移动端 Pulse 扫码添加好友</small></div>`
+  return modalFrame('个人信息', '展示给其他用户的名片', body, 'pulse-own-profile-modal')
+}
+
+async function openOwnProfileModal() {
+  state.modal = 'own-profile'
+  state.ownProfileQr = ''
+  render()
+  const pulseId = String(state.profile?.pulseId || state.profile?.userId || '')
+  if (!pulseId) return
+  try {
+    const qr = await QRCode.toDataURL(`pulse://user/${pulseId}`, { width: 220, margin: 2, color: { dark: '#17231d', light: '#ffffff' } })
+    if (state.modal === 'own-profile') {
+      state.ownProfileQr = qr
+      render()
+    }
+  } catch (error) {
+    showToast(error instanceof Error ? error.message : '二维码生成失败')
+  }
 }
 
 function desktopSelectedConversation() {
@@ -11166,8 +11297,9 @@ function renderMessages() {
 function renderConversationPanel() {
   const visible = desktopVisibleConversationIndexes().map((index) => conversations[index])
   return `<section class="conversation-panel panel-surface">
-    <div class="panel-title-row"><div><h2>最近对话</h2><span>${conversations.length} 个会话</span></div><div class="conversation-panel-actions"><button class="subtle-icon-btn desktop-read-all-btn" type="button" data-action="mark-all-read" aria-label="全部已读" title="全部已读">${icon('check')}</button><span class="desktop-home-plus-wrap desktop-conversation-plus-wrap"><button class="subtle-icon-btn" type="button" data-action="toggle-home-plus" aria-label="更多新建选项" title="更多新建选项">${icon('plus')}</button>${state.showHomePlusMenu ? renderDesktopHomePlusMenu('conversation') : ''}</span></div></div>
+    <div class="panel-title-row"><div><h2>消息</h2><span>${conversations.length} 个会话</span></div><div class="conversation-panel-actions"><button class="subtle-icon-btn desktop-read-all-btn" type="button" data-action="mark-all-read" aria-label="全部已读" title="全部已读">${icon('check')}</button><span class="desktop-home-plus-wrap desktop-conversation-plus-wrap"><button class="subtle-icon-btn" type="button" data-action="toggle-home-plus" aria-label="添加" title="添加" aria-expanded="${state.showHomePlusMenu ? 'true' : 'false'}">${icon('plus')}</button>${state.showHomePlusMenu ? renderDesktopHomePlusMenu('conversation') : ''}</span></div></div>
     <label class="panel-search">${icon('search')}<input id="conversation-search" value="${escapeHtml(state.contactQuery)}" placeholder="搜索会话" /></label>
+    <div class="pulse-conversation-filters" role="tablist" aria-label="筛选会话">${[['all', '全部'], ['unread', '未读'], ['group', '群聊']].map(([value, label]) => `<button type="button" role="tab" aria-selected="${state.conversationFilter === value}" class="${state.conversationFilter === value ? 'active' : ''}" data-conversation-filter="${value}">${label}</button>`).join('')}</div>
     <div class="conversation-list">${visible.length ? visible.map((item) => renderConversation(item)).join('') : '<div class="empty-state">没有找到相关会话</div>'}</div>
     ${renderConversationMenu()}
   </section>`
@@ -11177,7 +11309,8 @@ function desktopVisibleConversationIndexes() {
   const query = state.contactQuery.trim().toLowerCase()
   return conversations
     .map((item, index) => ({ item, index }))
-    .filter(({ item }) => !query || item.name.toLowerCase().includes(query) || item.preview.toLowerCase().includes(query))
+    .filter(({ item }) => (state.conversationFilter === 'unread' ? Number(item.unread || 0) > 0 : state.conversationFilter === 'group' ? isGroupConversation(item) : true)
+      && (!query || item.name.toLowerCase().includes(query) || item.preview.toLowerCase().includes(query)))
     .sort((left, right) => Number(Boolean(right.item.pinned)) - Number(Boolean(left.item.pinned)))
     .map(({ index }) => index)
 }
@@ -11193,6 +11326,7 @@ function updateDesktopConversationFilterBadges() {
   if (nav && total <= 0) navBadge?.remove()
   else if (nav && total > 0 && navBadge) navBadge.textContent = total > 99 ? '99+' : String(total)
   else if (nav && total > 0) nav.insertAdjacentHTML('beforeend', `<span class="nav-badge">${total > 99 ? '99+' : total}</span>`)
+  updateDesktopTopNavigationBadge('messages', total)
 }
 
 function renderConversation(item) {
@@ -12125,11 +12259,16 @@ function renderContextPanel(selected) {
   const countsLoading = state.sharedContentCountsLoadingConversationId === String(selected?.id || '')
   const mediaLabel = countsLoading ? '…' : counts?.media == null ? '—' : `${counts.media} 项媒体`
   const fileLabel = countsLoading ? '…' : counts?.file == null ? '—' : `${counts.file} 个文件`
-  const context = renderContextPanelLegacy(selected)
-    .replace(/(<div class="shared-grid">[\s\S]*?<strong>)[^<]*(<\/strong>)/, `$1${escapeHtml(mediaLabel)}$2`)
-    .replace(/(<span class="shared-preview shared-file">[\s\S]*?<strong>)[^<]*(<\/strong>)/, `$1${escapeHtml(fileLabel)}$2`)
-    .replace(/<div class="context-card context-list">[\s\S]*?<\/div>\s*<\/aside>/, '</aside>')
-  return context.replace('</aside>', `${renderDesktopChatSettingsPanel(selected)}</aside>`)
+  const group = isGroupConversation(selected)
+  const detail = group ? currentDesktopGroupDetail(selected) : null
+  const members = detail?.members || []
+  if (group && !detail && !state.groupDetailLoadingConversationId) void loadDesktopGroupDetail(selected)
+  return `<aside class="context-panel pulse-chat-details">
+    <div class="context-card profile-context"><div class="context-card-label"><span>${group ? '群聊信息' : '好友信息'}</span><button type="button" aria-label="收起详情">${icon('close')}</button></div><div class="profile-context-main"><button type="button" class="pulse-context-avatar" data-action="edit-conversation-remark" title="编辑${group ? '群' : '好友'}备注" aria-label="编辑${group ? '群' : '好友'}备注">${avatar(selected, 'avatar-large')}${icon('edit')}</button><h3>${escapeHtml(selected.name)}</h3><p>${group ? `${detail?.memberCount || members.length} 位群成员` : (selected.online ? '在线' : '离线')}</p></div><div class="profile-actions"><button type="button" data-action="edit-conversation-remark">${icon('edit')}<span>编辑备注</span></button><button type="button" data-action="${group ? 'group-info' : 'open-conversation-contact'}">${icon(group ? 'group' : 'person')}<span>${group ? '群信息与管理' : '查看好友资料'}</span></button></div></div>
+    ${group ? `<div class="context-card pulse-context-members"><div class="context-card-label"><span>群成员</span><button type="button" data-action="group-info" data-group-info-focus="members" aria-label="查看全部群成员">查看全部 ${icon('arrow')}</button></div><div class="pulse-context-member-avatars">${members.slice(0, 8).map((member) => avatar({ name: member.nickname, avatarUrl: member.avatarUrl, tone: 'blue' }, 'avatar-small')).join('')}</div></div>` : ''}
+    <div class="context-card"><div class="context-card-label"><span>聊天文件</span></div><div class="shared-grid"><button type="button" class="shared-tile"><span class="shared-preview shared-image">${icon('image')}</span><strong>${escapeHtml(mediaLabel)}</strong></button><button type="button" class="shared-tile"><span class="shared-preview shared-file">${icon('folder')}</span><strong>${escapeHtml(fileLabel)}</strong></button></div></div>
+    ${renderDesktopChatSettingsPanel(selected)}
+  </aside>`
 }
 
 function renderDesktopChatSettingsPanel(selected) {
@@ -12231,18 +12370,17 @@ function renderContacts() {
     ? filteredContacts.map(renderContactCard).join('')
     : '<div class="contacts-empty"><strong>\u6ca1\u6709\u627e\u5230\u5339\u914d\u7684\u8054\u7cfb\u4eba</strong><small>\u8bd5\u8bd5\u66f4\u6362\u641c\u7d22\u8bcd\uff0c\u6216\u5173\u95ed\u201c\u53ea\u770b\u5728\u7ebf\u8054\u7cfb\u4eba\u201d\u3002</small></div>'
   return '<section class="page page-contacts">' +
-    pageHeading('\u4fdd\u6301\u8fde\u63a5', '\u8054\u7cfb\u4eba', '\u627e\u5230\u4f60\u8ba4\u8bc6\u7684\u4eba\uff0c\u4e5f\u53d1\u73b0\u65b0\u7684\u8fde\u63a5\u3002', button('\u6dfb\u52a0\u8054\u7cfb\u4eba', 'add-contact', 'primary', 'plus')) +
+    pageHeading('\u4fdd\u6301\u8fde\u63a5', '\u8054\u7cfb\u4eba', '\u627e\u5230\u4f60\u8ba4\u8bc6\u7684\u4eba\uff0c\u4e5f\u53d1\u73b0\u65b0\u7684\u8fde\u63a5\u3002') +
     '<div class="contact-toolbar">' +
-      '<label class="wide-search">' + icon('search') + '<input id="contact-search" value="' + escapeHtml(state.contactQuery) + '" placeholder="\u641c\u7d22\u59d3\u540d\u6216 Pulse ID" /></label>' +
-      '<div class="toolbar-meta"><span><i class="online-dot"></i> ' + onlineCount + ' \u4f4d\u8054\u7cfb\u4eba\u5728\u7ebf</span>' +
+      '<label class="wide-search">' + icon('search') + '<input id="contact-search" value="' + escapeHtml(state.contactQuery) + '" placeholder="\u641c\u7d22\u59d3\u540d\u6216 Pulse ID" /></label>' + button('\u6dfb\u52a0\u597d\u53cb', 'add-contact', 'primary', 'plus') +
+    '</div><div class="toolbar-meta contact-meta-row"><span><i class="online-dot"></i> ' + onlineCount + ' \u4f4d\u8054\u7cfb\u4eba\u5728\u7ebf</span>' +
         '<span class="contact-more-wrap"><button type="button" class="subtle-icon-btn" data-action="toggle-contact-more" data-contact-more-toggle aria-haspopup="menu" aria-expanded="' + String(state.contactMoreOpen) + '" aria-label="\u66f4\u591a\u8054\u7cfb\u4eba\u64cd\u4f5c" title="\u66f4\u591a\u8054\u7cfb\u4eba\u64cd\u4f5c">' + icon('more') + '</button>' +
         (state.contactMoreOpen ? renderContactMoreMenu() : '') + '</span>' +
       '</div>' +
-    '</div>' +
     '<div class="quick-actions">' +
       '<button data-action="new-friends"><span class="quick-icon quick-blue">' + icon('contacts') + '</span><span><strong>\u65b0\u7684\u670b\u53cb</strong><small data-quick-notification-summary="friends">' + contactNotificationSummary(state.friendPendingCount, '\u597d\u53cb\u7533\u8bf7') + '</small></span>' + (state.friendPendingCount ? '<i class="quick-action-badge">' + (state.friendPendingCount > 99 ? '99+' : state.friendPendingCount) + '</i>' : '') + icon('arrow') + '</button>' +
       '<button data-action="group-notifications"><span class="quick-icon quick-blue">' + icon('bell') + '</span><span><strong>\u7fa4\u901a\u77e5</strong><small data-quick-notification-summary="groups">' + contactNotificationSummary(state.groupPendingCount, '\u7fa4\u901a\u77e5') + '</small></span>' + (state.groupPendingCount ? '<i class="quick-action-badge">' + (state.groupPendingCount > 99 ? '99+' : state.groupPendingCount) + '</i>' : '') + icon('arrow') + '</button>' +
-      '<button data-action="groups"><span class="quick-icon quick-violet">' + icon('group') + '</span><span><strong>\u67e5\u770b\u7fa4\u804a\u5217\u8868</strong><small>\u67e5\u770b\u6240\u6709\u7fa4\u804a\u4f1a\u8bdd</small></span>' + icon('arrow') + '</button>' +
+      '<button data-action="groups"><span class="quick-icon quick-violet">' + icon('group') + '</span><span><strong>\u7fa4\u804a</strong><small>\u67e5\u770b\u5df2\u52a0\u5165\u7684\u7fa4\u804a</small></span>' + icon('arrow') + '</button>' +
     '</div>' +
     '<div class="section-title-row"><div><h2>\u6211\u7684\u8054\u7cfb\u4eba</h2><span>\u5171 ' + contacts.length + ' \u4f4d\u8054\u7cfb\u4eba</span></div><div class="view-switch" role="group" aria-label="\u8054\u7cfb\u4eba\u663e\u793a\u65b9\u5f0f">' +
       '<button class="' + (state.contactView === 'grid' ? 'active' : '') + '" data-contact-view="grid" aria-label="\u5361\u7247\u89c6\u56fe" title="\u5361\u7247\u89c6\u56fe">' + icon('grid') + '</button>' +
@@ -12261,6 +12399,7 @@ function renderContacts() {
 
 function renderDiscover() {
   const friendProfile = state.friendMomentsProfile
+  const ownView = Boolean(state.ownMomentsView)
   const items = state.moments
   const rangeLabels = { 0: '好友可见', 1: '仅自己', 2: '部分可见' }
   const mediaMarkup = (item) => {
@@ -12315,18 +12454,21 @@ function renderDiscover() {
 
   const friendName = String(friendProfile?.displayName || friendProfile?.remark || friendProfile?.nickname || '好友').trim() || '好友'
   const heading = friendProfile
-    ? pageHeading('好友朋友圈', `${escapeHtml(friendName)}的朋友圈`, `查看${escapeHtml(friendName)}公开的动态内容。`, button('返回消息', 'navigate-back', 'secondary', 'arrow'))
+    ? ownView
+      ? pageHeading('我的动态', '我的朋友圈', '查看和管理自己发布的动态。', button('返回朋友圈', 'moments-all', 'secondary', 'arrow'))
+      : pageHeading('好友朋友圈', `${escapeHtml(friendName)}的朋友圈`, `查看${escapeHtml(friendName)}公开的动态内容。`, button('返回消息', 'navigate-back', 'secondary', 'arrow'))
     : pageHeading('和朋友分享此刻', '朋友圈', '发布动态、查看朋友近况，并管理每条内容的可见范围。')
   const composer = friendProfile
-    ? `<section class="desktop-friend-moments-header">${avatar({ ...friendProfile, name: friendName, initials: friendName.slice(0, 1), tone: 'blue' }, 'avatar-medium')}<div><strong>${escapeHtml(friendName)}的朋友圈</strong><span>仅显示对方允许你查看的公开动态</span></div></section>`
-    : `<section class="desktop-moment-composer">
+    ? `<section class="desktop-friend-moments-header">${avatar({ ...friendProfile, name: friendName, initials: friendName.slice(0, 1), tone: 'blue' }, 'avatar-medium')}<div><strong>${ownView ? '我的朋友圈' : `${escapeHtml(friendName)}的朋友圈`}</strong><span>${ownView ? '仅显示我发布的动态，可删除自己的内容' : '仅显示对方允许你查看的公开动态'}</span></div></section>`
+    : state.momentComposeOpen ? `<section class="desktop-moment-composer">
           <div class="desktop-moment-composer-head">${avatar({ initials: state.profile.nickname?.slice(0, 1) || '我', tone: 'blue', avatarUrl: state.profile.avatarUrl }, 'avatar-medium')}<div><strong>分享新动态</strong><span>这一刻，想和朋友说点什么？</span></div></div>
           <form data-moment-form><textarea data-moment-content maxlength="1000" placeholder="记录你的想法…">${escapeHtml(state.momentDraftText)}</textarea><div class="desktop-moment-composer-foot"><div class="desktop-moment-compose-tools"><label class="moment-file-label">${icon('image')} 添加图片/视频<input id="desktop-moment-files" type="file" accept="image/*,video/*" multiple /></label><button type="button" class="moment-location-button" data-action="moment-location-picker" title="添加位置">${icon('location')} <span>${escapeHtml(state.momentLocation?.name || '所在位置')}</span></button><select data-moment-visibility aria-label="动态可见范围"><option value="0" ${Number(state.momentVisibility) === 0 ? 'selected' : ''}>好友可见</option><option value="1" ${Number(state.momentVisibility) === 1 ? 'selected' : ''}>仅自己</option><option value="2" ${Number(state.momentVisibility) === 2 ? 'selected' : ''}>部分可见</option></select></div><div class="desktop-moment-publish-actions"><button type="button" class="btn" data-moment-save-draft title="保存为草稿，下次进入自动恢复">${icon('save')} 存草稿</button><button class="btn btn-primary" type="submit" ${state.momentPublishBusy ? 'disabled' : ''}>${state.momentPublishBusy ? '发布中…' : '发布'} ${icon('send')}</button></div></div><div class="desktop-moment-visibility-preview"><span>${icon('eye')}</span><div><strong>可见范围预览</strong><small>${Number(state.momentVisibility) === 1 ? '仅自己可见' : Number(state.momentVisibility) === 2 ? `部分可见 · ${escapeHtml(momentVisiblePreviewLabel())}` : '发布后好友可以看到这条动态'}</small></div></div>${renderDesktopMomentComposePreviews()}</form>
-        </section>`
+        </section>` : ''
   return `<section class="page page-moments page-discover">
     ${heading}
     <div class="desktop-moments-layout">
       <div class="desktop-moments-main">
+        ${friendProfile ? '' : `<div class="pulse-moments-toolbar"><button type="button" class="btn btn-primary" data-action="moment-compose">${icon('plus')} 发布动态</button><button type="button" class="pulse-moments-own-avatar" data-action="my-moments" aria-label="我的朋友圈" title="我的朋友圈">${avatar({ initials: state.profile.nickname?.slice(0, 1) || '我', tone: 'blue', avatarUrl: state.profile.avatarUrl }, 'avatar-small')}</button></div>`}
         ${composer}
         ${friendProfile ? '' : renderDesktopMomentReminderCard()}
         <div class="desktop-moments-feed">${feed}</div>
@@ -12425,15 +12567,13 @@ function renderSettings() {
       ${renderFriendPermissionSettings()}
     </section>`
   }
-  const profileAction = profileEditing
-    ? `<button class="btn btn-primary" type="submit" form="profile-form"><span>\u4fdd\u5b58\u8d44\u6599</span>${icon('check')}</button>`
-    : button('\u7f16\u8f91\u8d44\u6599', 'start-edit-profile', 'secondary', 'edit')
+  const profileAction = ''
   return `<section class="page page-settings">
     ${pageHeading('\u7ba1\u7406\u4f60\u7684 Pulse', '\u4e2a\u4eba\u4e2d\u5fc3', '\u8d44\u6599\u3001\u504f\u597d\u4e0e\u5b89\u5168\u8bbe\u7f6e\u90fd\u5728\u8fd9\u91cc\u3002', profileAction)}
     <div class="settings-layout">
       <div class="settings-sidebar">
       <aside class="settings-menu">
-        <div class="settings-profile-mini" data-action="edit-profile">
+        <div class="settings-profile-mini" data-action="open-own-profile">
           ${avatar({ initials, tone: 'blue', avatarUrl: profile.avatarUrl }, 'avatar-medium')}
           <div><strong>${escapeHtml(profile.nickname || '当前账户')}</strong><small>PulseID ${escapeHtml(profile.pulseId || profile.userId || '-')}</small></div>
           ${icon('arrow')}
@@ -12441,20 +12581,26 @@ function renderSettings() {
         <div class="settings-menu-label">\u8d26\u6237</div>
         <button type="button" class="settings-nav ${state.settingsSection === 'profile' ? 'active' : ''}" data-action="edit-profile">${icon('person')}\u4e2a\u4eba\u8d44\u6599</button>
         <button type="button" class="settings-nav" data-action="notifications">${icon('bell')}\u6d88\u606f\u901a\u77e5<span class="setting-dot"></span></button>
-        <button type="button" class="settings-nav ${state.settingsSection === 'account-security' ? 'active' : ''}" data-action="account-security">${icon('shield')}\u8d26\u53f7\u4e0e\u5b89\u5168</button>
         <div class="settings-menu-label">\u504f\u597d</div>
         ${isDesktopWalletEnabled() ? `<button type="button" class="settings-nav" data-page="wallet">${icon('money')}我的钱包</button>` : ''}
-        <button type="button" class="settings-nav" data-settings-section="friend-permission">${icon('group')}朋友权限</button>
+        <button type="button" class="settings-nav" data-page="files">${icon('folder')}文件管理</button>
         <button type="button" class="settings-nav ${state.settingsSection === 'storage' ? 'active' : ''}" data-action="storage">${icon('download')}\u5b58\u50a8\u7a7a\u95f4</button>
+        <div class="settings-menu-label">通用</div>
+        <button type="button" class="settings-nav ${state.settingsSection === 'account-security' ? 'active' : ''}" data-action="account-security">${icon('shield')}\u8d26\u53f7\u4e0e\u5b89\u5168</button>
+        <button type="button" class="settings-nav" data-settings-section="friend-permission">${icon('group')}朋友权限</button>
         <div class="settings-menu-label">\u5176\u4ed6</div>
          <button type="button" class="settings-nav ${state.settingsSection === 'help' ? 'active' : ''}" data-action="help">${icon('help')}\u5e2e\u52a9\u4e0e\u53cd\u9988</button>
+        <button type="button" class="settings-nav" data-action="global-refresh">${icon('refresh')}刷新数据</button>
+        <button type="button" class="settings-nav" data-action="lock-screen">${icon('lock')}锁定应用</button>
+        <button type="button" class="settings-nav" data-action="switch-account">${icon('switch-account')}切换账号</button>
+        <button type="button" class="settings-nav" data-action="logout">${icon('logout')}退出登录</button>
        </aside>
         </div>
       <div class="settings-content">
         <div class="settings-card profile-edit-card">
           <div class="settings-card-heading"><div><h2>\u4e2a\u4eba\u8d44\u6599</h2><p>\u8fd9\u4e9b\u4fe1\u606f\u4f1a\u5c55\u793a\u7ed9\u4f60\u7684\u8054\u7cfb\u4eba\u3002</p></div><span class="privacy-pill">${icon('lock')} \u4ec5\u8054\u7cfb\u4eba\u53ef\u89c1</span></div>
-          <div class="profile-edit-main">${avatar({ initials, tone: 'blue', avatarUrl: profile.avatarUrl }, 'avatar-xl')}<div><h3>${escapeHtml(profile.nickname || '当前账户')}</h3><p>${escapeHtml(profile.signature || '暂无个性签名')}</p><button type="button" class="text-button profile-avatar-button" data-action="change-avatar" ${state.profileAvatarUploading ? 'disabled aria-busy="true"' : ''}>${state.profileAvatarUploading ? '\u4e0a\u4f20\u4e2d\u2026' : '\u66f4\u6362\u5934\u50cf'} ${icon(state.profileAvatarUploading ? 'refresh' : 'arrow')}</button><small class="profile-avatar-hint">支持 JPG、PNG、WEBP，最大 20MB</small><input type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/bmp" data-profile-avatar-input hidden ${state.profileAvatarUploading ? 'disabled' : ''} /></div></div>
-           <form id="profile-form" class="form-grid" data-profile-form><label><span>\u6635\u79f0</span><input name="nickname" value="${escapeHtml(profileDraft.nickname || '')}" ${profileEditing ? '' : 'disabled'} /></label><label><span>Pulse ID</span><input value="${escapeHtml(profile.pulseId || profile.userId || '')}" disabled /></label><label class="full"><span>\u4e2a\u6027\u7b7e\u540d</span><input name="signature" value="${escapeHtml(profileDraft.signature || '')}" ${profileEditing ? '' : 'disabled'} /></label></form>
+          <div class="profile-edit-main">${avatar({ initials, tone: 'blue', avatarUrl: profile.avatarUrl }, 'avatar-xl')}<div><h3>${escapeHtml(profile.nickname || '当前账户')}</h3><p>${escapeHtml(profile.signature || '暂无个性签名')}</p><button type="button" class="text-button" data-action="open-own-profile">查看个人 ID 与二维码 ${icon('arrow')}</button></div></div>
+           <div class="form-grid"><label><span>昵称</span><input value="${escapeHtml(profile.nickname || '')}" disabled /></label><label><span>Pulse ID</span><input value="${escapeHtml(profile.pulseId || profile.userId || '')}" disabled /></label><label class="full"><span>个性签名</span><input value="${escapeHtml(profile.signature || '')}" disabled /></label></div>
         </div>
          <div class="settings-card session-card">
             <div class="settings-card-heading"><div><h2>\u5df2\u767b\u5f55\u8bbe\u5907</h2><p>\u4f60\u53ef\u4ee5\u5728\u8fd9\u91cc\u67e5\u770b\u548c\u7ba1\u7406\u767b\u5f55\u4f1a\u8bdd\u3002</p></div><span class="safe-label">${icon('shield')} \u8d26\u6237\u5b89\u5168</span></div>
@@ -12472,7 +12618,8 @@ function renderFavorites() {
 
 function renderDesktopFavorites() {
   if (state.dataSource !== 'remote') return renderFavorites()
-  const items = state.favorites
+  const query = String(state.favoriteQuery || '').trim().toLowerCase()
+  const items = state.favorites.filter((item) => !query || `${desktopFavoritePreview(item)} ${item.sourceTitle || ''} ${item.fromNickname || ''}`.toLowerCase().includes(query))
   const organizeLabel = state.favoriteOrganizing ? '完成整理' : '整理收藏'
   const body = state.favoritesLoading
     ? '<div class="desktop-modal-hint">正在加载收藏…</div>'
@@ -12495,7 +12642,7 @@ function renderDesktopFavorites() {
   const toolbar = state.favoriteOrganizing
     ? `<div class="favorite-organize-toolbar"><span>已选 ${state.favoriteSelection.size} 项</span><div><button type="button" class="btn btn-primary" data-favorite-forward-selected ${state.favoritesLoading || !state.favoriteSelection.size ? 'disabled' : ''}>${icon('share')} 转发</button><button type="button" class="btn" data-favorite-select-all ${state.favoritesLoading || !items.length ? 'disabled' : ''}>${allSelected ? '取消全选' : '全选'}</button><button type="button" class="btn btn-danger" data-favorite-delete-selected ${state.favoritesLoading || !state.favoriteSelection.size ? 'disabled' : ''}>删除选中</button></div></div>`
     : ''
-  return `<section class="page page-favorites">${pageHeading('稍后再看', '收藏', '把重要的消息、文件和动态留在这里。', button(organizeLabel, 'organize', 'secondary', 'grid'))}<div class="favorite-summary"><div><span>${icon('bookmark')}</span><strong>${items.length}</strong><small>条收藏</small></div><div><span>${icon('folder')}</span><strong>${items.filter((item) => item.msgType === 2).length}</strong><small>个文件</small></div><div><span>${icon('chat')}</span><strong>${items.filter((item) => item.msgType !== 2).length}</strong><small>条消息</small></div></div>${body}${toolbar}</section>`
+  return `<section class="page page-favorites">${pageHeading('稍后再看', '收藏', '把重要的消息、文件和动态留在这里。')}<div class="pulse-favorite-toolbar"><label class="wide-search">${icon('search')}<input data-favorite-query value="${escapeHtml(state.favoriteQuery)}" placeholder="搜索收藏" /></label>${button(organizeLabel, 'organize', 'secondary', 'grid')}</div><div class="favorite-summary"><div><span>${icon('bookmark')}</span><strong>${state.favorites.length}</strong><small>条收藏</small></div><div><span>${icon('folder')}</span><strong>${state.favorites.filter((item) => item.msgType === 2).length}</strong><small>个文件</small></div><div><span>${icon('chat')}</span><strong>${state.favorites.filter((item) => item.msgType !== 2).length}</strong><small>条消息</small></div></div>${body}${toolbar}</section>`
 }
 
 function renderFavoriteDetailModal() {
@@ -13112,7 +13259,8 @@ function renderDesktopGroupInfoModal() {
   const owner = Boolean(detail.owner)
   const memberIds = new Set((detail.members || []).map((member) => String(member.userId)))
   const addable = contacts.filter((contact) => !isDesktopFileTransferAssistant(contact) && !memberIds.has(String(contact.userId || contactUserId(contact))))
-  const members = (detail.members || []).map((member) => {
+    .filter((contact) => !state.groupInfoAddQuery || `${contact.name || ''} ${contact.nickname || ''} ${contact.pulseId || ''}`.toLowerCase().includes(state.groupInfoAddQuery.toLowerCase()))
+  const members = (detail.members || []).filter((member) => !state.groupInfoMemberQuery || `${member.nickname || ''} ${member.userId || ''}`.toLowerCase().includes(state.groupInfoMemberQuery.toLowerCase())).map((member) => {
     const role = member.role === 'owner' ? '\u7fa4\u4e3b' : member.role === 'admin' ? '\u7ba1\u7406\u5458' : '\u6210\u5458'
     const actions = String(member.userId) === String(state.profile.userId || '') || member.role === 'owner'
       ? ''
@@ -13123,30 +13271,32 @@ function renderDesktopGroupInfoModal() {
     return `<div class="desktop-group-member-row"><button type="button" class="desktop-group-member-profile" data-view-contact="${escapeHtml(member.userId)}"><span class="result-avatar">${avatar(member, 'avatar-small')}</span><span class="desktop-group-member-copy"><strong>${escapeHtml(member.nickname)}</strong><small>${role}${member.speakMuted ? ' \u00b7 \u7981\u8a00\u4e2d' : ''}</small></span></button>${actions}</div>`
   }).join('')
   const addPanel = state.groupInfoAddOpen
-    ? `<div class="desktop-group-add-panel"><div class="desktop-group-add-head"><strong>\u6dfb\u52a0\u6210\u5458</strong><button type="button" data-group-info-close-add>\u53d6\u6d88</button></div>${addable.length ? addable.map((contact) => { const id = String(contact.userId || contactUserId(contact)); const checked = state.groupInfoAddSelected.has(id); return `<label class="desktop-group-add-row"><input type="checkbox" data-group-info-add-member="${escapeHtml(id)}" ${checked ? 'checked' : ''} /><span>${avatar(contact, 'avatar-small')}</span><strong>${escapeHtml(contact.name || contact.nickname || '\u7528\u6237')}</strong></label>` }).join('') : '<div class="desktop-modal-hint">\u6682\u65e0\u53ef\u6dfb\u52a0\u7684\u597d\u53cb</div>'}<button class="btn btn-primary desktop-group-add-submit" type="button" data-group-info-add-submit>\u6dfb\u52a0\u5df2\u9009\u6210\u5458</button></div>`
+    ? `<div class="desktop-group-add-panel pulse-group-members"><div class="desktop-group-add-head"><strong>\u6dfb\u52a0\u6210\u5458</strong><button type="button" data-group-info-close-add>\u53d6\u6d88</button></div><label class="pulse-group-member-search">${icon('search')}<input data-group-add-query value="${escapeHtml(state.groupInfoAddQuery)}" placeholder="搜索可邀请的好友" /></label>${addable.length ? addable.map((contact) => { const id = String(contact.userId || contactUserId(contact)); const checked = state.groupInfoAddSelected.has(id); return `<label class="desktop-group-add-row"><input type="checkbox" data-group-info-add-member="${escapeHtml(id)}" ${checked ? 'checked' : ''} /><span>${avatar(contact, 'avatar-small')}</span><strong>${escapeHtml(contact.name || contact.nickname || '\u7528\u6237')}</strong></label>` }).join('') : '<div class="desktop-modal-hint">\u6682\u65e0\u53ef\u6dfb\u52a0\u7684\u597d\u53cb</div>'}<button class="btn btn-primary desktop-group-add-submit" type="button" data-group-info-add-submit>\u6dfb\u52a0\u5df2\u9009\u6210\u5458</button></div>`
     : ''
   const scheduledRows = groupInfoScheduledMessages().map((row) => `<div class="desktop-group-scheduled-row"><div><strong><span class="desktop-group-scheduled-type">${escapeHtml(desktopScheduledTypeLabel(row.msgType))}</span> ${escapeHtml(desktopScheduledContentLabel(row))}</strong><small>${escapeHtml(new Date(row.sendAt).toLocaleString())} · ${escapeHtml(desktopScheduledStatusLabel(row.status))} · ${escapeHtml(row.setterNickname || '设置人')}</small>${row.lastError ? `<small class="desktop-group-scheduled-error">${escapeHtml(row.lastError)}</small>` : ''}</div>${row.status === 'PENDING' || row.status === 'FAILED' ? `<span><button type="button" data-group-schedule-edit="${escapeHtml(row.id)}">编辑</button><button type="button" class="danger" data-group-schedule-delete="${escapeHtml(row.id)}">删除</button></span>` : ''}</div>`).join('')
-  const scheduledSection = manager ? `<div class="desktop-group-info-section"><div class="desktop-group-info-section-head"><strong>定时消息</strong><button type="button" class="btn btn-primary desktop-group-add-btn" data-group-schedule-new>+ 新增</button></div><p class="desktop-modal-hint">按设置人的头像和身份发送，支持文字、图片、视频和文件。</p>${scheduledRows || '<div class="desktop-modal-hint">暂无定时消息</div>'}</div>` : ''
-  const body = `<div class="desktop-group-info-body">
+  const scheduledSection = manager ? `<div class="desktop-group-info-section pulse-group-management"><div class="desktop-group-info-section-head"><strong>定时消息</strong><button type="button" class="btn btn-primary desktop-group-add-btn" data-group-schedule-new>+ 新增</button></div><p class="desktop-modal-hint">按设置人的头像和身份发送，支持文字、图片、视频和文件。</p>${scheduledRows || '<div class="desktop-modal-hint">暂无定时消息</div>'}</div>` : ''
+  const body = `<div class="desktop-group-info-body" data-active-tab="${state.groupInfoTab}">
+    <nav class="pulse-group-tabs" aria-label="群聊信息分类"><button type="button" data-group-info-tab="overview" class="${state.groupInfoTab === 'overview' ? 'active' : ''}">群资料</button><button type="button" data-group-info-tab="members" class="${state.groupInfoTab === 'members' ? 'active' : ''}">群成员</button><button type="button" data-group-info-tab="management" class="${state.groupInfoTab === 'management' ? 'active' : ''}">群管理</button></nav>
     <div class="desktop-group-info-hero">${avatar({ name: detail.title, avatarUrl: detail.avatarUrl, tone: 'violet' }, 'avatar-large')}<div><strong>${escapeHtml(detail.title)}</strong><small>${Number(detail.memberCount || detail.members.length)} \u540d\u6210\u5458${detail.myRole ? ` \u00b7 ${detail.myRole === 'owner' ? '\u7fa4\u4e3b' : detail.myRole === 'admin' ? '\u7ba1\u7406\u5458' : '\u6210\u5458'}` : ''}</small></div></div>
-    <div class="desktop-group-info-section"><div class="desktop-group-info-section-head"><strong>\u7fa4\u8d44\u6599</strong>${manager ? '<span>\u7ba1\u7406\u6743\u9650</span>' : ''}</div>
+    <div class="desktop-group-info-section pulse-group-overview"><div class="desktop-group-info-section-head"><strong>\u7fa4\u8d44\u6599</strong>${manager ? '<span>\u7ba1\u7406\u6743\u9650</span>' : ''}</div>
       <button class="desktop-group-info-row" type="button" data-group-info-edit="title"><span><strong>\u7fa4\u540d\u79f0</strong><small>${escapeHtml(detail.title)}</small></span>${manager ? icon('edit') : ''}</button>
       <button class="desktop-group-info-row" type="button" data-group-info-edit="notice"><span><strong>\u7fa4\u516c\u544a</strong><small>${escapeHtml(detail.notice || '\u6682\u65e0\u516c\u544a')}</small></span>${manager ? icon('edit') : ''}</button>
       ${manager ? `<button class="desktop-group-info-row" type="button" data-group-info-edit="welcome"><span><strong>群聊欢迎语</strong><small>${escapeHtml(detail.welcomeMessage || '新成员进群后自动发送，暂未设置')}</small></span>${icon('edit')}</button>` : ''}
       <button class="desktop-group-info-row" type="button" data-group-info-edit="nickname"><span><strong>\u6211\u7684\u7fa4\u6635\u79f0</strong><small>${escapeHtml(detail.myGroupNickname || '\u8ddf\u968f\u8d26\u53f7\u6635\u79f0')}</small></span>${icon('edit')}</button>
       <button class="desktop-group-info-row" type="button" data-group-info-edit="remark"><span><strong>\u7fa4\u5907\u6ce8</strong><small>${escapeHtml(detail.groupRemark || '\u4ec5\u81ea\u5df1\u53ef\u89c1\uff0c\u6682\u672a\u8bbe\u7f6e')}</small></span>${icon('edit')}</button>
       <button class="desktop-group-info-row" type="button" data-group-info-copy-pulse><span><strong>\u7fa4 PulseID</strong><small>${escapeHtml(detail.pulseId || formatDesktopGroupPulseId(detail.id))}</small></span><span class="desktop-copy-label">\u590d\u5236</span></button>
+      ${state.groupInfoQr ? `<div class="pulse-group-qr"><img src="${escapeHtml(state.groupInfoQr)}" alt="群聊二维码" /><span>使用移动端 Pulse 扫码加入群聊</span></div>` : ''}
     </div>
-    <div class="desktop-group-info-section"><div class="desktop-group-info-section-head"><strong>\u7fa4\u5185\u64cd\u4f5c</strong></div>
+    <div class="desktop-group-info-section pulse-group-management"><div class="desktop-group-info-section-head"><strong>\u7fa4\u5185\u64cd\u4f5c</strong></div>
       <label class="desktop-group-switch-row"><span><strong>\u7f6e\u9876\u7fa4\u804a</strong><small>\u4ec5\u5f71\u54cd\u4f60\u81ea\u5df1</small></span><input type="checkbox" data-group-setting="pinned" ${detail.pinned ? 'checked' : ''} /><i></i></label>
       <label class="desktop-group-switch-row"><span><strong>\u6d88\u606f\u514d\u6253\u6270</strong><small>\u4ec5\u5f71\u54cd\u4f60\u81ea\u5df1</small></span><input type="checkbox" data-group-setting="mute" ${detail.mute ? 'checked' : ''} /><i></i></label>
       <button class="desktop-group-info-row" type="button" data-group-info-important><span><strong>\u91cd\u8981\u6d88\u606f\u4ecd\u7136\u901a\u77e5</strong><small>@\u5168\u4f53\u3001@\u6211\u3001\u56de\u590d\u3001\u7fa4\u516c\u544a\u548c\u5173\u6ce8\u6210\u5458</small></span>${icon('arrow')}</button>
       ${manager ? `<button class="desktop-group-info-row" type="button" data-group-info-edit="search-mode"><span><strong>\u7fa4\u641c\u7d22\u65b9\u5f0f</strong><small>${desktopGroupSearchModeLabel(detail.searchMode)}</small></span>${icon('edit')}</button><label class="desktop-group-switch-row"><span><strong>\u5168\u5458\u7981\u8a00</strong><small>\u4ec5\u7fa4\u4e3b\u548c\u7ba1\u7406\u5458\u53ef\u53d1\u8a00</small></span><input type="checkbox" data-group-setting="muteAll" ${detail.muteAll ? 'checked' : ''} /><i></i></label><label class="desktop-group-switch-row"><span><strong>\u52a0\u7fa4\u9700\u5ba1\u6838</strong><small>\u65b0\u6210\u5458\u52a0\u5165\u524d\u9700\u7ba1\u7406\u5458\u786e\u8ba4</small></span><input type="checkbox" data-group-setting="joinVerifyRequired" ${detail.joinVerifyRequired ? 'checked' : ''} /><i></i></label><label class="desktop-group-switch-row"><span><strong>\u6210\u5458\u53ef\u4e92\u52a0\u597d\u53cb</strong><small>\u5141\u8bb8\u7fa4\u6210\u5458\u4ece\u7fa4\u8d44\u6599\u4e92\u52a0\u597d\u53cb</small></span><input type="checkbox" data-group-setting="allowMemberAddFriend" ${detail.allowMemberAddFriend ? 'checked' : ''} /><i></i></label><label class="desktop-group-switch-row"><span><strong>\u5141\u8bb8\u7fa4\u6210\u5458\u9080\u8bf7\u597d\u53cb\u8fdb\u7fa4</strong><small>\u5173\u95ed\u540e\u4ec5\u7fa4\u4e3b\u548c\u7ba1\u7406\u5458\u53ef\u6dfb\u52a0\u6210\u5458</small></span><input type="checkbox" data-group-setting="memberInviteAllowed" ${detail.memberInviteAllowed ? 'checked' : ''} /><i></i></label>` : ''}
     </div>
     ${scheduledSection}
-    <div class="desktop-group-info-section" data-group-info-members><div class="desktop-group-info-section-head"><strong>\u7fa4\u6210\u5458 (${detail.members.length})</strong><button type="button" class="btn btn-primary desktop-group-add-btn" data-group-info-open-add>+ \u6dfb\u52a0</button></div>${members}</div>
+    <div class="desktop-group-info-section pulse-group-members" data-group-info-members><div class="desktop-group-info-section-head"><strong>\u7fa4\u6210\u5458 (${detail.members.length})</strong><button type="button" class="btn btn-primary desktop-group-add-btn" data-group-info-open-add>+ \u6dfb\u52a0</button></div><label class="pulse-group-member-search">${icon('search')}<input data-group-member-query value="${escapeHtml(state.groupInfoMemberQuery)}" placeholder="搜索群成员" /></label>${members || '<div class="desktop-modal-empty">没有找到群成员</div>'}</div>
     ${addPanel}
-    <div class="desktop-group-danger-actions">${owner ? '<button type="button" data-group-action="dissolve">\u89e3\u6563\u7fa4\u804a</button>' : '<button type="button" data-group-action="leave">\u9000\u51fa\u7fa4\u804a</button>'}</div>
+    <div class="desktop-group-danger-actions pulse-group-management">${owner ? '<button type="button" data-group-action="dissolve">\u89e3\u6563\u7fa4\u804a</button>' : '<button type="button" data-group-action="leave">\u9000\u51fa\u7fa4\u804a</button>'}</div>
   </div>`
   return modalFrame('\u7fa4\u804a\u8d44\u6599', '\u7fa4\u7ba1\u7406\u4e0e\u7fa4\u5185\u64cd\u4f5c', body, 'desktop-group-info-modal')
 }
@@ -13228,6 +13378,8 @@ function renderDesktopScheduledDialog() {
 }
 
 function renderModal() {
+  if (state.modal === 'own-profile') return renderOwnProfileModal()
+  if (state.modal === 'contact-group-list') return renderContactGroupListModal()
   if (state.modal === 'input') return renderInputDialog()
   if (state.modal === 'group-scheduled') return renderDesktopScheduledDialog()
   if (state.modal === 'new-message') return renderNewMessageModal()
@@ -15830,7 +15982,8 @@ function bindEvents() {
   }))
   document.querySelector('[data-media-forward-submit]')?.addEventListener('click', () => void submitDesktopMediaForward())
 
-  document.querySelectorAll('[data-page]').forEach((element) => element.addEventListener('click', () => {
+  document.querySelectorAll('[data-page]').forEach((element) => element.addEventListener('click', (event) => {
+    if (element.closest('.desktop-top-navigation')) event.stopPropagation()
     const targetPage = String(element.dataset.page || '')
     if (targetPage === 'wallet' && !isDesktopWalletEnabled()) {
       showToast('电脑端钱包功能已关闭')
@@ -15844,7 +15997,14 @@ function bindEvents() {
     }
     if (state.profileAvatarFile) discardDesktopAvatarDraft()
     state.profileMenuOpen = false
-    if (targetPage === 'moments') state.friendMomentsProfile = null
+    state.showHomePlusMenu = false
+    state.conversationMenu = null
+    state.contactProfileExpanded = false
+    if (targetPage === 'moments') {
+      state.friendMomentsProfile = null
+      state.ownMomentsView = false
+      state.momentsLoaded = false
+    }
     if (state.page === 'moments' && targetPage !== 'moments'
       && state.momentDraftDirty
       && (String(state.momentDraftText || '').trim() || state.momentFiles.length)) {
@@ -15888,6 +16048,7 @@ function bindEvents() {
   document.querySelectorAll('[data-group-conversation]').forEach((element) => element.addEventListener('click', () => {
     const nextIndex = Number(element.dataset.groupConversation)
     if (!conversations[nextIndex]) return
+    resetModal()
     state.page = 'messages'
     state.scrollChatToBottom = Number(conversations[nextIndex].unread || 0) > 0
     state.selectedConversation = nextIndex
@@ -15935,6 +16096,10 @@ function bindEvents() {
     state.conversationMenu = { index: Number(element.dataset.conversation), left, top }
     render()
   }))
+  document.querySelectorAll('[data-conversation-filter]').forEach((element) => element.addEventListener('click', () => {
+    state.conversationFilter = element.dataset.conversationFilter || 'all'
+    render()
+  }))
   document.querySelector('#conversation-search')?.addEventListener('input', (event) => {
     state.contactQuery = event.target.value
     const cursor = event.target.selectionStart
@@ -15958,6 +16123,23 @@ function bindEvents() {
     const input = document.querySelector('#group-search')
     input.focus()
     input.setSelectionRange(cursor, cursor)
+  })
+  document.querySelector('[data-contact-group-list-search]')?.addEventListener('submit', (event) => {
+    event.preventDefault()
+    state.groupQuery = String(event.currentTarget.querySelector('[data-contact-group-list-query]')?.value || '')
+    state.groupAppliedQuery = state.groupQuery
+    render()
+  })
+  document.querySelector('[data-favorite-query]')?.addEventListener('input', (event) => {
+    state.favoriteQuery = String(event.currentTarget.value || '')
+    const cursor = event.currentTarget.selectionStart
+    render()
+    const input = document.querySelector('[data-favorite-query]')
+    input?.focus()
+    input?.setSelectionRange(cursor, cursor)
+  })
+  document.querySelector('[data-own-profile-copy]')?.addEventListener('click', (event) => {
+    void copyDesktopValue(event.currentTarget.dataset.ownProfileCopy, 'Pulse ID')
   })
 
   document.querySelector('#global-search')?.addEventListener('input', (event) => {
@@ -16516,6 +16698,22 @@ function bindEvents() {
     else if (field === 'search-mode') void editDesktopGroupSearchMode()
     else if (field) void editDesktopGroupField(field)
   }))
+  document.querySelectorAll('[data-group-info-tab]').forEach((element) => element.addEventListener('click', () => {
+    state.groupInfoTab = element.dataset.groupInfoTab || 'overview'
+    const modal = document.querySelector('.desktop-group-info-modal')
+    if (modal) modal.scrollTop = 0
+    render()
+  }))
+  for (const [selector, key] of [['[data-group-member-query]', 'groupInfoMemberQuery'], ['[data-group-add-query]', 'groupInfoAddQuery']]) {
+    document.querySelector(selector)?.addEventListener('input', (event) => {
+      state[key] = String(event.currentTarget.value || '')
+      const cursor = event.currentTarget.selectionStart
+      render()
+      const input = document.querySelector(selector)
+      input?.focus()
+      input?.setSelectionRange(cursor, cursor)
+    })
+  }
   document.querySelector('[data-group-info-copy-pulse]')?.addEventListener('click', () => {
     const detail = groupInfoDetail()
     void copyDesktopValue(detail?.pulseId || detail?.id, '\u7fa4 PulseID')
@@ -16759,6 +16957,28 @@ function bindEvents() {
       openSearchModal('', 'contact')
       return
     }
+    if (action === 'global-search-dialog') {
+      openSearchModal()
+      return
+    }
+    if (action === 'moment-compose') {
+      state.momentComposeOpen = !state.momentComposeOpen
+      render()
+      if (state.momentComposeOpen) document.querySelector('[data-moment-content]')?.focus()
+      return
+    }
+    if (action === 'my-moments') {
+      void openOwnMomentsPage()
+      return
+    }
+    if (action === 'moments-all') {
+      showAllDesktopMoments()
+      return
+    }
+    if (action === 'open-own-profile') {
+      void openOwnProfileModal()
+      return
+    }
     if (action === 'toggle-contact-more') {
       state.contactMoreOpen = !state.contactMoreOpen
       render()
@@ -16771,8 +16991,9 @@ function bindEvents() {
       return
     }
     if (action === 'groups') {
-      state.page = 'groups'
+      state.modal = 'contact-group-list'
       state.groupQuery = ''
+      state.groupAppliedQuery = ''
       state.messageMenu = null
       render()
       return
@@ -16824,6 +17045,16 @@ function bindEvents() {
     }
     if (action === 'group-info') {
       void openDesktopGroupInfo({ focusMembers: element.dataset.groupInfoFocus === 'members' })
+      return
+    }
+    if (action === 'edit-conversation-remark') {
+      const selected = conversations[state.selectedConversation]
+      if (!selected) return
+      if (isGroupConversation(selected)) {
+        void openDesktopGroupInfo().then(() => editDesktopGroupRemark())
+      } else if (selected.peerUserId) {
+        void openContactModal(selected.peerUserId).then(() => editDesktopFriendRemark())
+      }
       return
     }
     if (action === 'change-phone') {
@@ -17402,7 +17633,7 @@ function renderChatPanel(selected) {
   const messages = currentMessages(selected)
   const rows = messages.length
     ? messages.map((message) => renderDesktopMessageRow(selected, message)).join('')
-    : `<div class="message-row message-in"><div class="message-avatar">${avatar(selected, 'avatar-tiny')}</div><div><span class="message-sender">${escapeHtml(selected.name)}</span><div class="message-bubble">\u684c\u9762\u7aef\u804a\u5929\u5df2\u652f\u6301\u7cfb\u7edf\u6d88\u606f\u63d0\u793a\u3002</div><time>09:38</time></div></div>`
+    : '<div class="chat-empty">暂无消息</div>'
   const newMessageLabel = Number(selected.unread || 0) > 0 ? `<span class="jump-latest-count">${Number(selected.unread) > 99 ? '99+' : Number(selected.unread)} 条新消息</span>` : ''
   return `<section class="chat-panel panel-surface ${state.fileDragActive ? 'is-file-dragging' : ''}" data-file-drop-zone>
       <div class="desktop-file-drop-overlay" aria-hidden="true"><div>${icon('image')}<strong>松开鼠标添加图片或文件</strong><small>图片会先显示预览，确认后再发送</small></div></div>

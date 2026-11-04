@@ -2,7 +2,6 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { onActivated, onDeactivated } from 'vue'
 import { useRouter } from 'vue-router'
-import { showToast } from 'vant'
 import { fetchContacts, type ContactItem } from '@/api/contact'
 import UserAvatar from '@/components/UserAvatar.vue'
 import { fetchMyGroupNotifications } from '@/api/conversation'
@@ -10,14 +9,21 @@ import { useFriendRequestStore } from '@/stores/friendRequest'
 import { storeToRefs } from 'pinia'
 import { nameFirstLetter, compareLetters, compareNamesZh } from '@/utils/nameLetter'
 import { friendTagStyle } from '@/utils/friendTagColor'
+import { useUserStore } from '@/stores/user'
+import { readListSnapshot, writeListSnapshot } from '@/utils/listSnapshot'
 
 const router = useRouter()
 const friendRequest = useFriendRequestStore()
 const { pendingCount } = storeToRefs(friendRequest)
-const contacts = ref<ContactItem[]>([])
+const userStore = useUserStore()
+const initialSnapshot = readListSnapshot<ContactItem>('contacts', String(userStore.userId || ''))
+const contacts = ref<ContactItem[]>(initialSnapshot || [])
+watch(contacts, (items) => {
+  writeListSnapshot('contacts', String(userStore.userId || ''), items)
+}, { deep: true })
 const groupInviteCount = ref(0)
 const hasGroupNotifications = ref(false)
-const loading = ref(true)
+const loading = ref(initialSnapshot === null)
 const refreshing = ref(false)
 let onlineTimer: ReturnType<typeof setInterval> | null = null
 let hasMounted = false
@@ -54,17 +60,14 @@ const groupedContacts = computed(() => {
 
 const indexLetters = computed(() => groupedContacts.value.map((g) => g.letter))
 
-async function loadContacts(silent = false) {
+async function loadContacts(_silent = false) {
   if (contactsLoadTask) return contactsLoadTask
   const task = (async () => {
   try {
     contacts.value = (await fetchContacts()).filter((contact) => !isFileTransferAssistant(contact))
     lastContactsLoadAt = Date.now()
   } catch {
-    if (!silent && contacts.value.length === 0) {
-      // 仅首次失败且无数据时提示，避免显示不准确的在线状态
-      showToast('联系人加载失败')
-    }
+    // Connection feedback is shown only on the messages page.
   } finally {
     loading.value = false
   }
@@ -207,23 +210,15 @@ function scrollToLetter(letter: string) {
 
 <template>
   <div class="contacts-page">
-    <header class="page-header tab-home-header">
+    <header class="pulse-page-nav page-header tab-home-header home-tab-header">
       <h1 class="page-title">联系人</h1>
       <button type="button" class="icon-btn" aria-label="添加好友" @click="goAddFriend">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-          <circle cx="9" cy="7" r="4"/>
-          <line x1="19" y1="8" x2="19" y2="14"/>
-          <line x1="22" y1="11" x2="16" y2="11"/>
-        </svg>
+        <AppIcon name="person_add" />
       </button>
     </header>
 
     <div class="search-entry" @click="goSearch">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="11" cy="11" r="8"/>
-        <path d="M21 21l-4.35-4.35" stroke-linecap="round"/>
-      </svg>
+      <AppIcon name="search" :size="20" />
       <span>搜索</span>
     </div>
 
@@ -241,46 +236,26 @@ function scrollToLetter(letter: string) {
       <div class="quick-sections">
         <div class="section-item" @click="goNewFriends">
           <div class="section-icon new-friend">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-              <circle cx="9" cy="7" r="4"/>
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-            </svg>
+            <AppIcon name="person_add" />
           </div>
           <span class="section-label">新的朋友</span>
           <span v-if="pendingCount > 0" class="pending-badge">{{ pendingCount > 99 ? '99+' : pendingCount }}</span>
-          <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M9 18l6-6-6-6"/>
-          </svg>
+          <AppIcon name="chevronRight" class="chevron" :size="16" />
         </div>
         <div class="section-item" @click="goGroupInvites">
           <div class="section-icon group-invite">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-              <circle cx="9" cy="7" r="4"/>
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-              <line x1="19" y1="8" x2="19" y2="14"/>
-              <line x1="22" y1="11" x2="16" y2="11"/>
-            </svg>
+            <AppIcon name="group_add" />
           </div>
           <span class="section-label">群通知</span>
           <span v-if="groupInviteCount > 0" class="pending-badge">{{ groupInviteCount > 99 ? '99+' : groupInviteCount }}</span>
-          <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M9 18l6-6-6-6"/>
-          </svg>
+          <AppIcon name="chevronRight" class="chevron" :size="16" />
         </div>
         <div class="section-item" @click="goGroups">
           <div class="section-icon group">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-              <circle cx="9" cy="7" r="4"/>
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-            </svg>
+            <AppIcon name="group" />
           </div>
           <span class="section-label">群聊</span>
-          <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M9 18l6-6-6-6"/>
-          </svg>
+          <AppIcon name="chevronRight" class="chevron" :size="16" />
         </div>
       </div>
 
@@ -468,7 +443,7 @@ function scrollToLetter(letter: string) {
   color: #fff;
   font-size: var(--pulse-font-caption);
   font-weight: 700;
-  line-height: 18px;
+  line-height: calc(18px * var(--pulse-font-scale, 1));
   text-align: center;
 }
 
@@ -561,7 +536,7 @@ function scrollToLetter(letter: string) {
   border-radius: 999px;
   font-size: var(--pulse-font-caption);
   font-weight: 600;
-  line-height: 16px;
+  line-height: calc(16px * var(--pulse-font-scale, 1));
   white-space: normal;
   overflow-wrap: anywhere;
 }

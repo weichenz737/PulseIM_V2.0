@@ -137,7 +137,7 @@ async function onAvatarSelected(event: Event) {
 
 <template>
   <div class="page community-create-page">
-    <header class="page-header">
+    <header class="pulse-page-nav page-header">
       <button type="button" class="icon-btn" aria-label="返回" @click="router.back()">
         <IconBack />
       </button>
@@ -164,7 +164,7 @@ async function onAvatarSelected(event: Event) {
         <span class="field-label">圈子主题</span>
         <button type="button" class="picker-field" @click="showTopicPicker = true">
           <span :class="{ placeholder: !selectedTopic }">{{ selectedTopic?.name || '请选择圈子主题' }}</span>
-          <span class="material-symbols-outlined">keyboard_arrow_down</span>
+          <AppIcon name="keyboard_arrow_down"  />
         </button>
       </div>
 
@@ -174,24 +174,24 @@ async function onAvatarSelected(event: Event) {
       <div class="field-group">
         <span class="field-label">圈子类型</span>
         <button type="button" class="picker-field option-picker-field" @click="showTypePicker = true">
-          <span class="option-picker-icon"><span class="material-symbols-outlined">{{ selectedCommunityType.icon }}</span></span>
+          <span class="option-picker-icon"><AppIcon :name="selectedCommunityType.icon"  /></span>
           <span class="option-picker-copy">
             <strong>{{ selectedCommunityType.label }}</strong>
             <small>{{ selectedCommunityType.description }}</small>
           </span>
-          <span class="material-symbols-outlined picker-chevron">chevron_right</span>
+          <AppIcon name="chevron_right" class="picker-chevron" />
         </button>
       </div>
       <label v-if="form.type === 'PAID'">加入价格（PLU）<input v-model.number="form.price" type="number" min="0.01" step="0.01" placeholder="请输入价格" /></label>
       <div class="field-group">
         <span class="field-label">发布模式</span>
         <button type="button" class="picker-field option-picker-field" @click="showPostModePicker = true">
-          <span class="option-picker-icon"><span class="material-symbols-outlined">{{ selectedPostMode.icon }}</span></span>
+          <span class="option-picker-icon"><AppIcon :name="selectedPostMode.icon"  /></span>
           <span class="option-picker-copy">
             <strong>{{ selectedPostMode.label }}</strong>
             <small>{{ selectedPostMode.description }}</small>
           </span>
-          <span class="material-symbols-outlined picker-chevron">chevron_right</span>
+          <AppIcon name="chevron_right" class="picker-chevron" />
         </button>
       </div>
       <button class="submit" :disabled="saving || uploadingAvatar">{{ saving ? '提交中…' : uploadingAvatar ? '头像上传中…' : '提交审核' }}</button>

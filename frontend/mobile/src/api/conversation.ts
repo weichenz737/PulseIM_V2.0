@@ -1020,6 +1020,9 @@ export async function updateConversationSettings(
   },
 ): Promise<void> {
   await http.put(`/v1/conversations/${conversationId}/settings`, settings)
+  if (settings.groupRemark !== undefined || settings.groupNickname !== undefined) {
+    invalidateCachedGroupDetail(conversationId)
+  }
 }
 
 export interface BurnSetting {

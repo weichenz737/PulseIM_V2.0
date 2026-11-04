@@ -401,16 +401,16 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="post-detail-page">
-    <header class="page-header">
+    <header class="pulse-page-nav page-header">
       <button type="button" class="header-icon" aria-label="返回" @click="goBack">
-        <span class="material-symbols-outlined">arrow_back_ios_new</span>
+        <IconBack />
       </button>
       <div class="header-title"><h1>动态详情</h1><span>圈子内容</span></div>
       <button v-if="canManagePost" type="button" class="header-icon" aria-label="动态管理" @click="postMenuVisible = true">
-        <span class="material-symbols-outlined">more_horiz</span>
+        <IconMore />
       </button>
       <button v-else-if="canAttemptDelete" type="button" class="header-icon danger-icon" aria-label="删除动态" @click="onDelete">
-        <span class="material-symbols-outlined">delete</span>
+        <AppIcon name="delete"  />
       </button>
       <span v-else class="header-spacer" />
     </header>
@@ -440,13 +440,13 @@ onBeforeUnmount(() => {
           </div>
           <span v-if="post.pinned" class="pinned-chip"><span class="material-symbols-outlined">keep</span>置顶</span>
           <span v-if="statusLabel(post.status)" class="status-chip">{{ statusLabel(post.status) }}</span>
-          <span v-else class="community-chip"><span class="material-symbols-outlined">groups</span>圈子动态</span>
+          <span v-else class="community-chip"><AppIcon name="groups"  />圈子动态</span>
         </header>
 
         <p v-if="post.content" class="post-content">{{ post.content }}</p>
 
         <button v-if="post.quotedPost" type="button" class="quoted-post-card" @click.stop="router.push(`/communities/${communityId}/posts/${post.quotedPost.id}`)">
-          <span class="quoted-label"><span class="material-symbols-outlined">format_quote</span>引用 {{ post.quotedPost.nickname }} 的动态</span>
+          <span class="quoted-label"><AppIcon name="format_quote"  />引用 {{ post.quotedPost.nickname }} 的动态</span>
           <span v-if="post.quotedPost.content" class="quoted-content">{{ post.quotedPost.content }}</span>
           <img v-if="quotedMediaSource(post.quotedPost, 0)" :src="quotedMediaSource(post.quotedPost, 0)" alt="" class="quoted-image" />
         </button>
@@ -492,7 +492,7 @@ onBeforeUnmount(() => {
             评论
           </button>
           <button type="button" :class="{ active: post.favoritedByMe }" @click="onFavorite">
-            <span class="material-symbols-outlined">bookmark</span>
+            <AppIcon name="bookmark"  />
             {{ post.favoritedByMe ? '已收藏' : '收藏' }}
           </button>
           <button type="button" @click="forwardPost">
@@ -524,7 +524,7 @@ onBeforeUnmount(() => {
         </section>
 
         <button v-if="canAttemptDelete" type="button" class="delete-row" @click="onDelete">
-          <span class="material-symbols-outlined">delete</span>
+          <AppIcon name="delete"  />
           删除这条动态
         </button>
         </article>
@@ -614,10 +614,10 @@ main { width: min(100%, 680px); margin: 0 auto; }
 .grid-1 .media-item { aspect-ratio: 16 / 11; }
 .media-item img,
 .media-item video { width: 100%; height: 100%; display: block; object-fit: cover; }
-.video-badge { position: absolute; inset: 0; display: grid; place-items: center; color: var(--pulse-on-primary); font-size: 44px; text-shadow: 0 2px 10px color-mix(in srgb, var(--pulse-text) 60%, transparent); }
+.video-badge { position: absolute; inset: 0; display: grid; place-items: center; color: var(--pulse-on-primary); font-size: calc(44px * var(--pulse-font-scale, 1)); text-shadow: 0 2px 10px color-mix(in srgb, var(--pulse-text) 60%, transparent); }
 .location-card { position: relative; overflow: hidden; display: flex; width: 100%; align-items: center; gap: 13px; margin-top: 16px; padding: 12px; border: 1px solid color-mix(in srgb, var(--pulse-primary) 18%, var(--pulse-divider)); border-radius: 16px; background: color-mix(in srgb, var(--pulse-primary) 8%, var(--pulse-surface-high)); color: var(--pulse-text); text-align: left; }
 .location-mark { position: relative; width: 54px; height: 50px; flex: 0 0 54px; display: grid; place-items: center; overflow: hidden; border-radius: 12px; background: var(--pulse-surface-highest); color: var(--pulse-primary); }
-.location-mark > span { position: relative; z-index: 2; font-size: 29px; font-variation-settings: 'FILL' 1; }
+.location-mark > span { position: relative; z-index: 2; font-size: calc(29px * var(--pulse-font-scale, 1)); font-variation-settings: 'FILL' 1; }
 .location-mark i { position: absolute; width: 80px; height: 1px; background: color-mix(in srgb, var(--pulse-primary) 22%, transparent); transform: rotate(24deg); }
 .location-mark i:nth-child(2) { transform: rotate(-18deg) translateY(14px); }
 .location-mark i:nth-child(3) { transform: rotate(43deg) translateY(-13px); }

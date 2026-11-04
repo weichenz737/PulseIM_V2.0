@@ -767,6 +767,13 @@ async function onUnblockUser() {
 
 <template>
   <div class="contact-detail-page">
+    <header class="pulse-page-nav hero-header">
+      <button type="button" class="hero-btn" @click="goBack" aria-label="返回"><IconBack /></button>
+      <div v-if="profile" class="hero-header-actions">
+        <button type="button" class="hero-btn" aria-label="分享名片" @click="shareVisible = true"><AppIcon name="share"  /></button>
+        <button type="button" class="hero-btn" aria-label="更多" @click="openMore"><IconMore /></button>
+      </div>
+    </header>
     <div v-if="loading" class="loading-state">加载中...</div>
 
     <template v-else-if="profile">
@@ -775,20 +782,6 @@ async function onUnblockUser() {
           class="hero-bg"
         />
         <div class="hero-gradient" />
-
-        <header class="hero-header">
-          <button type="button" class="hero-btn" @click="goBack" aria-label="返回">
-            <IconBack />
-          </button>
-          <div class="hero-header-actions">
-          <button type="button" class="hero-btn" aria-label="分享名片" @click="shareVisible = true">
-            <span class="material-symbols-outlined">share</span>
-          </button>
-          <button type="button" class="hero-btn" @click="openMore">
-            <span class="material-symbols-outlined">more_vert</span>
-          </button>
-          </div>
-        </header>
 
         <div class="hero-info">
           <UserAvatar
@@ -810,7 +803,7 @@ async function onUnblockUser() {
           <div class="profile-meta">
             <span v-if="showPulseId" class="meta-primary">PulseID: {{ profile.pulseId || profile.userId }}</span>
             <button v-if="showPulseId" type="button" class="meta-copy" aria-label="复制 PulseID" @click.stop="copyPulseId">
-              <span class="material-symbols-outlined">content_copy</span>
+              <AppIcon name="content_copy"  />
             </button>
             <span v-if="showPulseId" class="meta-dot" />
             <span v-if="isSelf">我的资料</span>
@@ -851,7 +844,7 @@ async function onUnblockUser() {
             class="action-card"
             @click="openAddDialog"
           >
-            <span class="material-symbols-outlined">person_add</span>
+            <AppIcon name="person_add"  />
             <span class="action-label">加好友</span>
           </button>
           <button
@@ -860,7 +853,7 @@ async function onUnblockUser() {
             class="action-card"
             @click="openAddDialog"
           >
-            <span class="material-symbols-outlined">person_add</span>
+            <AppIcon name="person_add"  />
             <span class="action-label">再次申请</span>
           </button>
           <button
@@ -880,7 +873,7 @@ async function onUnblockUser() {
             "
             @click="startVoiceCall"
           >
-            <span class="material-symbols-outlined">call</span>
+            <AppIcon name="call"  />
             <span class="action-label">语音通话</span>
           </button>
           <button
@@ -891,7 +884,7 @@ async function onUnblockUser() {
             "
             @click="startVideoCall"
           >
-            <span class="material-symbols-outlined">videocam</span>
+            <AppIcon name="videocam"  />
             <span class="action-label">视频通话</span>
           </button>
         </div>
@@ -930,7 +923,7 @@ async function onUnblockUser() {
                   }}
                 </p>
               </div>
-              <span class="material-symbols-outlined info-arrow">chevron_right</span>
+              <AppIcon name="chevron_right" class="info-arrow" />
             </div>
             <div v-if="momentPreviewThumbs.length" class="moments-preview">
               <div
@@ -954,14 +947,14 @@ async function onUnblockUser() {
           <div class="info-card glass-card" @click="openSharedMedia">
             <div class="info-left">
               <div class="info-icon purple">
-                <span class="material-symbols-outlined">photo_library</span>
+                <AppIcon name="photo_library"  />
               </div>
               <div>
                 <p class="info-title">共享图片与视频</p>
                 <p class="info-sub">查看聊天记录中的图片和视频</p>
               </div>
             </div>
-            <span class="material-symbols-outlined info-arrow">chevron_right</span>
+            <AppIcon name="chevron_right" class="info-arrow" />
           </div>
 
           <div class="info-card glass-card" @click="openSharedFiles">
@@ -974,13 +967,13 @@ async function onUnblockUser() {
                 <p class="info-sub">查看聊天记录中的文件</p>
               </div>
             </div>
-            <span class="material-symbols-outlined info-arrow">chevron_right</span>
+            <AppIcon name="chevron_right" class="info-arrow" />
           </div>
 
           <div class="info-card glass-card" @click="openCommonGroups">
             <div class="info-left">
               <div class="info-icon blue">
-                <span class="material-symbols-outlined">group</span>
+                <AppIcon name="group"  />
               </div>
               <div>
                 <p class="info-title">共同群聊</p>
@@ -989,7 +982,7 @@ async function onUnblockUser() {
                 </p>
               </div>
             </div>
-            <span class="material-symbols-outlined info-arrow">chevron_right</span>
+            <AppIcon name="chevron_right" class="info-arrow" />
           </div>
         </div>
 
@@ -1019,7 +1012,7 @@ async function onUnblockUser() {
             @click="onDeleteFriend"
           >
             <span>删除好友</span>
-            <span class="material-symbols-outlined">delete</span>
+            <AppIcon name="delete"  />
           </button>
         </div>
       </section>
@@ -1067,7 +1060,7 @@ async function onUnblockUser() {
               {{ isDefaultFriend ? '由后台统一设置，不可修改' : (hasRemark ? displayName : '未设置') }}
             </span>
           </div>
-          <span v-if="!isDefaultFriend" class="material-symbols-outlined more-chevron">chevron_right</span>
+          <AppIcon name="chevron_right" v-if="!isDefaultFriend" class="more-chevron" />
         </button>
         <div class="more-item switch-item">
           <div class="more-item-text">
@@ -1142,7 +1135,7 @@ async function onUnblockUser() {
 
 .hero-section {
   position: relative;
-  height: 397px;
+  height: max(300px, calc(397px - var(--pulse-header-bar-height) - var(--pulse-header-pad-top)));
   width: 100%;
   overflow: hidden;
 }
@@ -1166,7 +1159,7 @@ async function onUnblockUser() {
 }
 
 .hero-header {
-  position: absolute;
+  position: sticky;
   top: 0;
   left: 0;
   right: 0;
@@ -1237,9 +1230,9 @@ async function onUnblockUser() {
 
 .profile-name {
   margin: 0;
-  font-size: 28px;
+  font-size: calc(28px * var(--pulse-font-scale, 1));
   font-weight: 700;
-  line-height: 34px;
+  line-height: calc(34px * var(--pulse-font-scale, 1));
   color: var(--pulse-text);
 }
 
@@ -1249,7 +1242,7 @@ async function onUnblockUser() {
   border-radius: 999px;
   font-size: var(--pulse-font-caption);
   font-weight: 600;
-  line-height: 18px;
+  line-height: calc(18px * var(--pulse-font-scale, 1));
 }
 
 .profile-meta {
@@ -1480,7 +1473,7 @@ async function onUnblockUser() {
 .info-title {
   margin: 0;
   font-size: var(--pulse-font-title);
-  line-height: 24px;
+  line-height: calc(24px * var(--pulse-font-scale, 1));
   color: var(--pulse-text);
 }
 

@@ -85,9 +85,7 @@ function accountFlowQuery(): Record<string, string> {
           <input type="file" accept="image/*" hidden @change="onAvatarChange" />
           <div class="avatar-circle" :class="{ filled: !!avatarPreview }">
             <img v-if="avatarPreview" :src="avatarPreview" alt="头像" class="avatar-img" />
-            <svg v-else width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <path d="M12 5v14M5 12h14" stroke-linecap="round"/>
-            </svg>
+            <AppIcon name="add" :size="36" v-else />
           </div>
           <span class="upload-text">上传头像</span>
         </label>
@@ -150,9 +148,9 @@ function accountFlowQuery(): Record<string, string> {
 
 .title {
   margin: 0 0 4px;
-  font-size: 34px;
+  font-size: calc(34px * var(--pulse-font-scale, 1));
   font-weight: 700;
-  line-height: 41px;
+  line-height: calc(41px * var(--pulse-font-scale, 1));
   letter-spacing: -0.02em;
   color: var(--pulse-text);
 }

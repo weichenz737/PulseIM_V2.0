@@ -2054,9 +2054,19 @@ public class SchemaMigrator implements ApplicationRunner {
                     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
                 )
                 """);
+        exec("ALTER TABLE sys_file_config ADD COLUMN IF NOT EXISTS image_max_size_mb INT");
+        exec("ALTER TABLE sys_file_config ADD COLUMN IF NOT EXISTS video_max_size_mb INT");
+        exec("ALTER TABLE sys_file_config ADD COLUMN IF NOT EXISTS file_max_size_mb INT");
         exec("""
-                INSERT INTO sys_file_config(id, max_size_mb, allowed_extensions)
-                VALUES (1, 100, '')
+                UPDATE sys_file_config SET
+                    image_max_size_mb = COALESCE(image_max_size_mb, max_size_mb),
+                    video_max_size_mb = COALESCE(video_max_size_mb, max_size_mb),
+                    file_max_size_mb = COALESCE(file_max_size_mb, max_size_mb)
+                """);
+        exec("""
+                INSERT INTO sys_file_config(id, max_size_mb, image_max_size_mb, video_max_size_mb,
+                                            file_max_size_mb, allowed_extensions)
+                VALUES (1, 100, 100, 100, 100, '')
                 ON CONFLICT (id) DO NOTHING
                 """);
     }

@@ -32,6 +32,9 @@ import './styles/global.css'
 import './styles/design-system.css'
 import AppButton from './components/AppButton.vue'
 import IconBack from './components/IconBack.vue'
+import IconMore from './components/IconMore.vue'
+import AppIcon from './components/AppIcon.vue'
+import { installInputFocusGuard } from './utils/inputFocusGuard'
 import AppBottomSheet from './components/AppBottomSheet.vue'
 
 // Material Symbols uses English ligatures such as "home" and "search".
@@ -107,6 +110,7 @@ function markClientPlatform() {
 }
 
 markClientPlatform()
+if (isNativeApp) installInputFocusGuard()
 
 /**
  * Set the native backdrop before the first route is mounted. Android 15/16
@@ -384,6 +388,8 @@ syncKeyboardViewport()
 const app = createApp(App)
 app.component('AppButton', AppButton)
 app.component('IconBack', IconBack)
+app.component('IconMore', IconMore)
+app.component('AppIcon', AppIcon)
 app.component('AppBottomSheet', AppBottomSheet)
 const pinia = createPinia()
 

@@ -286,7 +286,7 @@ async function handleLogout() {
 
 <template>
   <div ref="mePageRef" class="me-page">
-    <header class="page-header tab-home-header">
+    <header class="pulse-page-nav page-header tab-home-header home-tab-header">
       <h1 class="page-title">我的</h1>
     </header>
 
@@ -312,7 +312,7 @@ async function handleLogout() {
           <div class="profile-id-row">
             <div class="profile-id">PulseID: {{ displayPulseId }}</div>
             <button type="button" class="profile-copy-btn" aria-label="复制 PulseID" @click.stop="copyPulseId">
-              <span class="material-symbols-outlined">content_copy</span>
+              <AppIcon name="content_copy"  />
             </button>
           </div>
           <div class="profile-meta" :class="{ 'is-placeholder': !region }" :aria-hidden="!region">
@@ -322,9 +322,7 @@ async function handleLogout() {
             {{ signature }}
           </div>
         </div>
-        <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M9 18l6-6-6-6"/>
-        </svg>
+        <AppIcon name="chevronRight" :size="16" class="chevron" />
         <button
           v-if="qrPayload"
           type="button"
@@ -340,9 +338,7 @@ async function handleLogout() {
       <button type="button" class="switch-account-btn" @click="goSwitchAccount">
         <span class="material-symbols-outlined">switch_account</span>
         <span>切换账号</span>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M9 18l6-6-6-6" />
-        </svg>
+        <AppIcon name="chevronRight" :size="16" />
       </button>
 
       <div class="groups">
@@ -360,39 +356,7 @@ async function handleLogout() {
           >
             <div class="item-left">
               <span class="item-icon" :data-icon="item.icon">
-                <svg v-if="item.icon === 'groups_3'" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                  <circle cx="12" cy="8" r="3"/><circle cx="5.5" cy="10" r="2.25"/><circle cx="18.5" cy="10" r="2.25"/><path d="M7 19v-1.25A4.75 4.75 0 0 1 11.75 13h.5A4.75 4.75 0 0 1 17 17.75V19"/><path d="M2 19v-.75A3.25 3.25 0 0 1 5.25 15H7"/><path d="M22 19v-.75A3.25 3.25 0 0 0 18.75 15H17"/>
-                </svg>
-                <svg v-else-if="item.icon === 'account_balance_wallet'" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                  <path d="M4 6.5h14a2 2 0 0 1 2 2V19H4a2 2 0 0 1-2-2V6a3 3 0 0 1 3-3h12"/><path d="M20 10.5h-5a2.5 2.5 0 0 0 0 5h5"/><circle cx="15" cy="13" r=".7" fill="currentColor" stroke="none"/>
-                </svg>
-                <svg v-else-if="item.icon === 'shield'" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                </svg>
-                <svg v-else-if="item.icon === 'group'" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                </svg>
-                <svg v-else-if="item.icon === 'bell'" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-                </svg>
-                <svg v-else-if="item.icon === 'tune'" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                  <line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/>
-                </svg>
-                <svg v-else-if="item.icon === 'storage'" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                  <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
-                </svg>
-                <svg v-else-if="item.icon === 'help'" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                  <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-                </svg>
-                <svg v-else-if="item.icon === 'bookmark'" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                  <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
-                </svg>
-                <svg v-else-if="item.icon === 'photo'" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                  <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/>
-                </svg>
-                <svg v-else width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
-                </svg>
+                <AppIcon :name="item.icon" />
               </span>
               <div class="item-text">
                 <span class="item-label">{{ item.label }}</span>
@@ -401,18 +365,14 @@ async function handleLogout() {
             </div>
             <div class="item-right">
               <span v-if="item.extra" class="item-extra">{{ item.extra }}</span>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M9 18l6-6-6-6"/>
-              </svg>
+              <AppIcon name="chevronRight" :size="16" />
             </div>
           </div>
         </section>
       </div>
 
       <button type="button" class="logout-btn" @click="handleLogout">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
-        </svg>
+        <AppIcon name="logout" :size="20" />
         退出登录
       </button>
 
@@ -566,7 +526,7 @@ async function handleLogout() {
 
 .profile-name {
   height: 22px;
-  line-height: 22px;
+  line-height: calc(22px * var(--pulse-font-scale, 1));
   font-size: calc(var(--pulse-content-font-size, 15px) + 3px);
   font-weight: 600;
   color: var(--pulse-text);
@@ -623,7 +583,7 @@ async function handleLogout() {
 .profile-meta {
   flex-shrink: 0;
   height: 18px;
-  line-height: 18px;
+  line-height: calc(18px * var(--pulse-font-scale, 1));
   margin-top: 6px;
   font-size: var(--pulse-font-small);
   color: var(--pulse-text-secondary);
@@ -635,7 +595,7 @@ async function handleLogout() {
 .profile-signature {
   flex-shrink: 0;
   height: 36px;
-  line-height: 18px;
+  line-height: calc(18px * var(--pulse-font-scale, 1));
   margin-top: 4px;
   font-size: var(--pulse-font-small);
   color: var(--pulse-outline);

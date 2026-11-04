@@ -329,7 +329,7 @@ async function onDeleteScopeSelect(action: { name?: string }) {
 
 <template>
   <div class="settings-page">
-    <header class="page-header">
+    <header class="pulse-page-nav page-header">
       <button type="button" class="icon-btn" @click="goBack" aria-label="返回">
         <IconBack />
       </button>
@@ -353,14 +353,14 @@ async function onDeleteScopeSelect(action: { name?: string }) {
             <div class="hero-name">{{ displayName }}</div>
             <div class="hero-sub">{{ isGroup ? '群聊' : '查看好友资料' }}</div>
           </div>
-          <span v-if="!isGroup" class="material-symbols-outlined hero-chevron">chevron_right</span>
+          <AppIcon name="chevron_right" v-if="!isGroup" class="hero-chevron" />
         </button>
       </section>
 
       <section class="card">
         <button type="button" class="menu-row" @click="openSearchHistory">
           <span class="menu-label">查找聊天记录</span>
-          <span class="material-symbols-outlined chevron">chevron_right</span>
+          <AppIcon name="chevron_right" class="chevron" />
         </button>
         <div class="menu-row">
           <span class="menu-label">置顶聊天</span>
@@ -378,7 +378,7 @@ async function onDeleteScopeSelect(action: { name?: string }) {
         </div>
         <button v-if="isGroup" type="button" class="menu-row" @click="openImportantMessageSettings">
           <span class="menu-label">重要消息仍然通知</span>
-          <span class="material-symbols-outlined chevron">chevron_right</span>
+          <AppIcon name="chevron_right" class="chevron" />
         </button>
       </section>
 
@@ -402,7 +402,7 @@ async function onDeleteScopeSelect(action: { name?: string }) {
         <button v-if="burnEnabled" type="button" class="menu-row" :disabled="burnSaving" @click="showBurnSheet = true">
           <span class="menu-label">销毁时间</span>
           <span class="menu-value">{{ burnTimeLabel }}</span>
-          <span class="material-symbols-outlined chevron">chevron_right</span>
+          <AppIcon name="chevron_right" class="chevron" />
         </button>
         <small v-if="hasLegacyBurnSeconds" class="burn-legacy">当前为旧设置，请选择 5、15 或 30 秒</small>
       </section>
@@ -427,7 +427,7 @@ async function onDeleteScopeSelect(action: { name?: string }) {
         <button v-if="autoDeleteEnabled" type="button" class="menu-row" :disabled="autoDeleteSaving" @click="showAutoDeleteSheet = true">
           <span class="menu-label">删除时间</span>
           <span class="menu-value">{{ autoDeleteLabel }}</span>
-          <span class="material-symbols-outlined chevron">chevron_right</span>
+          <AppIcon name="chevron_right" class="chevron" />
         </button>
       </section>
 

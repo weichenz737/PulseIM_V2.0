@@ -145,13 +145,13 @@ onBeforeUnmount(() => mediaCacheGuard.dispose())
 
 <template>
   <div class="favorite-detail-page">
-    <header class="page-header">
+    <header class="pulse-page-nav page-header">
       <button type="button" class="header-btn" aria-label="返回" @click="goBack">
-        <span class="material-symbols-outlined">arrow_back_ios_new</span>
+        <IconBack />
       </button>
       <h1>收藏详情</h1>
       <button v-if="item" type="button" class="header-btn delete-btn" aria-label="取消收藏" @click="removeFavorite">
-        <span class="material-symbols-outlined">delete</span>
+        <AppIcon name="delete"  />
       </button>
       <span v-else class="header-btn" />
     </header>
@@ -159,13 +159,13 @@ onBeforeUnmount(() => mediaCacheGuard.dispose())
     <main>
       <div v-if="loading" class="page-state"><van-loading vertical>正在加载收藏…</van-loading></div>
       <div v-else-if="!item" class="page-state">
-        <span class="material-symbols-outlined state-icon">bookmark_remove</span>
+        <AppIcon name="bookmark_remove" class="state-icon" />
         <p>该收藏不存在或已取消</p>
         <button type="button" @click="goBack">返回我的收藏</button>
       </div>
       <article v-else class="detail-card">
         <section class="source-card">
-          <span class="source-icon material-symbols-outlined">groups</span>
+          <AppIcon name="groups" class="source-icon" />
           <div><small>来自圈子</small><strong>{{ item.communityName }}</strong></div>
           <time>收藏于 {{ formatTime(item.favoritedAt) }}</time>
         </section>

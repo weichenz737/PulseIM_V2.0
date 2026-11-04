@@ -11,6 +11,7 @@ import {
   canRecallMessage,
   deleteMessages,
   forwardMessages,
+  addFavorite,
   copyableText,
   favoritePreviewLabel,
   parseForwardCard,
@@ -162,11 +163,12 @@ const conversationId = computed(() => route.params.id as string)
 const peerUserId = computed(() => (route.query.peerUserId as string) || '')
 const isGroup = computed(() => route.query.type === 'group')
 const resolvedPeerTitle = ref('')
+const resolvedGroupRemark = ref('')
 const resolvedPeerTag = ref(String(route.query.tag || '').trim())
 const resolvedPeerInitialName = ref(String(route.query.avatarName || '').trim())
 const resolvedPeerAvatar = ref<string | null>(null)
 const peerFileTransferAssistant = ref(route.query.fileTransferAssistant === '1')
-const peerTitle = computed(() => resolvedPeerTitle.value || (route.query.title as string) || '聊天')
+const peerTitle = computed(() => (isGroup.value ? resolvedGroupRemark.value : '') || resolvedPeerTitle.value || (route.query.title as string) || '聊天')
 const peerTag = computed(() => resolvedPeerTag.value.trim() || String(route.query.tag || '').trim())
 const cachedPeerAvatar = computed(() => getCachedAvatar(
   String(userStore.userId || parseUserIdFromToken(userStore.token) || ''),
@@ -367,6 +369,11 @@ const highlightUnavailable = ref(false)
 const historyLoading = ref(false)
 const historyHasMore = ref(true)
 const historyReady = ref(false)
+watch(messages, () => {
+  if (historyReady.value && !showingLocatedWindow.value) {
+    setCachedChatMessages(conversationId.value, messages.value)
+  }
+}, { deep: true })
 const pendingRealtimeMessages: Array<Record<string, unknown>> = []
 const inputText = ref('')
 const composerRef = ref<HTMLTextAreaElement | null>(null)
@@ -507,22 +514,129 @@ function onComposerFocus() {
   showEmojiPanel.value = false
   showPlusSheet.value = false
   syncKeyboardInset()
-  // 键盘弹起后滚到底，避免输入框被挡；不再反复改 transform
-  window.setTimeout(() => {
+  // Follow geometry once per frame instead of competing delayed scrolls.
+  startComposerViewportFollow()
+}
+
+let composerPanelPointerId: number | null = null
+let removeComposerClickGuard: (() => void) | null = null
+let composerShowRequestedAt = Number.NEGATIVE_INFINITY
+let composerFollowFrame = 0
+let composerFollowUntil = 0
+let composerHandoffTimer = 0
+let composerKeyboardHide: Promise<unknown> = Promise.resolve()
+let composerFocusEpoch = 0
+let composerFocusWantedUntil = 0
+let composerLayoutAnimation: Animation | null = null
+const composerHandoffHeight = ref(0)
+const composerHandoffInset = ref(0)
+const composerHandoffSpace = computed(() => Math.max(0, composerHandoffHeight.value
+  + (composerFocused.value || keyboardOpen.value ? composerHandoffInset.value : 0)
+  - Math.max(0, keyboardBaseHeightPx - viewportHeightPx.value)))
+
+watch([viewportHeightPx, composerHandoffSpace], async () => {
+  if (!composerHandoffHeight.value || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+  const footer = composerRef.value?.closest<HTMLElement>('.chat-footer')
+  if (!footer) return
+  const previousTop = footer.getBoundingClientRect().top
+  await nextTick()
+  if (!footer.isConnected || !composerHandoffHeight.value) return
+  composerLayoutAnimation?.cancel()
+  const delta = previousTop - footer.getBoundingClientRect().top
+  if (Math.abs(delta) < 1) return
+  composerLayoutAnimation = footer.animate([
+    { transform: `translateY(${delta}px)` }, { transform: 'translateY(0)' },
+  ], { duration: 180, easing: 'cubic-bezier(.2,.7,.2,1)' })
+})
+
+function startComposerViewportFollow() {
+  composerFollowUntil = performance.now() + 600
+  if (composerFollowFrame) return
+  const follow = () => {
     syncKeyboardInset()
-    scrollToBottom(false)
-  }, 120)
-  window.setTimeout(() => {
-    syncKeyboardInset()
-    scrollToBottom(false)
-  }, 360)
+    if (listRef.value && !isLocateScrollActive()) {
+      listRef.value.scrollTop = listRef.value.scrollHeight
+      stickToBottom = true
+    }
+    if (performance.now() < composerFollowUntil) composerFollowFrame = requestAnimationFrame(follow)
+    else composerFollowFrame = 0
+  }
+  composerFollowFrame = requestAnimationFrame(follow)
+}
+
+function beginComposerHandoff(input: HTMLTextAreaElement) {
+  if (!showPlusSheet.value && !showEmojiPanel.value) return
+  const dock = input.closest('.chat-footer')?.querySelector('.composer-dock')
+  composerHandoffHeight.value = dock?.getBoundingClientRect().height || 0
+  const footer = input.closest('.chat-footer')
+  composerHandoffInset.value = footer ? Math.max(0, Number.parseFloat(getComputedStyle(footer).paddingBottom) - 8) : 0
+  window.clearTimeout(composerHandoffTimer)
+  // Retain only the part of the panel not yet occupied by the IME. This avoids
+  // expanding to the full screen and shrinking again before the keyboard opens.
+  composerHandoffTimer = window.setTimeout(() => { composerHandoffHeight.value = 0 }, 650)
+}
+
+function guardComposerTransitionClick(event: PointerEvent) {
+  removeComposerClickGuard?.()
+  const { clientX, clientY } = event
+  const previousFooter = composerRef.value?.closest('.chat-footer')?.getBoundingClientRect()
+  const isTransitionTap = (target: EventTarget | null, x: number, y: number) => {
+    if (Math.hypot(x - clientX, y - clientY) <= 32) return true
+    if (target instanceof Element && target.closest('.plus-btn, .emoji-btn, .mic-btn')) return false
+    return !!previousFooter && x >= previousFooter.left && x <= previousFooter.right
+      && y >= previousFooter.top && y <= previousFooter.bottom
+  }
+  // Android can hit-test the synthesized click after the dock/IME moved the
+  // composer. Consume only this tap, not later taps elsewhere in the chat.
+  const onClick = (click: MouseEvent) => {
+    if (click.detail === 0 || !isTransitionTap(click.target, click.clientX, click.clientY)) return
+    click.preventDefault()
+    click.stopImmediatePropagation()
+  }
+  const onRepeatStart = (repeat: Event) => {
+    const point = repeat instanceof TouchEvent ? repeat.touches[0] : repeat as PointerEvent
+    if (!point || !isTransitionTap(repeat.target, point.clientX, point.clientY)) return
+    repeat.preventDefault()
+    repeat.stopImmediatePropagation()
+    const input = composerRef.value
+    if (input && !input.disabled && document.activeElement !== input) input.focus({ preventScroll: true })
+  }
+  const cleanup = () => {
+    document.removeEventListener('click', onClick, true)
+    document.removeEventListener('pointerdown', onRepeatStart, true)
+    document.removeEventListener('touchstart', onRepeatStart, true)
+    window.clearTimeout(timer)
+    if (removeComposerClickGuard === cleanup) removeComposerClickGuard = null
+  }
+  const timer = window.setTimeout(cleanup, 500)
+  document.addEventListener('click', onClick, true)
+  document.addEventListener('pointerdown', onRepeatStart, true)
+  document.addEventListener('touchstart', onRepeatStart, { capture: true, passive: false })
+  removeComposerClickGuard = cleanup
 }
 
 function onComposerPointerDown(event: PointerEvent) {
   event.stopPropagation()
-  if (!showPlusSheet.value && !showEmojiPanel.value) return
+  if (!showPlusSheet.value && !showEmojiPanel.value && nativeKeyboardVisible
+    && document.activeElement === composerRef.value) return
+  composerPanelPointerId = event.pointerId
+  if (!showPlusSheet.value && !showEmojiPanel.value && document.activeElement === composerRef.value) return
   event.preventDefault()
+  // Keep the hit target and layout stable until the finger is lifted.
+  try { (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId) } catch { /* Older WebViews may not support capture. */ }
+}
+
+function onComposerPointerUp(event: PointerEvent) {
+  if (composerPanelPointerId !== event.pointerId) return
+  composerPanelPointerId = null
+  event.preventDefault()
+  event.stopPropagation()
+  guardComposerTransitionClick(event)
   void ensureComposerFocus(event)
+}
+
+function onComposerPointerCancel() {
+  composerPanelPointerId = null
 }
 
 async function ensureComposerFocus(event: Event) {
@@ -530,6 +644,9 @@ async function ensureComposerFocus(event: Event) {
     ? event.currentTarget
     : composerRef.value
   if (!input || input.disabled) return
+  const focusEpoch = ++composerFocusEpoch
+  composerFocusWantedUntil = performance.now() + 700
+  beginComposerHandoff(input)
   // Remove the dock synchronously before the IME changes the viewport bounds.
   // A leaving Transition otherwise retains its full-height child during resize.
   switchingToKeyboard.value = true
@@ -538,9 +655,16 @@ async function ensureComposerFocus(event: Event) {
   voiceMode.value = false
   // Let Vue remove the panel before focusing the final composer layout.
   await nextTick()
+  // A rapid panel -> input tap can race the preceding Keyboard.hide call.
+  // Finish that request before opening the new keyboard session.
+  await composerKeyboardHide
+  if (focusEpoch !== composerFocusEpoch) return
   if (composerRef.value !== input || input.disabled) return
+  if (showPlusSheet.value || showEmojiPanel.value) return
   if (document.activeElement !== input) input.focus({ preventScroll: true })
-  if (isNativeApp && document.activeElement === input) {
+  if (isNativeApp && document.activeElement === input && !nativeKeyboardVisible
+    && performance.now() - composerShowRequestedAt > 600) {
+    composerShowRequestedAt = performance.now()
     void nativeKeyboard.showKeyboard().catch(() => {})
   }
   scheduleKeyboardInset()
@@ -550,6 +674,7 @@ function onComposerBlur() {
   composerFocused.value = false
   stopTypingStatus()
   window.setTimeout(() => {
+    if (document.activeElement === composerRef.value) return
     syncKeyboardInset()
     resetDocumentScroll()
   }, 80)
@@ -667,6 +792,10 @@ function restoreComposerFocusAfterSend(keepKeyboardOpen: boolean) {
 }
 
 function dismissChatKeyboard() {
+  composerFocusEpoch += 1
+  composerFocusWantedUntil = 0
+  removeComposerClickGuard?.()
+  switchingToKeyboard.value = false
   if (!keyboardOpen.value && !composerFocused.value && !showEmojiPanel.value) return
   showEmojiPanel.value = false
   showPlusSheet.value = false
@@ -858,6 +987,7 @@ const callableGroupMembers = computed(() =>
 )
 
 function applyGroupDetail(g: GroupDetail) {
+  resolvedGroupRemark.value = g.groupRemark?.trim() || ''
   resolvedPeerTitle.value = g.title || resolvedPeerTitle.value
   const avatar = resolveAvatarUrl(g.avatarUrl || '')
   if (avatar) {
@@ -916,9 +1046,7 @@ function onNativeKeyboard(event: Event) {
   }
   keyboardOpen.value = nativeKeyboardVisible
   nativeKeyboardVisible ? scheduleKeyboardInset() : scheduleKeyboardInsetAfterHide()
-  if (nativeKeyboardVisible) {
-    window.setTimeout(() => scrollToBottom(false), 50)
-  }
+  if (nativeKeyboardVisible) startComposerViewportFollow()
 }
 
 function onNativeKeyboardSettled(event: Event) {
@@ -942,7 +1070,13 @@ function onNativeKeyboardSettled(event: Event) {
     keyboardBackConsumed = true
   }
   nativeKeyboardVisible ? scheduleKeyboardInset() : scheduleKeyboardInsetAfterHide()
-  if (nativeKeyboardVisible) scrollToBottom(false)
+  if (nativeKeyboardVisible) {
+    composerHandoffHeight.value = 0
+    const input = composerRef.value
+    if (performance.now() < composerFocusWantedUntil && input && !input.disabled
+      && document.activeElement !== input) input.focus({ preventScroll: true })
+    startComposerViewportFollow()
+  }
 }
 
 function onNativeOrientationChange() {
@@ -1165,6 +1299,7 @@ const msgActions = computed(() => {
   }
   actions.push(
     { name: '转发' },
+    { name: '收藏' },
     { name: '删除' },
     { name: '多选' },
     { name: '引用' },
@@ -1181,7 +1316,7 @@ function messageActionIcon(name: string): string {
     '复制': 'description', '复制文件名': 'description', '转发': 'share',
     '删除': 'delete', '多选': 'certificate', '引用': 'comment',
     '撤回': 'revoke', '编辑图片': 'edit', '保存到相册': 'photo',
-    '定位到原消息': 'location',
+    '定位到原消息': 'location', '收藏': 'star-o',
   } as Record<string, string>)[name] || 'more-o'
 }
 
@@ -2123,9 +2258,10 @@ async function refreshGroupMuteState() {
 }
 
 function onGroupProfileUpdated(event: Event) {
-  const detail = (event as CustomEvent<{ conversationId?: string; title?: string; avatarUrl?: string }>).detail
+  const detail = (event as CustomEvent<{ conversationId?: string; title?: string; avatarUrl?: string; groupRemark?: string }>).detail
   if (!detail || String(detail.conversationId || '') !== conversationId.value) return
   if (detail.title) resolvedPeerTitle.value = detail.title
+  if (detail.groupRemark != null) resolvedGroupRemark.value = detail.groupRemark.trim()
   if (detail.avatarUrl != null) {
     const avatar = resolveAvatarUrl(detail.avatarUrl)
     if (avatar) {
@@ -2547,6 +2683,15 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
+  stopLocatedLayoutFollow?.()
+  if (highlightClearTimer) clearTimeout(highlightClearTimer)
+  composerFocusEpoch += 1
+  composerFocusWantedUntil = 0
+  composerLayoutAnimation?.cancel()
+  window.clearTimeout(composerHandoffTimer)
+  if (composerFollowFrame) cancelAnimationFrame(composerFollowFrame)
+  composerPanelPointerId = null
+  removeComposerClickGuard?.()
   chatViewMounted = false
   dockScrollFollowing = false
   if (dockScrollFrame) cancelAnimationFrame(dockScrollFrame)
@@ -3105,10 +3250,43 @@ function findMessageRow(list: HTMLElement, id: string): HTMLElement | null {
 }
 
 let highlightClearTimer: ReturnType<typeof setTimeout> | null = null
+let stopLocatedLayoutFollow: (() => void) | null = null
+
+function keepLocatedRowCentered(list: HTMLElement, row: HTMLElement) {
+  stopLocatedLayoutFollow?.()
+  let frame = 0
+  const align = () => {
+    frame = 0
+    if (!list.isConnected || !row.isConnected) return
+    const focus = row.querySelector<HTMLElement>('.msg-image, .msg-video-wrap, .bubble, .recall-tip') || row
+    const a = focus.getBoundingClientRect()
+    const b = list.getBoundingClientRect()
+    list.scrollTop += a.top + a.height / 2 - (b.top + b.height / 2)
+    stickToBottom = false
+  }
+  const observer = new ResizeObserver(() => {
+    if (!frame) frame = requestAnimationFrame(align)
+  })
+  observer.observe(list)
+  list.querySelectorAll<HTMLElement>('.message-row').forEach((element) => observer.observe(element))
+  const cleanup = () => {
+    observer.disconnect()
+    if (frame) cancelAnimationFrame(frame)
+    window.clearTimeout(timer)
+    list.removeEventListener('touchstart', cleanup)
+    list.removeEventListener('wheel', cleanup)
+    if (stopLocatedLayoutFollow === cleanup) stopLocatedLayoutFollow = null
+  }
+  const timer = window.setTimeout(cleanup, 2200)
+  list.addEventListener('touchstart', cleanup, { passive: true })
+  list.addEventListener('wheel', cleanup, { passive: true })
+  stopLocatedLayoutFollow = cleanup
+  align()
+}
 
 async function scrollToMessageWithHistory(id: string) {
   if (!id || !listRef.value) return
-  locateScrollSuppressedUntil = Date.now() + 1200
+  locateScrollSuppressedUntil = Date.now() + 2200
   if (scrollSettleTimer) {
     clearTimeout(scrollSettleTimer)
     scrollSettleTimer = null
@@ -3176,7 +3354,8 @@ async function scrollToMessageWithHistory(id: string) {
   const listRect = list.getBoundingClientRect()
   const focusRect = focus.getBoundingClientRect()
   const delta = focusRect.top + focusRect.height / 2 - (listRect.top + listRect.height / 2)
-  list.scrollBy({ top: delta, behavior: 'smooth' })
+  list.scrollTop += delta
+  keepLocatedRowCentered(list, row)
   list.querySelectorAll('.message-row.highlight').forEach((el) => el.classList.remove('highlight'))
   if (highlightClearTimer) {
     clearTimeout(highlightClearTimer)
@@ -3330,7 +3509,7 @@ function onMsgAction(action: { name: string }) {
     if (videoPlayerMsg) closeVideoPlayer()
   }
   if (
-    ['保存到相册', '编辑图片', '复制', '复制文件名', '转发'].includes(action.name) &&
+    ['保存到相册', '编辑图片', '复制', '复制文件名', '转发', '收藏'].includes(action.name) &&
     blockBurnExport(msg)
   ) return
   switch (action.name) {
@@ -3351,6 +3530,9 @@ function onMsgAction(action: { name: string }) {
       selectedIds.value = new Set([msg.id])
       void openForwardPicker()
       break
+    case '收藏':
+      void favoriteChatMessage(msg)
+      break
     case '删除':
       void doDelete([msg.id])
       break
@@ -3363,6 +3545,22 @@ function onMsgAction(action: { name: string }) {
     case '撤回':
       void doRecall(msg)
       break
+  }
+}
+
+const pendingFavoriteKeys = new Set<string>()
+async function favoriteChatMessage(msg: ChatMessage) {
+  const key = `${conversationId.value}:${msg.id}`
+  if (pendingFavoriteKeys.has(key)) return
+  pendingFavoriteKeys.add(key)
+  try {
+    await addFavorite(conversationId.value, msg.id)
+    showToast('已收藏')
+  } catch (error) {
+    showToast(error instanceof Error && /[\u4e00-\u9fff]/.test(error.message)
+      ? error.message : '收藏失败，请稍后重试')
+  } finally {
+    pendingFavoriteKeys.delete(key)
   }
 }
 
@@ -3918,7 +4116,14 @@ function toggleComposerPanel(panel: 'types' | 'emoji') {
     return
   }
   const closing = panel === 'types' ? showPlusSheet.value : showEmojiPanel.value
+  composerFocusEpoch += 1
+  composerFocusWantedUntil = 0
   switchingToKeyboard.value = false
+  composerLayoutAnimation?.cancel()
+  composerHandoffHeight.value = 0
+  window.clearTimeout(composerHandoffTimer)
+  removeComposerClickGuard?.()
+  composerShowRequestedAt = Number.NEGATIVE_INFINITY
   rememberComposerSelection()
   if (panel === 'emoji' && !showEmojiPanel.value) emojiPage.value = 0
   showPlusSheet.value = !closing && panel === 'types'
@@ -3926,7 +4131,7 @@ function toggleComposerPanel(panel: 'types' | 'emoji') {
   voiceMode.value = false
   composerRef.value?.blur()
   composerFocused.value = false
-  if (isNativeApp) void nativeKeyboard.hideKeyboard().catch(() => {})
+  if (isNativeApp) composerKeyboardHide = nativeKeyboard.hideKeyboard().catch(() => {})
   scheduleKeyboardInsetAfterHide()
   void nextTick(() => scrollToBottom(false))
 }
@@ -7809,14 +8014,16 @@ function onDeleteModeSelect(action: { name?: string }) {
         : undefined
     "
   >
-    <header class="chat-header glass-header">
+    <header class="pulse-page-nav chat-header glass-header unified-back-header">
       <div class="header-left">
         <button
           type="button"
-          class="icon-btn back-btn"
+          class="icon-btn back-btn detail-back-button"
+          :aria-label="multiMode ? '退出多选' : '返回'"
           @click="multiMode ? exitMultiMode() : goBack()"
         >
-          <span class="material-symbols-outlined">{{ multiMode ? 'close' : 'arrow_back' }}</span>
+          <AppIcon name="close" v-if="multiMode"  />
+          <IconBack v-else />
       </button>
         <button
           v-if="!multiMode && !isFileTransferAssistant && headerUnreadCount > 0"
@@ -7891,9 +8098,10 @@ function onDeleteModeSelect(action: { name?: string }) {
         <button
           type="button"
           class="icon-btn"
+          aria-label="更多"
           @click="openChatSettings"
         >
-          <span class="material-symbols-outlined">more_horiz</span>
+          <IconMore />
         </button>
       </div>
     </header>
@@ -7912,9 +8120,7 @@ function onDeleteModeSelect(action: { name?: string }) {
           </div>
           <div class="receive-success-card">
             <div class="receive-success-icon">
-              <span class="material-symbols-outlined filled">
-                {{ receiveSuccessKind === 'redpacket' ? 'redeem' : 'currency_yen' }}
-              </span>
+              <AppIcon :name="receiveSuccessKind === 'redpacket' ? 'redeem' : 'currency_yen'" class="filled" />
             </div>
             <strong>{{ receiveSuccessKind === 'redpacket' ? '领取成功' : '收款成功' }}</strong>
             <b v-if="receiveSuccessAmount">{{ receiveSuccessAmount }}</b>
@@ -7934,7 +8140,7 @@ function onDeleteModeSelect(action: { name?: string }) {
         >
           <div class="business-cover-card" :class="{ received: businessCoverReceived }">
           <button type="button" class="cover-close" aria-label="关闭" @click="closeBusinessCover">
-            <span class="material-symbols-outlined">close</span>
+            <AppIcon name="close"  />
           </button>
 
           <template v-if="businessCoverKind === 'transfer'">
@@ -8103,15 +8309,13 @@ function onDeleteModeSelect(action: { name?: string }) {
                 @contextmenu.prevent.stop="onBubbleContextMenu(msg, $event)"
               >
                 <span class="call-bubble-icon">
-                  <span class="material-symbols-outlined">
-                    {{ callRecordIsVideo(msg.content) ? 'videocam' : 'call' }}
-                  </span>
+                  <AppIcon :name="callRecordIsVideo(msg.content) ? 'videocam' : 'call'"  />
                 </span>
                 <span class="call-bubble-body">
                   <b>{{ callRecordLabel(msg) }}</b>
                   <small>{{ callRecordStatusText(msg.content) }}</small>
                 </span>
-                <span class="material-symbols-outlined call-bubble-arrow">chevron_right</span>
+                <AppIcon name="chevron_right" class="call-bubble-arrow" />
               </button>
             </template>
             <div v-else class="system-tip-wrap">
@@ -8128,7 +8332,7 @@ function onDeleteModeSelect(action: { name?: string }) {
                   @keydown.enter.prevent.stop="isBusinessSystemTip(msg) && jumpToBusinessSource(msg)"
                 >
                   <span>{{ systemTipText(msg.content, msg) }}</span>
-                  <span v-if="isBusinessSystemTip(msg)" class="material-symbols-outlined system-tip-business-icon">chevron_right</span>
+                  <AppIcon name="chevron_right" v-if="isBusinessSystemTip(msg)" class="system-tip-business-icon" />
                 </div>
             </div>
           </template>
@@ -8140,9 +8344,7 @@ function onDeleteModeSelect(action: { name?: string }) {
             :class="{ on: isSelected(msg.id), disabled: msg.recalled }"
             :disabled="!!msg.recalled"
           >
-            <span class="material-symbols-outlined">{{
-              isSelected(msg.id) ? 'check_circle' : 'radio_button_unchecked'
-            }}</span>
+            <AppIcon :name="isSelected(msg.id) ? 'check_circle' : 'radio_button_unchecked'"  />
           </button>
 
           <button
@@ -8264,7 +8466,7 @@ function onDeleteModeSelect(action: { name?: string }) {
                     v-else-if="!msg.replyToRecalled && replyQuoteType(msg) === 2"
                     class="quote-file-icon"
                   >
-                    <span class="material-symbols-outlined">description</span>
+                    <AppIcon name="description"  />
                   </div>
                   <span class="quote-text">{{ replyQuoteLabel(msg) }}</span>
                 </div>
@@ -8286,7 +8488,7 @@ function onDeleteModeSelect(action: { name?: string }) {
                     <strong>{{ isMine(msg) ? '我发起了位置共享' : `${senderName(msg)}发起了位置共享` }}</strong>
                     <small>{{ isLiveLocationEnded(msg) ? '位置共享已结束' : '进入共享位置' }}</small>
                   </span>
-                  <span class="material-symbols-outlined live-location-card-arrow">chevron_right</span>
+                  <AppIcon name="chevron_right" class="live-location-card-arrow" />
                 </span>
               </button>
 
@@ -8308,7 +8510,7 @@ function onDeleteModeSelect(action: { name?: string }) {
                 </div>
                 <div class="fwd-card-foot">
                   聊天记录
-                  <span class="material-symbols-outlined">chevron_right</span>
+                  <AppIcon name="chevron_right"  />
                 </div>
               </button>
 
@@ -8355,7 +8557,7 @@ function onDeleteModeSelect(action: { name?: string }) {
                 </div>
                 <div class="contact-card-foot">
                   {{ contactCardOf(msg)!.cardType === 'community' ? '查看圈子' : contactCardOf(msg)!.cardType === 'group' ? '群聊' : '名片' }}
-                  <span class="material-symbols-outlined">chevron_right</span>
+                  <AppIcon name="chevron_right"  />
                 </div>
               </button>
 
@@ -8365,7 +8567,7 @@ function onDeleteModeSelect(action: { name?: string }) {
                 class="burn-media-locked"
                 @click.stop="msg.msgType === 1 ? openImagePreview(msg) : openVideoPlayer(msg)"
               >
-                <span class="material-symbols-outlined">lock</span>
+                <AppIcon name="lock"  />
                 <span>{{ msg.msgType === 1 ? '点击查看图片' : '点击查看视频' }}</span>
                 <small>查看后开始销毁倒计时</small>
               </button>
@@ -8412,7 +8614,7 @@ function onDeleteModeSelect(action: { name?: string }) {
                 :class="{ mine: isMine(msg) }"
                 @click.stop="openFileMsg(msg)"
               >
-                <span class="material-symbols-outlined file-card-icon">description</span>
+                <AppIcon name="description" class="file-card-icon" />
                 <div class="file-card-meta">
                   <div class="file-card-name">{{ fileOf(msg)!.name }}</div>
                   <div class="file-card-sub">{{ formatFileSize(fileOf(msg)!.size) || '文件' }}</div>
@@ -8431,13 +8633,11 @@ function onDeleteModeSelect(action: { name?: string }) {
                 @click.stop="onVoiceBubbleClick(msg)"
                 @touchend="onVoiceBubbleTap(msg, $event)"
               >
-                <span class="material-symbols-outlined voice-icon">{{
-                  voiceLoadingId === msg.id
+                <AppIcon :name="voiceLoadingId === msg.id
                     ? 'hourglass_top'
                     : playingVoiceId === msg.id
                       ? 'pause'
-                      : 'play_arrow'
-                }}</span>
+                      : 'play_arrow'" class="voice-icon" />
                 <span class="voice-bars" aria-hidden="true">
                   <i /><i /><i /><i />
                 </span>
@@ -8456,7 +8656,7 @@ function onDeleteModeSelect(action: { name?: string }) {
                 }"
                 @click.stop="openBusinessMessage(msg)"
               >
-                <span class="material-symbols-outlined">{{ msg.msgType === 7 ? 'redeem' : 'currency_yen' }}</span>
+                <AppIcon :name="msg.msgType === 7 ? 'redeem' : 'currency_yen'"  />
                 <span>
                   <b>{{ msg.msgType === 7 ? businessOf(msg)!.greeting || '恭喜发财，大吉大利' : `转账 ${yuan(Number(businessOf(msg)!.amount))}` }}</b>
                   <small>{{
@@ -8487,7 +8687,7 @@ function onDeleteModeSelect(action: { name?: string }) {
                   @dragstart.prevent
                 />
                 <span v-else class="msg-image-pending">
-                  <span class="material-symbols-outlined">image</span>
+                  <AppIcon name="image"  />
                   <span>图片准备中</span>
                 </span>
                 <span
@@ -8564,7 +8764,7 @@ function onDeleteModeSelect(action: { name?: string }) {
     >
       <span class="mention-jump-mark">@</span>
       <span>{{ mentionJumpIds.length > 1 ? `${mentionJumpIds.length}条@我` : '有人@我' }}</span>
-      <span class="material-symbols-outlined">chevron_right</span>
+      <AppIcon name="chevron_right"  />
     </button>
 
     <button
@@ -8574,12 +8774,12 @@ function onDeleteModeSelect(action: { name?: string }) {
       aria-label="跳到最新消息"
       @click="jumpToLatest"
     >
-      <span class="material-symbols-outlined">keyboard_arrow_down</span>
+      <AppIcon name="keyboard_arrow_down"  />
     </button>
 
     <footer v-if="multiMode" class="multi-footer glass-header">
       <button type="button" class="multi-action" :disabled="!selectedCount" @click="openForwardPicker">
-        <span class="material-symbols-outlined">forward</span>
+        <AppIcon name="forward"  />
         <span>转发</span>
       </button>
       <button
@@ -8588,11 +8788,11 @@ function onDeleteModeSelect(action: { name?: string }) {
         :disabled="!selectedCount"
         @click="doDelete([...selectedIds])"
       >
-        <span class="material-symbols-outlined">delete</span>
+        <AppIcon name="delete"  />
         <span>删除</span>
       </button>
       <button type="button" class="multi-action" @click="exitMultiMode">
-        <span class="material-symbols-outlined">close</span>
+        <AppIcon name="close"  />
         <span>取消</span>
       </button>
     </footer>
@@ -8603,7 +8803,7 @@ function onDeleteModeSelect(action: { name?: string }) {
         <span>{{ muteBannerTip }}</span>
       </div>
       <div v-if="showChatBlockTip" class="chat-block-tip" :class="{ mute: isMuteBlock }">
-        <span class="material-symbols-outlined">{{ isMuteBlock ? 'voice_over_off' : 'person_off' }}</span>
+        <AppIcon :name="isMuteBlock ? 'voice_over_off' : 'person_off'"  />
         <span>{{ chatBlockTip }}</span>
       </div>
       <div v-else-if="replyTarget" class="reply-bar">
@@ -8631,18 +8831,18 @@ function onDeleteModeSelect(action: { name?: string }) {
               <span class="material-symbols-outlined">play_circle</span>
             </div>
             <div v-else-if="replyTarget.msgType === 2" class="reply-bar-file-icon">
-              <span class="material-symbols-outlined">description</span>
+              <AppIcon name="description"  />
             </div>
             <span class="reply-bar-text">{{ replyPreview(replyTarget) }}</span>
           </div>
         </div>
         <button type="button" class="reply-bar-close" @click="clearReply">
-          <span class="material-symbols-outlined">close</span>
+          <AppIcon name="close"  />
         </button>
       </div>
       <div v-if="composerVisible" class="composer-row" :class="{ 'is-checking': composerChecking }">
-        <button type="button" class="plus-btn" :disabled="composerChecking" :aria-expanded="showPlusSheet" aria-label="切换消息类型" @pointerdown.prevent @click.stop="onPlusClick">
-          <span class="material-symbols-outlined">{{ showPlusSheet ? 'close' : 'add' }}</span>
+        <button type="button" class="mic-btn" :class="{ secondary: voiceMode }" :disabled="composerChecking" :aria-label="voiceMode ? '切换键盘输入' : '切换语音输入'" @pointerdown.prevent @click.stop="toggleVoiceMode">
+          <AppIcon :name="voiceMode ? 'keyboard' : 'mic'"  />
         </button>
 
         <template v-if="voiceMode">
@@ -8666,9 +8866,6 @@ function onDeleteModeSelect(action: { name?: string }) {
                   : `录音中 ${recordSeconds}"`
                 : '按住 说话'
             }}
-          </button>
-          <button type="button" class="mic-btn secondary" :disabled="composerChecking" @click="toggleVoiceMode">
-            <span class="material-symbols-outlined">keyboard</span>
           </button>
         </template>
 
@@ -8699,6 +8896,8 @@ function onDeleteModeSelect(action: { name?: string }) {
               :placeholder="muteBannerTip ? '全员禁言中，你仍可发言...' : '输入消息...'"
               @focus="onComposerFocus"
               @pointerdown="onComposerPointerDown"
+              @pointerup="onComposerPointerUp"
+              @pointercancel="onComposerPointerCancel"
               @click.stop="ensureComposerFocus"
               @blur="onComposerBlur"
               @select="rememberComposerSelection"
@@ -8707,9 +8906,7 @@ function onDeleteModeSelect(action: { name?: string }) {
               @keydown.enter.exact.prevent="sendMessage"
             />
             <button type="button" class="emoji-btn" :disabled="composerChecking" aria-label="切换表情面板" :aria-expanded="showEmojiPanel" @pointerdown.prevent @click.stop="toggleEmojiPanel">
-              <span class="material-symbols-outlined">{{
-                showEmojiPanel ? 'keyboard' : 'sentiment_satisfied'
-              }}</span>
+              <AppIcon :name="showEmojiPanel ? 'keyboard' : 'sentiment_satisfied'"  />
             </button>
           </div>
           <button
@@ -8723,10 +8920,10 @@ function onDeleteModeSelect(action: { name?: string }) {
           >
             发送
           </button>
-          <button v-else type="button" class="mic-btn" :disabled="composerChecking" @click="toggleVoiceMode">
-            <span class="material-symbols-outlined filled">mic</span>
-          </button>
         </template>
+        <button v-if="voiceMode || !inputText.trim()" type="button" class="plus-btn" :disabled="composerChecking" :aria-expanded="showPlusSheet" aria-label="切换消息类型" @pointerdown.prevent @click.stop="onPlusClick">
+          <AppIcon :name="showPlusSheet ? 'close' : 'add'"  />
+        </button>
       </div>
 
       <Transition name="composer-dock" :css="!switchingToKeyboard"
@@ -8745,7 +8942,7 @@ function onDeleteModeSelect(action: { name?: string }) {
           @click="onPlusAction(item.key)"
         >
           <span class="plus-icon-wrap" aria-hidden="true">
-            <span class="material-symbols-outlined">{{ item.icon }}</span>
+            <AppIcon :name="item.icon"  />
           </span>
           <span class="plus-label">{{ item.label }}</span>
         </button>
@@ -8764,6 +8961,7 @@ function onDeleteModeSelect(action: { name?: string }) {
       </div>
       </div>
       </Transition>
+      <div v-if="composerHandoffHeight > 0" class="composer-handoff-space" :style="{ height: `${composerHandoffSpace}px` }" aria-hidden="true" />
     </footer>
 
     <AppBottomSheet
@@ -8813,7 +9011,7 @@ function onDeleteModeSelect(action: { name?: string }) {
 
     <div v-if="recording" class="voice-record-mask" :class="{ cancel: recordCancel }">
       <div class="voice-record-card">
-        <span class="material-symbols-outlined filled voice-record-mic">mic</span>
+        <AppIcon name="mic" class="filled voice-record-mic" />
         <p class="voice-record-tip">
           {{ recordCancel ? '松开手指，取消发送' : '松开发送，上滑取消' }}
         </p>
@@ -8847,7 +9045,7 @@ function onDeleteModeSelect(action: { name?: string }) {
     >
       <div class="file-send-confirm" @click.stop>
         <div class="file-send-confirm-icon">
-          <span class="material-symbols-outlined">description</span>
+          <AppIcon name="description"  />
         </div>
         <h3>确认发送文件？</h3>
         <p class="file-send-confirm-name">{{ normalizeFileName(pendingFileToSend?.name) || '文件' }}</p>
@@ -8906,7 +9104,7 @@ function onDeleteModeSelect(action: { name?: string }) {
         />
         <div class="video-capture-top">
           <button type="button" class="video-capture-icon-btn" @click.stop="closeVideoCapture">
-            <span class="material-symbols-outlined">close</span>
+            <AppIcon name="close"  />
           </button>
           <span class="video-capture-title">
             {{
@@ -8997,7 +9195,7 @@ function onDeleteModeSelect(action: { name?: string }) {
               :disabled="imageEditorLoading"
               @click="switchPendingSendImage(1)"
             >
-              <span class="material-symbols-outlined">chevron_right</span>
+              <AppIcon name="chevron_right"  />
             </button>
           </div>
           <div class="image-editor-history-actions">
@@ -9282,9 +9480,7 @@ function onDeleteModeSelect(action: { name?: string }) {
             :class="{ on: isForwardSelected(c.id) }"
             @click="toggleForwardTarget(c.id)"
           >
-            <span class="material-symbols-outlined forward-check">{{
-              isForwardSelected(c.id) ? 'check_circle' : 'radio_button_unchecked'
-            }}</span>
+            <AppIcon :name="isForwardSelected(c.id) ? 'check_circle' : 'radio_button_unchecked'" class="forward-check" />
             <img v-if="c.avatar" :src="c.avatar" :alt="c.name" class="forward-avatar" />
             <div v-else class="forward-avatar initials">{{ c.name.slice(0, 1) }}</div>
             <div class="forward-meta">
@@ -9337,9 +9533,7 @@ function onDeleteModeSelect(action: { name?: string }) {
           <img v-if="member.avatarUrl" :src="member.avatarUrl" :alt="member.nickname" />
           <span v-else class="initials">{{ member.nickname.slice(0, 1) }}</span>
           <span class="name">{{ member.nickname }}</span>
-          <span class="material-symbols-outlined check">
-            {{ selectedCallMemberIds.includes(String(member.userId)) ? 'check_circle' : 'radio_button_unchecked' }}
-          </span>
+          <AppIcon :name="selectedCallMemberIds.includes(String(member.userId)) ? 'check_circle' : 'radio_button_unchecked'" class="check" />
         </button>
       </div>
     </AppBottomSheet>
@@ -9362,7 +9556,7 @@ function onDeleteModeSelect(action: { name?: string }) {
 <style scoped>
 .message-menu-overlay { background: transparent; }
 .message-float-menu { position: fixed; display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); padding: 8px; box-sizing: border-box; border-radius: 5px; background: #4b4b4b; color: #fff; box-shadow: 0 4px 16px rgb(0 0 0 / 12%); }
-.message-menu-action { min-width: 0; height: 72px; padding: 8px 1px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 4px; background: transparent; color: #fff; font: inherit; font-size: var(--pulse-font-caption); line-height: 16px; cursor: pointer; }
+.message-menu-action { min-width: 0; height: 72px; padding: 8px 1px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 4px; background: transparent; color: #fff; font: inherit; font-size: var(--pulse-font-caption); line-height: calc(16px * var(--pulse-font-scale, 1)); cursor: pointer; }
 .message-menu-action .van-icon { font-size: 22px; color: #fff; }
 .message-menu-action:active, .message-menu-action:focus-visible { background: rgb(255 255 255 / 14%); }
 .message-menu-arrow { position: absolute; bottom: -5px; width: 10px; height: 10px; background: #4b4b4b; transform: translateX(-50%) rotate(45deg); pointer-events: none; }
@@ -9593,8 +9787,8 @@ function onDeleteModeSelect(action: { name?: string }) {
 .peer-name {
   flex: none;
   font-size: var(--pulse-font-body);
-  font-weight: 600;
-  line-height: 22px;
+  font-weight: 700;
+  line-height: calc(22px * var(--pulse-font-scale, 1));
   color: var(--pulse-text);
   white-space: nowrap;
 }
@@ -9611,7 +9805,7 @@ function onDeleteModeSelect(action: { name?: string }) {
   border-radius: 999px;
   font-size: var(--pulse-font-caption);
   font-weight: 600;
-  line-height: 16px;
+  line-height: calc(16px * var(--pulse-font-scale, 1));
   white-space: nowrap;
   overflow: visible;
   text-overflow: unset;
@@ -9635,7 +9829,7 @@ function onDeleteModeSelect(action: { name?: string }) {
 .peer-status {
   font-size: var(--pulse-font-caption);
   font-weight: 600;
-  line-height: 13px;
+  line-height: calc(13px * var(--pulse-font-scale, 1));
   color: var(--pulse-text-secondary);
 }
 
@@ -9652,7 +9846,7 @@ function onDeleteModeSelect(action: { name?: string }) {
   text-overflow: ellipsis;
   font-size: var(--pulse-font-caption);
   font-weight: 600;
-  line-height: 13px;
+  line-height: calc(13px * var(--pulse-font-scale, 1));
   color: var(--pulse-primary);
 }
 
@@ -10107,7 +10301,7 @@ function onDeleteModeSelect(action: { name?: string }) {
     filter: brightness(1);
   }
   30% {
-    filter: brightness(1.25);
+    filter: brightness(.65);
   }
 }
 
@@ -10193,7 +10387,7 @@ function onDeleteModeSelect(action: { name?: string }) {
   border-radius: 999px;
   font-size: var(--pulse-font-caption);
   font-weight: 600;
-  line-height: 16px;
+  line-height: calc(16px * var(--pulse-font-scale, 1));
   white-space: normal;
   overflow-wrap: anywhere;
 }
@@ -11135,14 +11329,16 @@ function onDeleteModeSelect(action: { name?: string }) {
   width: 100%;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px 8px;
-  padding: 16px 4px 8px;
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: 6px 8px;
+  padding: 10px 4px;
   border-top: 1px solid var(--pulse-divider);
-  align-content: start;
+  align-items: stretch;
 }
 
 .plus-item {
   min-width: 0;
+  min-height: 0;
   padding: 0;
   border: none;
   background: transparent;
@@ -11151,7 +11347,8 @@ function onDeleteModeSelect(action: { name?: string }) {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 7px;
+  justify-content: center;
+  gap: 5px;
   cursor: pointer;
 }
 
@@ -11167,15 +11364,15 @@ function onDeleteModeSelect(action: { name?: string }) {
 }
 
 .plus-icon-wrap .material-symbols-outlined {
-  font-size: 26px;
+  font-size: 30px;
   color: var(--pulse-text);
 }
 
 .plus-label {
   max-width: 100%;
   color: var(--pulse-text-secondary);
-  font-size: var(--pulse-font-caption);
-  line-height: 16px;
+  font-size: var(--pulse-font-body);
+  line-height: calc(20px * var(--pulse-font-scale, 1));
   white-space: nowrap;
 }
 
@@ -11186,10 +11383,6 @@ function onDeleteModeSelect(action: { name?: string }) {
 
 .plus-item:disabled {
   opacity: .45;
-}
-
-@media (max-width: 360px) {
-  .plus-panel { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
 .bubble-text {
@@ -11731,7 +11924,7 @@ function onDeleteModeSelect(action: { name?: string }) {
   margin-top: 4px;
   color: #d94b32;
   font-size: var(--pulse-font-caption);
-  line-height: 16px;
+  line-height: calc(16px * var(--pulse-font-scale, 1));
 }
 
 .burn-status.mine {
@@ -11926,7 +12119,7 @@ function onDeleteModeSelect(action: { name?: string }) {
   transition: background 0.2s;
 }
 
-.money-card{box-sizing:border-box;width:100%;min-height:82px;border:0;border-radius:8px;background:#f19b3b;color:#fff;display:flex;align-items:center;gap:12px;padding:15px;text-align:left;transition:filter .2s,background .2s}.money-card.transfer{background:#ef8b3b}.money-card.received{background:#8a7562;filter:saturate(.55)}.money-card.transfer.received{background:#806b5d}.money-card>.material-symbols-outlined{font-size:38px;border:1px solid rgba(255,255,255,.7);border-radius:50%;padding:4px;flex:none}.money-card>span:last-child{display:flex;flex-direction:column;min-width:0}.money-card b{font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.money-card small{margin-top:5px;color:rgba(255,255,255,.85)}
+.money-card{box-sizing:border-box;width:100%;min-height:82px;border:0;border-radius:8px;background:#f19b3b;color:#fff;display:flex;align-items:center;gap:12px;padding:15px;text-align:left;transition:filter .2s,background .2s}.money-card.transfer{background:#ef8b3b}.money-card.received{background:#8a7562;filter:saturate(.55)}.money-card.transfer.received{background:#806b5d}.money-card>.material-symbols-outlined{font-size:38px;border:1px solid rgba(255,255,255,.7);border-radius:50%;padding:4px;flex:none}.money-card>span:last-child{display:flex;flex-direction:column;min-width:0}.money-card b{font-size:calc(15px * var(--pulse-font-scale, 1));overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.money-card small{margin-top:5px;color:rgba(255,255,255,.85)}
 
 .plus-btn:active {
   background: var(--pulse-surface-highest);
@@ -12075,7 +12268,8 @@ function onDeleteModeSelect(action: { name?: string }) {
   align-content: start;
 }
 
-.composer-dock { height: min(260px, 38vh); overflow: hidden; flex-shrink: 0; }
+.composer-dock { height: min(212px, 38vh); overflow: hidden; flex-shrink: 0; }
+.composer-handoff-space { flex-shrink: 0; overflow: hidden; pointer-events: none; }
 /* The IME and an outgoing panel must never reserve space simultaneously. */
 .chat-page.keyboard-open .composer-dock { display: none; }
 .composer-dock-enter-active, .composer-dock-leave-active { transition: height 200ms cubic-bezier(.2,.7,.2,1), opacity 160ms ease; }
@@ -12099,7 +12293,7 @@ function onDeleteModeSelect(action: { name?: string }) {
 /* Both panels occupy the same dock; switching never moves the input row. */
 .composer-panel {
   box-sizing: border-box;
-  height: min(260px, 38vh);
+  height: min(212px, 38vh);
   flex-shrink: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -12214,7 +12408,7 @@ function onDeleteModeSelect(action: { name?: string }) {
 }
 
 .voice-record-mic {
-  font-size: 40px;
+  font-size: calc(40px * var(--pulse-font-scale, 1));
   color: var(--pulse-primary);
 }
 
@@ -12368,13 +12562,16 @@ function onDeleteModeSelect(action: { name?: string }) {
 
 .sender-role {
   display: inline-flex;
-  margin-left: 5px;
-  padding: 1px 5px;
+  flex-shrink: 0;
+  align-items: center;
+  margin-left: 0;
+  padding: 0 4px;
   border-radius: 4px;
   color: #ffab40;
   background: rgba(255, 171, 64, 0.14);
-  font-size: var(--pulse-font-caption);
-  line-height: 16px;
+  font-size: clamp(9px, calc(10px * var(--pulse-font-scale, 1)), 13px);
+  font-weight: 500;
+  line-height: 1.4;
 }
 .van-popup.group-call-picker .group-call-picker-head {
   color: #fff !important;
@@ -12495,7 +12692,7 @@ function onDeleteModeSelect(action: { name?: string }) {
 }
 
 .receive-success-card strong {
-  font-size: 25px;
+  font-size: calc(25px * var(--pulse-font-scale, 1));
   letter-spacing: 2px;
 }
 
@@ -12703,7 +12900,7 @@ function onDeleteModeSelect(action: { name?: string }) {
 
 .cover-amount {
   margin-top: 18px;
-  font-size: 42px;
+  font-size: calc(42px * var(--pulse-font-scale, 1));
   font-weight: 700;
   letter-spacing: 0.5px;
   line-height: 1.1;

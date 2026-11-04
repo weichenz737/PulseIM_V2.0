@@ -80,18 +80,18 @@ function openGroupInfo(item: ConversationItem, e: Event) {
 
 <template>
   <div class="groups-page">
-    <header class="page-header">
+    <header class="pulse-page-nav page-header">
       <button type="button" class="icon-btn" @click="goBack" aria-label="返回">
         <IconBack />
       </button>
       <h1 class="page-title">群聊</h1>
       <button type="button" class="icon-btn" aria-label="发起群聊" @click="goCreate">
-        <span class="material-symbols-outlined">group_add</span>
+        <AppIcon name="group_add"  />
       </button>
     </header>
 
     <div class="search-box">
-      <span class="material-symbols-outlined search-icon">search</span>
+      <AppIcon name="search" class="search-icon" />
       <input
         v-model="keyword"
             type="text"
@@ -106,7 +106,7 @@ function openGroupInfo(item: ConversationItem, e: Event) {
         aria-label="清除"
         @click="keyword = ''"
       >
-        <span class="material-symbols-outlined">cancel</span>
+        <AppIcon name="cancel"  />
       </button>
     </div>
 
@@ -122,7 +122,7 @@ function openGroupInfo(item: ConversationItem, e: Event) {
 
       <div v-else-if="!groups.length" class="empty-wrap">
         <div class="empty-icon">
-          <span class="material-symbols-outlined">groups</span>
+          <AppIcon name="groups"  />
         </div>
         <p class="empty-title">暂无群聊</p>
         <p class="empty-sub">创建群聊，邀请好友一起交流</p>
@@ -164,7 +164,7 @@ function openGroupInfo(item: ConversationItem, e: Event) {
                 aria-label="群资料"
                 @click="openGroupInfo(item, $event)"
               >
-                <span class="material-symbols-outlined">info</span>
+                <AppIcon name="info"  />
               </button>
             </div>
           </div>
@@ -369,7 +369,7 @@ function openGroupInfo(item: ConversationItem, e: Event) {
   color: #fff;
   font-size: var(--pulse-font-caption);
   font-weight: 700;
-  line-height: 18px;
+  line-height: calc(18px * var(--pulse-font-scale, 1));
   text-align: center;
 }
 

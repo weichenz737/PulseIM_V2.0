@@ -181,7 +181,7 @@ async function submitFeedback() {
 
 <template>
   <div class="page help-feedback-page">
-    <header class="header">
+    <header class="pulse-page-nav header">
       <button type="button" class="icon-btn" aria-label="返回" @click="smartBack(router)">
         <IconBack />
       </button>
@@ -209,10 +209,10 @@ async function submitFeedback() {
           <button type="button" @click="activeTab = 'feedback'">去反馈</button>
         </div>
         <div v-if="questions.length" class="faq-search">
-          <span class="material-symbols-outlined">search</span>
+          <AppIcon name="search"  />
           <input v-model="faqKeyword" type="text" placeholder="搜索问题关键词" aria-label="搜索常见问题" />
           <button v-if="faqKeyword" type="button" class="search-clear-btn" aria-label="清除搜索" @click="faqKeyword = ''">
-            <span class="material-symbols-outlined">cancel</span>
+            <AppIcon name="cancel"  />
           </button>
         </div>
         <div v-if="loading" class="state">
@@ -223,7 +223,7 @@ async function submitFeedback() {
           <button type="button" class="retry-btn" @click="loadQuestions">重新加载</button>
         </div>
         <div v-else-if="questions.length === 0" class="state">
-          <span class="material-symbols-outlined state-icon">help</span>
+          <AppIcon name="help" class="state-icon" />
           <span>暂无相关问题</span>
         </div>
         <div v-else-if="filteredQuestions.length === 0" class="state search-empty">
@@ -244,7 +244,7 @@ async function submitFeedback() {
               <span class="question-title">{{ item.question }}</span>
               <span v-if="item.answer" class="answer-preview">{{ item.answer }}</span>
             </span>
-            <span class="material-symbols-outlined chevron">chevron_right</span>
+            <AppIcon name="chevron_right" class="chevron" />
           </button>
         </div>
       </section>
@@ -277,12 +277,12 @@ async function submitFeedback() {
               <div v-if="item.state !== 'done'" class="upload-mask">
                 <van-loading v-if="item.state === 'uploading'" color="#fff" size="20px" />
                 <button v-else type="button" class="retry-upload" @click="uploadImage(item)">
-                  <span class="material-symbols-outlined">refresh</span>
+                  <AppIcon name="refresh"  />
                   重试
                 </button>
               </div>
               <button type="button" class="remove-image" aria-label="删除图片" @click="removeImage(item)">
-                <span class="material-symbols-outlined">close</span>
+                <AppIcon name="close"  />
               </button>
             </div>
             <button

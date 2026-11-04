@@ -16,7 +16,7 @@ npm install
 npm run dev
 ```
 
-也可以直接双击目录里的 `start-desktop.bat`，它会自动启动开发服务器并打开浏览器。
+也可以直接双击目录里的 `start-desktop.bat`，它会在固定的 5175 端口启动开发服务器并打开浏览器。完整本地服务请从仓库根目录运行 `start-pulseim.bat`。
 
 启动 Electron 桌面壳层：先保持 Vite 开发服务器运行，再新开一个终端执行（Electron 依赖安装后可用）：
 

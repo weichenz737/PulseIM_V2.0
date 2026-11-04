@@ -57,7 +57,7 @@ function openGroup(item: CommonGroupItem) {
 
 <template>
   <div class="common-groups-page">
-    <header class="page-header">
+    <header class="pulse-page-nav page-header">
       <button type="button" class="icon-btn" @click="goBack" aria-label="返回">
         <IconBack />
       </button>
@@ -95,7 +95,7 @@ function openGroup(item: CommonGroupItem) {
             <div class="group-title">{{ item.title }}</div>
             <div class="group-sub">{{ item.memberCount }} 人</div>
           </div>
-          <span class="material-symbols-outlined chevron">chevron_right</span>
+          <AppIcon name="chevron_right" class="chevron" />
         </li>
       </ul>
     </van-pull-refresh>

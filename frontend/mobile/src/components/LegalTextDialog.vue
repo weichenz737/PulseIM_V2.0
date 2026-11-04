@@ -66,7 +66,7 @@ defineExpose({ open })
 .legal-header h2 {
   margin: 0;
   font-size: var(--pulse-font-title);
-  line-height: 24px;
+  line-height: calc(24px * var(--pulse-font-scale, 1));
   font-weight: 600;
 }
 

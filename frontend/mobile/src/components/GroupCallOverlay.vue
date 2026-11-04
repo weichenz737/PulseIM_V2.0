@@ -258,7 +258,7 @@ function bindRemoteAudio(el: unknown, stream?: MediaStream) {
       </template>
       <template v-else>
         <span class="float-avatar icon">
-          <span class="material-symbols-outlined">{{ isVideo ? 'videocam' : 'call' }}</span>
+          <AppIcon :name="isVideo ? 'videocam' : 'call'"  />
         </span>
         <span class="float-audio-meta">
           <strong>{{ groupTitle || '群通话' }}</strong>
@@ -290,7 +290,7 @@ function bindRemoteAudio(el: unknown, stream?: MediaStream) {
         >
           <span class="material-symbols-outlined">picture_in_picture_alt</span>
         </button>
-        <span class="material-symbols-outlined media-icon">{{ isVideo ? 'videocam' : 'call' }}</span>
+        <AppIcon :name="isVideo ? 'videocam' : 'call'" class="media-icon" />
         <div class="top-meta">
           <strong>{{ groupTitle || '群聊' }}</strong>
           <small>{{ statusLine }} · {{ memberCountText }}</small>
@@ -349,7 +349,7 @@ function bindRemoteAudio(el: unknown, stream?: MediaStream) {
       </div>
       <div v-else class="actions">
         <button type="button" class="round" :class="{ on: muted }" @click="call.toggleMute()">
-          <span class="material-symbols-outlined">{{ muted ? 'mic_off' : 'mic' }}</span>
+          <AppIcon :name="muted ? 'mic_off' : 'mic'"  />
           <small>静音</small>
         </button>
         <button
@@ -359,7 +359,7 @@ function bindRemoteAudio(el: unknown, stream?: MediaStream) {
           :class="{ on: !cameraOn }"
           @click="call.toggleCamera()"
         >
-          <span class="material-symbols-outlined">{{ cameraOn ? 'videocam' : 'videocam_off' }}</span>
+          <AppIcon :name="cameraOn ? 'videocam' : 'videocam_off'"  />
           <small>摄像头</small>
         </button>
         <button
@@ -368,7 +368,7 @@ function bindRemoteAudio(el: unknown, stream?: MediaStream) {
           class="round"
           @click="showInvite = true"
         >
-          <span class="material-symbols-outlined">person_add</span>
+          <AppIcon name="person_add"  />
           <small>邀请</small>
         </button>
         <button type="button" class="round reject" @click="call.leave()">
@@ -657,7 +657,7 @@ function bindRemoteAudio(el: unknown, stream?: MediaStream) {
   display: grid;
   place-items: center;
   background: #364153;
-  font-size: 24px;
+  font-size: calc(24px * var(--pulse-font-scale, 1));
 }
 
 .round small {

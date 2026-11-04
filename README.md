@@ -10,51 +10,38 @@
 - **frontend/mobile**：Vue3 + Vant 用户端
 - **frontend/admin**：Vue3 + Element Plus 管理端骨架
 
-## 本地开发
+## Windows 本地开发
 
-### 1. 基础设施
+先启动 Docker Desktop，再双击仓库根目录的 `start-pulseim.bat`。脚本使用项目现有的 `.local/postgres-data`，启动 Redis、MinIO、API、IM 和三个 Vite 前端；如有端口被其他项目占用，会明确报错，不会自动切换到另一套数据库或端口。首次使用需要已安装 PostgreSQL 16、JDK 21、Node.js，并准备好后端 JAR 和前端 `node_modules`。
 
-> 若 Docker Hub 不可达，`docker-compose.yml` 已默认使用 DaoCloud 镜像加速。
-> MinIO / Elasticsearch 为可选：`docker compose --profile full up -d minio elasticsearch`
+| 用途 | 本地地址 |
+| --- | --- |
+| 移动端网页 | http://127.0.0.1:5173/ |
+| 管理后台 | http://127.0.0.1:5174/admin/ |
+| 电脑端网页预览 | http://127.0.0.1:5175/ |
+| API 健康检查 | http://127.0.0.1:8080/actuator/health |
+| IM WebSocket | ws://127.0.0.1:9001/ws |
+| PostgreSQL / Redis / MinIO | 15432 / 16379 / 19090 |
 
-```bash
-cd deploy
-docker compose up -d postgres redis
+移动端本机开发入口使用 HTTP，避免自签名证书阻止浏览器打开页面；`127.0.0.1` 在浏览器中仍属于安全上下文。电脑端 Electron 开发壳层默认连接 5175。不要同时运行下方的完整 Docker 部署和这套本地开发服务，它们会争用 API、IM 和前端端口。
+
+```powershell
+# 查看状态；日志位于 .local/dev-logs
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools/local-dev.ps1 -Action Status
+
+# 停止前端/API/IM（数据库、Redis、MinIO 保留）
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools/local-dev.ps1 -Action Stop
 ```
 
-### 2. 后端（需 JDK 21 + Maven 3.9+）
+`start-pulseim.bat` 只启动本地服务，不注册计划任务，也不会设置开机自启。Docker Desktop 本身需保持运行。项目的 PostgreSQL 数据目录固定为 `.local/postgres-data`，避免误用系统里其他同名数据库。
 
-```bash
-cd backend
-mvn -DskipTests package
-
-# 业务 API
-java -jar pulse-api/target/pulse-api-1.0.0-SNAPSHOT.jar
-
-# IM（另开终端）
-java -jar pulse-im-server/target/pulse-im-server-1.0.0-SNAPSHOT.jar
-```
-
-- API: http://localhost:8080
-- IM WebSocket: ws://localhost:9001/ws
-
-### 3. 前端
-
-```bash
-# 用户端 http://localhost:5173
-cd frontend/mobile
-npm install
-npm run dev
-
-# 管理端 http://localhost:5174 （或 Vite 分配端口）
-cd frontend/admin
-npm install
-npm run dev
-```
+若后端代码变更，使用 JDK 21 和 Maven 3.9+ 在 `backend` 运行 `mvn -DskipTests package` 后，再重新启动 API/IM。Elasticsearch 为可选服务，不属于本地核心启动链路。
 
 用户端已实现：登录、注册三步、消息列表（对齐 `ui设计图`）。
 
-## Docker 一键部署
+## Docker 开发编排
+
+这套编排使用开发默认凭据。Linux 正式部署前请阅读 `deploy/PRODUCTION.md`，准备证书、密钥、MinIO 和公网地址配置。
 
 ```bash
 cd deploy

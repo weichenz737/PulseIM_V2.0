@@ -1,13 +1,14 @@
 /* Shared visual contract. Business layouts and dedicated chat/call controls
    keep their own geometry; only explicitly migrated buttons use pulse-button. */
 :root {
+  --pulse-font-scale: 1;
   --pulse-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif;
-  --pulse-font-caption: 12px;
-  --pulse-font-small: 13px;
   --pulse-font-body: 15px;
+  --pulse-font-caption: var(--pulse-font-body);
+  --pulse-font-small: var(--pulse-font-body);
   --pulse-font-title: 18px;
   --pulse-font-heading: 22px;
-  --pulse-line-caption: 18px;
+  --pulse-line-caption: 22px;
   --pulse-line-body: 22px;
   --pulse-line-title: 26px;
   --pulse-weight-regular: 400;
@@ -32,6 +33,10 @@
   --pulse-button-text: #ffffff;
   --pulse-overlay-background: rgba(0, 0, 0, .46);
   --van-base-font: var(--pulse-font-family);
+  --van-font-size-sm: var(--pulse-font-body);
+  --van-font-size-md: var(--pulse-font-body);
+  --van-font-size-lg: var(--pulse-font-title);
+  --van-pull-refresh-head-font-size: var(--pulse-font-body);
   --van-primary-color: var(--pulse-primary);
   --van-danger-color: var(--pulse-danger);
   --van-text-color: var(--pulse-text);
@@ -83,6 +88,102 @@
 html, body { font-family: var(--pulse-font-family); font-size: var(--pulse-font-body); }
 input, textarea, select, button { font-family: inherit; }
 .pulse-back-icon { flex: none; vertical-align: middle; }
+:root .unified-back-header {
+  box-sizing: border-box !important;
+  height: calc(var(--pulse-header-bar-height) + var(--pulse-header-pad-top)) !important;
+  min-height: calc(var(--pulse-header-bar-height) + var(--pulse-header-pad-top)) !important;
+  padding: var(--pulse-header-pad-top) 12px 0 !important;
+  align-items: center !important;
+}
+:root .unified-back-header .detail-back-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 44px;
+  width: 44px !important;
+  height: 44px !important;
+  min-width: 44px !important;
+  min-height: 44px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: var(--pulse-control-radius) !important;
+  background: transparent !important;
+  color: var(--pulse-primary) !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+:root .unified-back-header .detail-back-button .pulse-back-icon { width: 24px; height: 24px; }
+:root .unified-back-header .detail-back-button:active { background: var(--pulse-pressed) !important; }
+:root .history-search-page > .unified-back-header { grid-template-columns: 44px minmax(0, 1fr) auto; }
+/* The four tab roots share the same title row and native safe-area geometry. */
+:root[data-theme] .home-tab-header.page-header.tab-home-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: row !important;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  height: calc(var(--pulse-header-bar-height) + var(--pulse-header-pad-top)) !important;
+  min-height: calc(var(--pulse-header-bar-height) + var(--pulse-header-pad-top)) !important;
+  padding: var(--pulse-header-pad-top) 12px 0 16px !important;
+  margin: 0 0 8px !important;
+  border: 0 !important;
+  background: var(--pulse-page-bg) !important;
+  box-shadow: none;
+}
+:root[data-theme] .home-tab-header.page-header.tab-home-header > .page-title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  text-align: left;
+  color: var(--pulse-primary) !important;
+  font-size: var(--pulse-font-title) !important;
+  font-weight: 700 !important;
+  line-height: var(--pulse-line-title);
+}
+.home-tab-actions { display: flex; align-items: center; gap: 8px; }
+:root[data-theme] .home-tab-header :is(.icon-btn, .more-btn, .desktop-session-btn) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  min-height: 40px;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  border-radius: var(--pulse-control-radius);
+  color: var(--pulse-primary) !important;
+  background: var(--pulse-surface-high) !important;
+}
+.messages-page .head-area > .top-row { padding: 0 16px 12px; }
+.messages-page .head-area { background: transparent !important; }
+:root[data-theme] :is(.messages-page .search-pill, .contacts-page .search-entry) {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 40px;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--pulse-border) !important;
+  border-radius: var(--pulse-control-radius);
+  background: var(--pulse-surface-high) !important;
+  color: var(--pulse-text-secondary);
+  font-size: var(--pulse-font-body);
+}
+.contacts-page .search-entry { margin: 0 16px 12px; }
+.home-tab-header ~ .search-entry svg, .head-area .search-ico { width: 20px; height: 20px; flex-shrink: 0; }
+.local-list-status { margin: 0; padding: 8px 16px; color: var(--pulse-text-secondary); background: var(--pulse-surface-low); font-size: var(--pulse-font-body); line-height: var(--pulse-line-body); }
+.local-list-status.connection-error { color: var(--pulse-danger); background: transparent; }
+:is(.menu-row, .setting-item, .settings-item, .field-row) {
+  height: auto;
+  min-height: 48px;
+}
 :is(.page-header, .header, .chat-header, .top-bar) :is(.icon-btn, .back-btn) {
   min-width: 40px;
   min-height: 44px;
@@ -210,6 +311,146 @@ button.pulse-button:focus-visible { outline: 2px solid var(--pulse-primary); out
 /* Only the existing safe-area helper is affected. Custom business padding is
    retained to avoid double-insetting sheets that already own their safe area. */
 .van-safe-area-bottom { padding-bottom: var(--pulse-safe-bottom, env(safe-area-inset-bottom, 0px)); }
+
+/* Navigation belongs to the viewport of its page, never to a cover or a
+   pull-refresh track. Each detail page is the scroll owner so a fixed-height
+   native route cannot end the sticky range before the end of its content. */
+:root .route-page:has(> header:is(.page-header, .header, .wallet-header, .pay-header, .moments-header, .notifications-header, .hero-header, .top-row)) {
+  height: 100%;
+  min-height: 0 !important;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+}
+:root .route-page:is(.favorites-page, .compose-page) { overflow: hidden; }
+:root[data-theme] :is(.route-page, .contacts-page, .discover-page, .me-page) > header:is(.page-header, .header, .wallet-header, .pay-header, .moments-header, .notifications-header, .hero-header, .top-row) {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 45 !important;
+  flex-shrink: 0;
+  background: var(--pulse-page-bg) !important;
+  background-image: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+:root[data-theme='light'] :is(.route-page, .contacts-page, .discover-page, .me-page) > header:is(.page-header, .header, .wallet-header, .pay-header, .moments-header, .notifications-header, .hero-header, .top-row),
+:root[data-theme='light'] .home-tab-header.page-header.tab-home-header {
+  background: var(--pulse-list-page-bg, var(--pulse-page-bg)) !important;
+}
+/* Messages already scroll inside their flex body; keep the entire head fixed. */
+.messages-page .head-area { flex-shrink: 0; }
+:root .route-page > header:is(.hero-header, .notifications-header, .top-row) {
+  box-sizing: border-box;
+  height: calc(var(--pulse-header-bar-height) + var(--pulse-header-pad-top));
+  min-height: calc(var(--pulse-header-bar-height) + var(--pulse-header-pad-top));
+  padding-top: var(--pulse-header-pad-top);
+  padding-bottom: 0;
+  align-items: center;
+}
+:root .album-page > .page-header :is(.page-title, .icon-btn, .perm-btn) {
+  color: var(--pulse-primary) !important;
+  text-shadow: none !important;
+}
+
+/* All route navigation controls share the chat back button's geometry. Keep
+   this scoped to navigation, so message menus and sheet controls are untouched. */
+:root[data-theme] .pulse-page-nav:not(.home-tab-header) {
+  box-sizing: border-box !important;
+  height: calc(var(--pulse-header-bar-height) + var(--pulse-header-pad-top)) !important;
+  min-height: calc(var(--pulse-header-bar-height) + var(--pulse-header-pad-top)) !important;
+  padding: var(--pulse-header-pad-top) 12px 0 !important;
+  align-items: center !important;
+  column-gap: 0 !important;
+  border-bottom: 0 !important;
+}
+:root[data-theme] .pulse-page-nav button:is(.icon-btn, .back-btn, .back, .header-btn, .header-button, .header-icon, .hero-btn, .back-link, .desktop-session-btn, .more-btn) {
+  position: relative !important;
+  inset: auto !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex: 0 0 44px !important;
+  width: 44px !important;
+  height: 44px !important;
+  min-width: 44px !important;
+  min-height: 44px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: var(--pulse-control-radius) !important;
+  background: transparent !important;
+  color: var(--pulse-primary) !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  transform: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+:root .pulse-page-nav button :is(svg, .material-symbols-outlined) {
+  width: 24px !important;
+  height: 24px !important;
+  flex: none;
+  font-size: 24px !important;
+  line-height: 24px !important;
+}
+:root[data-theme] .pulse-page-nav button:active { background: var(--pulse-pressed) !important; }
+:root .pulse-page-nav:not(.chat-header):not(.home-tab-header) > :is(.header-left, .header-side, .header-right, .header-actions, .hero-header-actions) {
+  position: static;
+  display: flex;
+  align-items: center;
+  gap: 4px !important;
+  min-width: 44px;
+}
+:root[data-theme] .pulse-page-nav:not(.home-tab-header):not(.chat-header):not(.history-search-page > header) > h1,
+:root[data-theme] .pulse-page-nav:not(.chat-header) > .header-left > h1 {
+  position: absolute !important;
+  top: var(--pulse-header-pad-top) !important;
+  left: 50% !important;
+  right: auto !important;
+  display: block !important;
+  width: calc(100% - 208px) !important;
+  max-width: calc(100% - 208px) !important;
+  min-width: 0 !important;
+  height: var(--pulse-header-bar-height) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  transform: translateX(-50%) !important;
+  font-size: var(--pulse-font-title) !important;
+  line-height: var(--pulse-header-bar-height) !important;
+  font-weight: 600 !important;
+  color: var(--pulse-primary) !important;
+  text-align: center !important;
+  text-shadow: none !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+/* A positioned title leaves the controls free to use the full content row. */
+:root .pulse-page-nav:not(.home-tab-header):not(.chat-header):not(.history-search-page > header) {
+  display: flex !important;
+  justify-content: space-between !important;
+}
+:root .pulse-page-nav > button:not(:has(svg, .material-symbols-outlined)) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px !important;
+  height: 44px !important;
+  margin: 0 !important;
+  padding: 0 8px !important;
+  border: 0 !important;
+  border-radius: var(--pulse-control-radius) !important;
+  background: transparent !important;
+  color: var(--pulse-primary) !important;
+  box-shadow: none !important;
+  font-size: var(--pulse-font-body) !important;
+  line-height: var(--pulse-line-body) !important;
+}
+:root[data-theme] .pulse-page-nav button:is(.danger, .danger-icon, .delete-btn) { color: var(--pulse-danger) !important; }
+:root .pulse-page-nav button:disabled { opacity: .4; }
 
 @media (prefers-reduced-motion: reduce) {
   button.pulse-button { transition: none; }

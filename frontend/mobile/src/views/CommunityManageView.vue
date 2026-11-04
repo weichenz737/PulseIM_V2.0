@@ -532,7 +532,7 @@ onMounted(() => {
 
 <template>
   <div class="manage-page">
-    <header class="page-header">
+    <header class="pulse-page-nav page-header">
       <button type="button" class="icon-btn" aria-label="返回" @click="goBack"><IconBack /></button>
       <h1 class="page-title">管理中心</h1>
       <span class="header-spacer" />
@@ -562,9 +562,9 @@ onMounted(() => {
 
       <main v-if="activeTab === 'overview'" class="manage-content">
         <section class="section-title"><h3>用户与内容</h3><span>实时数据</span></section>
-        <div class="stats-grid"><button v-for="stat in stats" :key="stat.label" type="button" class="stat-card" :class="{ clickable: stat.detailType }" @click="openDataDetail(stat.detailType)"><span class="stat-icon material-symbols-outlined">{{ stat.icon }}</span><strong>{{ stat.value }}</strong><small>{{ stat.label }}</small><span v-if="stat.detailType" class="card-arrow material-symbols-outlined">chevron_right</span></button></div>
+        <div class="stats-grid"><button v-for="stat in stats" :key="stat.label" type="button" class="stat-card" :class="{ clickable: stat.detailType }" @click="openDataDetail(stat.detailType)"><AppIcon :name="stat.icon" class="stat-icon" /><strong>{{ stat.value }}</strong><small>{{ stat.label }}</small><AppIcon name="chevron_right" v-if="stat.detailType" class="card-arrow" /></button></div>
         <section class="section-title revenue-title"><h3>收益数据</h3><span>钱包余额以 PLU 计</span></section>
-        <div class="revenue-grid"><button v-for="stat in revenueStats" :key="stat.label" type="button" class="revenue-card" :class="{ clickable: stat.detailType }" @click="openDataDetail(stat.detailType)"><span class="material-symbols-outlined">{{ stat.icon }}</span><div><strong>{{ stat.value }}</strong><small>{{ stat.label }}</small></div><span v-if="stat.detailType" class="revenue-arrow material-symbols-outlined">chevron_right</span></button></div>
+        <div class="revenue-grid"><button v-for="stat in revenueStats" :key="stat.label" type="button" class="revenue-card" :class="{ clickable: stat.detailType }" @click="openDataDetail(stat.detailType)"><AppIcon :name="stat.icon"  /><div><strong>{{ stat.value }}</strong><small>{{ stat.label }}</small></div><AppIcon name="chevron_right" v-if="stat.detailType" class="revenue-arrow" /></button></div>
         <p class="data-note">举报数量：{{ dashboard?.report_total || 0 }} 条 · 新成员和活跃人数按系统统计口径计算</p>
       </main>
 
@@ -587,7 +587,7 @@ onMounted(() => {
         </section>
         <div class="member-search">
           <input v-model="keyword" placeholder="搜索成员昵称或手机号" @keyup.enter="loadMembers" />
-          <button v-if="keyword" type="button" class="search-clear-btn" aria-label="清除搜索" @click="keyword = ''; loadMembers()"><span class="material-symbols-outlined">cancel</span></button>
+          <button v-if="keyword" type="button" class="search-clear-btn" aria-label="清除搜索" @click="keyword = ''; loadMembers()"><AppIcon name="cancel"  /></button>
           <button type="button" @click="loadMembers">搜索</button>
         </div>
         <div class="member-filters">
@@ -598,7 +598,7 @@ onMounted(() => {
           <article v-for="member in members" :key="member.id" class="member-card" @click="memberAction(member)">
             <img v-if="member.avatar_url" :src="resolveAvatarUrl(member.avatar_url)" alt="" class="member-avatar" /><div v-else class="member-avatar initials">{{ member.nickname?.slice(0, 1) }}</div>
             <div class="member-info"><strong>{{ member.nickname }}</strong><small>{{ roleLabel(member.role) }} · {{ statusLabel(member.status) }}</small></div>
-            <div class="member-actions"><button v-if="isOwner && member.role === 'ADMIN'" type="button" class="permission-btn" @click.stop="openPermissions(member)">权限</button><span class="material-symbols-outlined">more_horiz</span></div>
+            <div class="member-actions"><button v-if="isOwner && member.role === 'ADMIN'" type="button" class="permission-btn" @click.stop="openPermissions(member)">权限</button><IconMore /></div>
           </article>
           <div v-if="!members.length" class="empty">暂无成员</div>
         </div>
@@ -608,14 +608,14 @@ onMounted(() => {
         <div class="content-toolbar">
           <div class="content-search">
             <input v-model="contentKeyword" placeholder="检索动态内容或作者" @keyup.enter="applyContentFilters" />
-            <button v-if="contentKeyword" type="button" class="search-clear-btn" aria-label="清除搜索" @click="contentKeyword = ''; applyContentFilters()"><span class="material-symbols-outlined">cancel</span></button>
+            <button v-if="contentKeyword" type="button" class="search-clear-btn" aria-label="清除搜索" @click="contentKeyword = ''; applyContentFilters()"><AppIcon name="cancel"  /></button>
             <button type="button" @click="applyContentFilters">搜索</button>
           </div>
           <div class="content-filter-row">
             <button type="button" class="date-filter-button" @click="openDatePicker('start')"><span class="material-symbols-outlined">calendar_month</span><span><small>开始时间</small><strong>{{ contentStartDate || '不限' }}</strong></span></button>
             <span class="date-range-dash">—</span>
             <button type="button" class="date-filter-button" @click="openDatePicker('end')"><span class="material-symbols-outlined">calendar_month</span><span><small>结束时间</small><strong>{{ contentEndDate || '不限' }}</strong></span></button>
-            <button type="button" class="sort-filter-button" @click="sortPickerVisible = true"><span class="material-symbols-outlined">sort</span><span><small>排序方式</small><strong>{{ selectedContentSort.label }}</strong></span><span class="material-symbols-outlined arrow">expand_more</span></button>
+            <button type="button" class="sort-filter-button" @click="sortPickerVisible = true"><span class="material-symbols-outlined">sort</span><span><small>排序方式</small><strong>{{ selectedContentSort.label }}</strong></span><AppIcon name="expand_more" class="arrow" /></button>
           </div>
           <button type="button" class="filter-reset" @click="contentKeyword = ''; contentStartDate = ''; contentEndDate = ''; contentSort = 'LATEST'; applyContentFilters()">重置</button>
         </div>
@@ -672,9 +672,9 @@ onMounted(() => {
           <small class="setting-help">保存后将显示在圈子详情顶部，较长内容会自动滚动播放。</small>
         </label>
         <label>圈子规则<textarea v-model="edit.rules" maxlength="2000" :disabled="!isOwner" /></label>
-        <div class="setting-picker-group"><span>动态发布权限</span><button type="button" class="setting-picker" :disabled="!isOwner" @click="postModePickerVisible = true"><span class="setting-picker-icon material-symbols-outlined">{{ selectedPostMode.icon }}</span><span><strong>{{ selectedPostMode.label }}</strong><small>{{ selectedPostMode.description }}</small></span><i class="material-symbols-outlined">chevron_right</i></button></div>
-        <div class="setting-picker-group"><span>进圈是否需要审核</span><button type="button" class="setting-picker" :disabled="!isOwner" @click="joinReviewPickerVisible = true"><span class="setting-picker-icon material-symbols-outlined">{{ selectedJoinReview.icon }}</span><span><strong>{{ selectedJoinReview.label }}</strong><small>{{ selectedJoinReview.description }}</small></span><i class="material-symbols-outlined">chevron_right</i></button></div>
-        <div class="setting-picker-group"><span>退出圈子是否需要审核</span><button type="button" class="setting-picker" :disabled="!isOwner" @click="leaveReviewPickerVisible = true"><span class="setting-picker-icon material-symbols-outlined">{{ selectedLeaveReview.icon }}</span><span><strong>{{ selectedLeaveReview.label }}</strong><small>{{ selectedLeaveReview.description }}</small></span><i class="material-symbols-outlined">chevron_right</i></button></div>
+        <div class="setting-picker-group"><span>动态发布权限</span><button type="button" class="setting-picker" :disabled="!isOwner" @click="postModePickerVisible = true"><AppIcon :name="selectedPostMode.icon" class="setting-picker-icon" /><span><strong>{{ selectedPostMode.label }}</strong><small>{{ selectedPostMode.description }}</small></span><i class="material-symbols-outlined">chevron_right</i></button></div>
+        <div class="setting-picker-group"><span>进圈是否需要审核</span><button type="button" class="setting-picker" :disabled="!isOwner" @click="joinReviewPickerVisible = true"><AppIcon :name="selectedJoinReview.icon" class="setting-picker-icon" /><span><strong>{{ selectedJoinReview.label }}</strong><small>{{ selectedJoinReview.description }}</small></span><i class="material-symbols-outlined">chevron_right</i></button></div>
+        <div class="setting-picker-group"><span>退出圈子是否需要审核</span><button type="button" class="setting-picker" :disabled="!isOwner" @click="leaveReviewPickerVisible = true"><AppIcon :name="selectedLeaveReview.icon" class="setting-picker-icon" /><span><strong>{{ selectedLeaveReview.label }}</strong><small>{{ selectedLeaveReview.description }}</small></span><i class="material-symbols-outlined">chevron_right</i></button></div>
         <AppButton variant="primary" v-if="isOwner" type="button" class="save-btn" :disabled="saving" @click="saveSettings">{{ saving ? '保存中…' : '保存设置' }}</AppButton>
         <section v-if="isOwner" class="danger-zone"><h3>圈主操作</h3><button type="button" @click="transferOwner"><span class="material-symbols-outlined">swap_horiz</span><span><strong>转让圈主</strong><small>将圈主身份转给一名当前成员</small></span><i class="material-symbols-outlined">chevron_right</i></button><button type="button" class="dissolve-button" @click="dissolve"><span class="material-symbols-outlined">delete_forever</span><span><strong>解散圈子</strong><small>所有成员退出，操作不可撤销</small></span><i class="material-symbols-outlined">chevron_right</i></button></section>
       </main>
@@ -687,7 +687,7 @@ onMounted(() => {
       <section class="sort-picker-sheet">
         <div class="sort-picker-heading"><span><small>内容处理</small><strong>选择排序方式</strong></span><span class="material-symbols-outlined">sort</span></div>
         <button v-for="option in contentSortOptions" :key="option.value" type="button" class="sort-option" :class="{ selected: contentSort === option.value }" @click="selectContentSort(option.value)">
-          <span class="sort-option-icon material-symbols-outlined">{{ option.icon }}</span><span>{{ option.label }}</span><span v-if="contentSort === option.value" class="material-symbols-outlined sort-check">check_circle</span>
+          <AppIcon :name="option.icon" class="sort-option-icon" /><span>{{ option.label }}</span><span v-if="contentSort === option.value" class="material-symbols-outlined sort-check">check_circle</span>
         </button>
       </section>
     </AppBottomSheet>
@@ -702,7 +702,7 @@ onMounted(() => {
             <span class="remove-kicker">成员管理</span>
             <h3>移除成员</h3>
           </div>
-          <button type="button" class="remove-close" aria-label="关闭" :disabled="removingMember" @click="removeMemberVisible = false"><span class="material-symbols-outlined">close</span></button>
+          <button type="button" class="remove-close" aria-label="关闭" :disabled="removingMember" @click="removeMemberVisible = false"><AppIcon name="close"  /></button>
         </header>
         <div class="remove-target-card">
           <img v-if="removeMemberTarget?.avatar_url" :src="resolveAvatarUrl(removeMemberTarget.avatar_url)" alt="" class="remove-target-avatar" />
@@ -710,12 +710,12 @@ onMounted(() => {
           <div><strong>{{ removeMemberTarget?.nickname }}</strong><small>移除后将无法继续查看圈子内容</small></div>
           <span class="material-symbols-outlined remove-target-icon">person_remove</span>
         </div>
-        <div class="remove-warning"><span class="material-symbols-outlined">info</span><span>请先选择一个原因，记录会同步到成员出入记录，方便后续追溯。</span></div>
+        <div class="remove-warning"><AppIcon name="info"  /><span>请先选择一个原因，记录会同步到成员出入记录，方便后续追溯。</span></div>
         <div class="remove-section-heading"><strong>选择移除原因</strong><span>{{ removalReasons.length }} 个可选</span></div>
         <div v-if="removalReasonLoading" class="remove-reason-loading"><van-loading size="18px" />正在加载后台配置…</div>
         <div v-else-if="removalReasons.length" class="remove-reason-grid">
           <button v-for="reason in removalReasons" :key="reason.code" type="button" class="remove-reason-option" :class="{ selected: selectedRemovalReason === reason.code }" @click="selectedRemovalReason = reason.code">
-            <span class="remove-reason-icon material-symbols-outlined">{{ selectedRemovalReason === reason.code ? 'check_circle' : 'radio_button_unchecked' }}</span>
+            <AppIcon :name="selectedRemovalReason === reason.code ? 'check_circle' : 'radio_button_unchecked'" class="remove-reason-icon" />
             <span>{{ reason.name }}</span>
           </button>
         </div>

@@ -152,7 +152,7 @@ function locationMapUrl(item: ForwardCardItem) {
 
 <template>
   <div class="forward-detail-page">
-    <header class="page-header">
+    <header class="pulse-page-nav page-header">
       <button type="button" class="icon-btn" @click="goBack" aria-label="返回">
         <IconBack />
       </button>
@@ -175,16 +175,16 @@ function locationMapUrl(item: ForwardCardItem) {
           </div>
           <div v-else-if="item.msgType === 2 && fileOf(item)" class="media-block">
             <button type="button" class="file-card" @click="openItemPreview(item)">
-              <span class="material-symbols-outlined file-icon">{{ isVideoItem(item) ? 'movie' : 'description' }}</span>
+              <AppIcon :name="isVideoItem(item) ? 'movie' : 'description'" class="file-icon" />
               <span class="file-meta">
                 <strong>{{ fileOf(item)?.name || (isVideoItem(item) ? '视频' : '文件') }}</strong>
                 <small>{{ formatFileSize(fileOf(item)?.size) || '点击打开预览' }}</small>
               </span>
-              <span class="material-symbols-outlined">chevron_right</span>
+              <AppIcon name="chevron_right"  />
             </button>
           </div>
           <button v-else-if="item.msgType === 3 && fileOf(item)" type="button" class="voice-card" @click="openItemPreview(item)">
-            <span class="material-symbols-outlined">mic</span>
+            <AppIcon name="mic"  />
             <span>{{ fileOf(item)?.durationMs ? `语音 ${formatVoiceDuration(fileOf(item)!.durationMs)}` : '语音消息' }}</span>
             <span class="material-symbols-outlined">play_arrow</span>
           </button>

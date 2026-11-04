@@ -307,11 +307,9 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="edit-profile-page">
-    <header class="page-header">
-      <button type="button" class="back-btn" @click="goBack">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M15 18l-6-6 6-6"/>
-        </svg>
+    <header class="pulse-page-nav page-header">
+      <button type="button" class="back-btn" aria-label="返回" @click="goBack">
+        <IconBack />
       </button>
       <h1 class="page-title">编辑资料</h1>
       <button type="button" class="save-btn" :disabled="uploadingAvatar" @click="() => void handleSave()">
@@ -331,10 +329,7 @@ onBeforeUnmount(() => {
             class="avatar"
           />
           <div class="avatar-overlay">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-              <circle cx="12" cy="13" r="4"/>
-            </svg>
+            <AppIcon name="camera" />
           </div>
           <span class="edit-badge">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
@@ -364,27 +359,21 @@ onBeforeUnmount(() => {
             <span class="form-label">性别</span>
             <span class="form-value" :class="{ placeholder: !gender }">{{ genderDisplay }}</span>
           </div>
-          <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M9 18l6-6-6-6"/>
-          </svg>
+          <AppIcon name="chevronRight" class="chevron" :size="16" />
         </button>
         <button type="button" class="form-row pick-row" @click="openBirthdayPicker">
           <div class="form-col">
             <span class="form-label">生日</span>
             <span class="form-value" :class="{ placeholder: !birthday }">{{ birthdayDisplay }}</span>
           </div>
-          <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M9 18l6-6-6-6"/>
-          </svg>
+          <AppIcon name="chevronRight" class="chevron" :size="16" />
         </button>
         <button type="button" class="form-row pick-row last" @click="openRegionPicker">
           <div class="form-col">
             <span class="form-label">地区</span>
             <span class="form-value" :class="{ placeholder: !region }">{{ regionDisplay }}</span>
           </div>
-          <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M9 18l6-6-6-6"/>
-          </svg>
+          <AppIcon name="chevronRight" class="chevron" :size="16" />
         </button>
       </section>
 
@@ -637,7 +626,7 @@ onBeforeUnmount(() => {
   background: transparent;
   color: var(--pulse-text);
   font-size: var(--pulse-font-body);
-  line-height: 22px;
+  line-height: calc(22px * var(--pulse-font-scale, 1));
   outline: none;
   width: 100%;
   padding: 0;

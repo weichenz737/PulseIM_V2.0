@@ -194,9 +194,7 @@ async function submitForward() {
           :class="{ on: isForwardSelected(c.id) }"
           @click="toggleForwardTarget(c.id)"
         >
-          <span class="material-symbols-outlined media-forward-check">
-            {{ isForwardSelected(c.id) ? 'check_circle' : 'radio_button_unchecked' }}
-          </span>
+          <AppIcon :name="isForwardSelected(c.id) ? 'check_circle' : 'radio_button_unchecked'" class="media-forward-check" />
           <img v-if="c.avatar" :src="c.avatar" :alt="c.name" class="media-forward-avatar" />
           <div v-else class="media-forward-avatar initials">{{ c.name.slice(0, 1) }}</div>
           <div class="media-forward-meta">

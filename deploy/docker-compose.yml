@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: docker.m.daocloud.io/library/postgres:16-alpine
+    image: postgres:16-alpine
     container_name: pulse-postgres
     command:
       - "postgres"
@@ -30,34 +30,36 @@ services:
       interval: 5s
       timeout: 5s
       retries: 20
+    restart: unless-stopped
 
   redis:
-    image: docker.m.daocloud.io/library/redis:7-alpine
+    image: redis:7-alpine
     container_name: pulse-redis
+    command: ["redis-server", "--appendonly", "yes"]
     ports:
-      - "6380:6379"
+      - "16379:6379"
+    volumes:
+      - pulse_redis:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 3s
       retries: 20
+    restart: unless-stopped
 
   minio:
-    image: bitnami/minio:2024.9.22
+    image: ghcr.io/coollabsio/minio:latest
     container_name: pulse-minio
+    command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
-      MINIO_DEFAULT_BUCKETS: pulse-avatar:download
     ports:
-      - "9000:9000"
-      - "9002:9001"
+      - "19090:9000"
+      - "19091:9001"
     volumes:
-      - pulse_minio:/bitnami/minio/data
-    profiles: ["full"]
-
-  # minio-init removed: bitnami image can create default buckets via MINIO_DEFAULT_BUCKETS
-  # enable with: docker compose --profile full up -d minio
+      - pulse_minio:/data
+    restart: unless-stopped
 
   elasticsearch:
     image: docker.m.daocloud.io/elastic/elasticsearch:8.15.3
@@ -71,6 +73,7 @@ services:
     volumes:
       - pulse_es:/usr/share/elasticsearch/data
     profiles: ["full"]
+    restart: unless-stopped
 
   pulse-api:
     build:
@@ -82,6 +85,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      minio:
+        condition: service_started
     environment:
       DB_HOST: postgres
       DB_PORT: 5432
@@ -94,7 +99,7 @@ services:
       MINIO_ACCESS_KEY: minioadmin
       MINIO_SECRET_KEY: minioadmin
       MINIO_BUCKET: pulse-avatar
-      MINIO_PUBLIC_URL: http://localhost:9000/pulse-avatar
+      MINIO_PUBLIC_URL: http://localhost:19090/pulse-avatar
       JWT_SECRET: pulse-im-jwt-secret-key-change-me-32bytes!!
       ES_URIS: http://elasticsearch:9200
       BAIDU_MAP_AK: ${BAIDU_MAP_AK}
@@ -102,6 +107,7 @@ services:
       - "8080:8080"
     volumes:
       - pulse_uploads:/app/uploads
+    restart: unless-stopped
 
   pulse-im:
     build:
@@ -128,6 +134,7 @@ services:
       JWT_SECRET: pulse-im-jwt-secret-key-change-me-32bytes!!
     ports:
       - "9001:9001"
+    restart: unless-stopped
 
   mobile:
     build:
@@ -136,6 +143,7 @@ services:
     container_name: pulse-mobile
     depends_on:
       - pulse-api
+    restart: unless-stopped
 
   admin:
     build:
@@ -144,6 +152,7 @@ services:
     container_name: pulse-admin
     depends_on:
       - pulse-api
+    restart: unless-stopped
 
   nginx:
     image: docker.m.daocloud.io/library/nginx:1.27-alpine
@@ -158,9 +167,11 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - pulse_uploads:/srv/pulse-uploads:ro
+    restart: unless-stopped
 
 volumes:
   pulse_pg:
   pulse_minio:
+  pulse_redis:
   pulse_es:
   pulse_uploads:
