@@ -73,6 +73,9 @@ public class AuthService {
             }
         }
         String code = smsProperties.getDevFixedCode();
+        if (!StringUtils.hasText(code)) {
+            throw new BizException("短信服务暂未配置，请联系管理员创建账号后使用密码登录");
+        }
         redis.opsForValue().set(
                 RedisKeys.smsCode(req.getPhone()),
                 code,

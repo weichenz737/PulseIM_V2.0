@@ -15,6 +15,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -23,6 +24,28 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class AuthServiceTest {
+    @Test
+    void rejectsSmsRequestWhenNoProviderOrTestCodeIsConfigured() {
+        SmsProperties properties = new SmsProperties();
+        properties.setDevFixedCode("");
+        StringRedisTemplate redis = mock(StringRedisTemplate.class);
+        AuthService service = new AuthService(
+                mock(SysUserMapper.class), mock(SysAdminMapper.class),
+                mock(PasswordEncoder.class), mock(JwtUtil.class), redis, properties,
+                mock(UserIdentityAllocator.class), mock(LoginLogService.class),
+                mock(AdminAuditService.class), mock(AdminPermissionService.class),
+                mock(JdbcTemplate.class), mock(DefaultFriendService.class),
+                mock(ClientAccessConfigService.class));
+        AuthDtos.SendSmsReq request = new AuthDtos.SendSmsReq();
+        request.setPhone("13800138000");
+        request.setScene("register");
+
+        BizException error = assertThrows(BizException.class, () -> service.sendSms(request));
+
+        assertEquals("短信服务暂未配置，请联系管理员创建账号后使用密码登录", error.getMessage());
+        verify(redis, never()).opsForValue();
+    }
+
     @Test
     void recordsFailedPasswordLoginForUnknownUser() {
         SysUserMapper userMapper = mock(SysUserMapper.class);
