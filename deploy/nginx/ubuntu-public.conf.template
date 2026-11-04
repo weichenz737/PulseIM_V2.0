@@ -1,0 +1,19 @@
+map $http_upgrade $pulseim_connection_upgrade {
+    default upgrade;
+    '' close;
+}
+server {
+    listen 80;
+    server_name __PUBLIC_IP__;
+    location ^~ /.well-known/acme-challenge/ { root /var/www/pulseim-acme; }
+    location / { return 301 https://$host$request_uri; }
+}
+server {
+    listen 443 ssl;
+    server_name __PUBLIC_IP__;
+    ssl_certificate /etc/letsencrypt/live/__PUBLIC_IP__/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/__PUBLIC_IP__/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    location ^~ /.well-known/acme-challenge/ { root /var/www/pulseim-acme; }
+    include /opt/pulseim/current/deploy/nginx/ubuntu-locations.conf;
+}
